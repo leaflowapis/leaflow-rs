@@ -134,10 +134,10 @@ pub struct McpServerDefinition {
         ::prost::alloc::string::String,
         ::prost::alloc::string::String,
     >,
-    /// HTTP and SSE only: the endpoint.
+    /// HTTP only: the endpoint.
     #[prost(string, tag = "5")]
     pub url: ::prost::alloc::string::String,
-    /// HTTP and SSE only: headers sent with every request. Secret.
+    /// HTTP only: headers sent with every request. Secret.
     #[prost(map = "string, string", tag = "6")]
     pub headers: ::std::collections::HashMap<
         ::prost::alloc::string::String,
@@ -504,8 +504,6 @@ pub enum McpTransport {
     Stdio = 1,
     /// Streamable HTTP.
     Http = 2,
-    /// HTTP with Server-Sent Events, the transport of earlier revisions of MCP.
-    Sse = 3,
 }
 impl McpTransport {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -517,7 +515,6 @@ impl McpTransport {
             Self::Unspecified => "MCP_TRANSPORT_UNSPECIFIED",
             Self::Stdio => "MCP_TRANSPORT_STDIO",
             Self::Http => "MCP_TRANSPORT_HTTP",
-            Self::Sse => "MCP_TRANSPORT_SSE",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -526,7 +523,6 @@ impl McpTransport {
             "MCP_TRANSPORT_UNSPECIFIED" => Some(Self::Unspecified),
             "MCP_TRANSPORT_STDIO" => Some(Self::Stdio),
             "MCP_TRANSPORT_HTTP" => Some(Self::Http),
-            "MCP_TRANSPORT_SSE" => Some(Self::Sse),
             _ => None,
         }
     }

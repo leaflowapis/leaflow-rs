@@ -87,7 +87,7 @@ pub struct UpdateMcpServerRequest {
     ///Constraint: maxLength=64
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expected_revision: Option<String>,
-    ///With `http` and `sse`, headers sent with every request
+    ///With `http`, headers sent with every request
     #[serde(skip_serializing_if = "Option::is_none")]
     pub headers: Option<UpdateMcpServerRequestHeaders>,
     ///Variables of the server's current `env` whose values stay as they are
@@ -101,12 +101,12 @@ pub struct UpdateMcpServerRequest {
     ///Unset for `stdio` with `command` and `http` with `url`
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transport: Option<McpTransport>,
-    ///With `http` and `sse`, the endpoint; shown to anyone who reads the configuration
+    ///With `http`, the endpoint; shown to anyone who reads the configuration
     ///Constraint: maxLength=4096
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
-///With `http` and `sse`, headers sent with every request
+///With `http`, headers sent with every request
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct UpdateMcpServerRequestHeaders {
     /// Additional properties matching the spec's
@@ -604,11 +604,10 @@ pub struct McpServerResource {
     ///With `running`, how many tools it offers; null otherwise
     pub tool_count: Option<i64>,
     pub transport: McpTransport,
-    ///With `http` and `sse`, the endpoint
+    ///With `http`, the endpoint
     pub url: String,
 }
-/**`stdio` for a program the machine starts as the account, `http` for Streamable HTTP and
-`sse` for HTTP with Server-Sent Events, the transport of earlier revisions of MCP*/
+///`stdio` for a program the machine starts as the account, `http` for Streamable HTTP
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum McpTransport {
     #[default]
@@ -616,15 +615,12 @@ pub enum McpTransport {
     Stdio,
     #[serde(rename = "http")]
     Http,
-    #[serde(rename = "sse")]
-    Sse,
 }
 impl McpTransport {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Stdio => "stdio",
             Self::Http => "http",
-            Self::Sse => "sse",
         }
     }
 }
