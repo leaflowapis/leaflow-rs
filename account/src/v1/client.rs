@@ -298,6 +298,32 @@ fn __pct_encode_path_segment(s: &str) -> String {
     }
     out
 }
+///Allowed values for the `status` query parameter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+pub enum ListSshKeysStatus {
+    #[serde(rename = "ACTIVE")]
+    Active,
+    #[serde(rename = "REVOKED")]
+    Revoked,
+}
+impl ListSshKeysStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Revoked => "REVOKED",
+        }
+    }
+}
+impl std::fmt::Display for ListSshKeysStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ListSshKeysStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
 ///Typed error responses for `accept-agreements`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum AcceptAgreementsApiError {
@@ -326,6 +352,11 @@ pub enum CreateProjectApiError {
 ///Typed error responses for `create-scoped-token`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CreateScopedTokenApiError {
+    Default(Error),
+}
+///Typed error responses for `create-ssh-key`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateSshKeyApiError {
     Default(Error),
 }
 ///Typed error responses for `get-account`. One variant per declared non-2xx response.
@@ -363,6 +394,11 @@ pub enum GetProjectSlugAvailabilityApiError {
 pub enum GetSettingsApiError {
     Default(Error),
 }
+///Typed error responses for `get-ssh-key`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetSshKeyApiError {
+    Default(Error),
+}
 ///Typed error responses for `list-agreements`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListAgreementsApiError {
@@ -388,6 +424,11 @@ pub enum ListMyInvitationsApiError {
 pub enum ListProjectsApiError {
     Default(Error),
 }
+///Typed error responses for `list-ssh-keys`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListSshKeysApiError {
+    Default(Error),
+}
 ///Typed error responses for `preview-invitation-by-token`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum PreviewInvitationByTokenApiError {
@@ -398,9 +439,19 @@ pub enum PreviewInvitationByTokenApiError {
 pub enum RegisterApiError {
     Default(Error),
 }
+///Typed error responses for `rename-ssh-key`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum RenameSshKeyApiError {
+    Default(Error),
+}
 ///Typed error responses for `request-account-deletion`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum RequestAccountDeletionApiError {
+    Default(Error),
+}
+///Typed error responses for `revoke-ssh-key`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum RevokeSshKeyApiError {
     Default(Error),
 }
 ///Typed error responses for `search-projects`. One variant per declared non-2xx response.
@@ -905,6 +956,88 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(CreateScopedTokenApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Add an SSH key to the current account
+    ///
+    /// The key takes effect in every project the caller belongs to: Fleet machines accept it within about a minute, and Compute installs it on the servers the caller creates or reinstalls from then on.
+    ///
+    /// Fails with 409 `SSH_KEY_ALREADY_EXISTS` while the same key is active on any account, this one included, and with 412 `SSH_KEY_QUOTA_EXCEEDED` while the account already holds 50 active keys.
+    ///
+    /// `POST /account/v1/me/ssh-keys`
+    pub async fn create_ssh_key(
+        &self,
+        request: CreateSSHKeyRequestBody,
+    ) -> Result<SSHKeyResource, ApiOpError<CreateSshKeyApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/account/v1/me/ssh-keys");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 201u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "201",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateSshKeyApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSshKeyApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -1502,6 +1635,88 @@ impl HttpClient {
             }))
         }
     }
+    /// Get an SSH key of the current account
+    ///
+    /// `GET /account/v1/me/ssh-keys/{keyId}`
+    pub async fn get_ssh_key(
+        &self,
+        key_id: impl AsRef<str>,
+    ) -> Result<SSHKeyResource, ApiOpError<GetSshKeyApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/account/v1/me/ssh-keys/{}",
+                __pct_encode_path_segment(key_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetSshKeyApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetSshKeyApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// List the agreements registration requires
     ///
     /// No token required. Send the `type` and `version` of each one back unchanged to `POST /account/v1/me:register`.
@@ -1925,6 +2140,100 @@ impl HttpClient {
             }))
         }
     }
+    /// List the SSH keys of the current account
+    ///
+    /// Most recent first.
+    ///
+    /// `GET /account/v1/me/ssh-keys`
+    pub async fn list_ssh_keys(
+        &self,
+        limit: Option<i64>,
+        offset: Option<i64>,
+        status: Option<ListSshKeysStatus>,
+    ) -> Result<LengthAwarePageSSHKeyResource, ApiOpError<ListSshKeysApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/account/v1/me/ssh-keys");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = limit {
+                query_params.push(("limit".to_string(), v.to_string()));
+            }
+            if let Some(v) = offset {
+                query_params.push(("offset".to_string(), v.to_string()));
+            }
+            if let Some(v) = status {
+                query_params.push(("status".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListSshKeysApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListSshKeysApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Preview an invitation by its token
     ///
     /// No token required: whoever follows the link in an invitation email has usually not signed in, and may hold no account at all.
@@ -2095,6 +2404,94 @@ impl HttpClient {
             }))
         }
     }
+    /// Rename an SSH key of the current account
+    ///
+    /// Only the name can change. The key, its type and its fingerprint are three statements about one thing, and changing one of them would leave the row describing a key that does not exist.
+    ///
+    /// `PATCH /account/v1/me/ssh-keys/{keyId}`
+    pub async fn rename_ssh_key(
+        &self,
+        key_id: impl AsRef<str>,
+        request: RenameSSHKeyRequestBody,
+    ) -> Result<SSHKeyResource, ApiOpError<RenameSshKeyApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/account/v1/me/ssh-keys/{}",
+                __pct_encode_path_segment(key_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.patch(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<RenameSshKeyApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(RenameSshKeyApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Request deletion of the current account
     ///
     /// The account is frozen at once: it can no longer enter a project or change anything in one. The answer is 202 with `state` `checking` while the services holding data for the account are asked whether it can be closed. Poll `GET /account/v1/me/deletion` until `state` leaves `checking`, which normally takes a few seconds.
@@ -2171,6 +2568,92 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(RequestAccountDeletionApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Revoke an SSH key of the current account
+    ///
+    /// The row remains and its status becomes `REVOKED`, so it stays answerable afterwards which key was trusted at the time. Fleet machines stop accepting the key within about a minute. A server on which Compute installed the key keeps it until it is removed there.
+    ///
+    /// The same key can then be added again, to this account or another.
+    ///
+    /// `DELETE /account/v1/me/ssh-keys/{keyId}`
+    pub async fn revoke_ssh_key(
+        &self,
+        key_id: impl AsRef<str>,
+    ) -> Result<SSHKeyResource, ApiOpError<RevokeSshKeyApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/account/v1/me/ssh-keys/{}",
+                __pct_encode_path_segment(key_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<RevokeSshKeyApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(RevokeSshKeyApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

@@ -196,6 +196,56 @@ pub struct CountryOption {
     pub name: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LengthAwarePageSSHKeyResource {
+    ///The items in this page
+    pub items: Vec<SSHKeyResource>,
+    ///Maximum number of items in this page, echoing the request
+    pub limit: i64,
+    ///Number of items skipped, echoing the request
+    pub offset: i64,
+    ///Total number of matches, not only this page
+    pub total: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SSHKeyResource {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    ///The SHA-256 fingerprint, as `ssh-keygen -l` prints it
+    pub fingerprint: String,
+    pub id: uuid::Uuid,
+    ///The algorithm, such as `ssh-ed25519`
+    pub key_type: String,
+    pub name: String,
+    ///The key in OpenSSH format, without the comment it was added with
+    pub public_key: String,
+    pub status: SSHKeyResourceStatus,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum SSHKeyResourceStatus {
+    #[default]
+    #[serde(rename = "ACTIVE")]
+    Active,
+    #[serde(rename = "REVOKED")]
+    Revoked,
+}
+impl SSHKeyResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Revoked => "REVOKED",
+        }
+    }
+}
+impl ::std::fmt::Display for SSHKeyResourceStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for SSHKeyResourceStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LengthAwarePageProjectAccessResource {
     ///The items in this page
     pub items: Vec<ProjectAccessResource>,
@@ -830,6 +880,14 @@ impl CreateProjectRequestBodyBuilder {
         self.value
     }
 }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateSSHKeyRequestBody {
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
+    ///The public key in OpenSSH format. The type and the fingerprint are derived from it and cannot be changed. A certificate is refused, being a signature rather than a key
+    ///Constraint: minLength=1, maxLength=16384
+    pub public_key: String,
+}
 ///What an invitation states before it is accepted. It carries neither the invitation id nor the full recipient address; the invitations listed against the current account are returned by `list-my-invitations`
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InvitationPreviewResource {
@@ -841,6 +899,11 @@ pub struct InvitationPreviewResource {
     pub project_name: String,
     ///The display names of the roles granted on acceptance
     pub role_names: Option<Vec<String>>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RenameSSHKeyRequestBody {
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SubmitIdentityVerificationRequestBody {

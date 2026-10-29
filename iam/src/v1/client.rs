@@ -839,9 +839,11 @@ impl HttpClient {
             }))
         }
     }
-    /// Add an SSH key
+    /// Add an SSH key to this project
     ///
-    /// `owner=me` adds a key of the caller's own, which any member may do. `owner=project` adds a key shared by the project, requires `iam:ssh_keys.manage`, and lands on every machine created in the project afterwards.
+    /// Adds a key the project shares, such as one used by CI or a bastion. Compute installs it on every server created in the project afterwards. It belongs to no member, so it signs in as nobody on Fleet machines; a member adds a key of their own to their account (`POST /account/v1/me/ssh-keys` on the account API).
+    ///
+    /// Requires `iam:ssh_keys.manage`.
     ///
     /// `POST /api/v1/ssh-keys`
     pub async fn create_ssh_key(
@@ -2375,7 +2377,7 @@ impl HttpClient {
     }
     /// List the SSH keys of this project
     ///
-    /// Both the keys belonging to members and the keys belonging to the project are listed; the `owner_user_id` on each one tells them apart.
+    /// The keys the project shares. The keys of members are their own and belong to their accounts (`/account/v1/me/ssh-keys` on the account API), so they are not listed here.
     ///
     /// `GET /api/v1/ssh-keys`
     pub async fn list_ssh_keys(
@@ -2547,7 +2549,7 @@ impl HttpClient {
     }
     /// Rename an SSH key
     ///
-    /// Only the name can change. The key, its type and its fingerprint are three statements about one thing, and changing one of them would leave the row describing a key that does not exist.
+    /// Only the name can change. The key, its type and its fingerprint are three statements about one thing, and changing one of them would leave the row describing a key that does not exist. Requires `iam:ssh_keys.manage`.
     ///
     /// `PATCH /api/v1/ssh-keys/{keyId}`
     pub async fn rename_ssh_key(
@@ -2707,7 +2709,7 @@ impl HttpClient {
     }
     /// Revoke an SSH key
     ///
-    /// The row remains and its status becomes `REVOKED`, so it stays answerable afterwards which key was trusted at the time.
+    /// The row remains and its status becomes `REVOKED`, so it stays answerable afterwards which key was trusted at the time. A server on which Compute installed the key keeps it until it is removed there. Requires `iam:ssh_keys.manage`.
     ///
     /// `DELETE /api/v1/ssh-keys/{keyId}`
     pub async fn revoke_ssh_key(

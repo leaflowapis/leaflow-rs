@@ -380,9 +380,6 @@ pub struct SSHKeyResource {
     pub id: uuid::Uuid,
     pub key_type: String,
     pub name: String,
-    ///Who the key belongs to. Absent means it belongs to the project itself
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub owner_user_id: Option<String>,
     pub public_key: String,
     ///A purpose label. The key the platform generates carries `platform`
     pub purposes: Option<Vec<String>>,
@@ -570,113 +567,6 @@ pub struct FieldViolation {
     ///Why the field was rejected, such as `REQUIRED` or `OUT_OF_RANGE`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CreateSSHKeyRequestBody {
-    ///Constraint: minLength=1, maxLength=128
-    pub name: String,
-    ///Who this key belongs to
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub owner: Option<CreateSSHKeyRequestBodyOwner>,
-    ///The public key in OpenSSH format. The type and the fingerprint are derived from it and cannot be changed
-    ///Constraint: minLength=1, maxLength=16384
-    pub public_key: String,
-    ///A purpose label, such as ci or bastion
-    ///Constraint: maxItems=16
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub purposes: Option<Option<Vec<String>>>,
-}
-impl CreateSSHKeyRequestBody {
-    /// Construct this request with every required wire field.
-    pub fn new(name: String, public_key: String) -> Self {
-        Self {
-            name,
-            public_key,
-            owner: None,
-            purposes: None,
-        }
-    }
-    /// Start a dependency-free builder with every required wire field.
-    pub fn builder(name: String, public_key: String) -> CreateSSHKeyRequestBodyBuilder {
-        CreateSSHKeyRequestBodyBuilder::new(name, public_key)
-    }
-}
-/// Dependency-free builder for [`#struct_name`].
-#[derive(Debug, Clone)]
-#[must_use]
-pub struct CreateSSHKeyRequestBodyBuilder {
-    value: CreateSSHKeyRequestBody,
-}
-impl CreateSSHKeyRequestBodyBuilder {
-    /// Start a builder with every required wire field.
-    pub fn new(name: String, public_key: String) -> Self {
-        Self {
-            value: CreateSSHKeyRequestBody::new(name, public_key),
-        }
-    }
-    #[doc = concat!("Set the optional `", "owner", "` request field.")]
-    #[must_use]
-    pub fn owner(mut self, owner: CreateSSHKeyRequestBodyOwner) -> Self {
-        self.value.owner = Some(owner);
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "purposes", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn purposes(mut self, purposes: Vec<String>) -> Self {
-        self.value.purposes = Some(Some(purposes));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "purposes", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn purposes_null(mut self) -> Self {
-        self.value.purposes = Some(None);
-        self
-    }
-    #[doc = concat!("Omit the optional nullable `", "purposes", "` request field.")]
-    #[must_use]
-    pub fn purposes_absent(mut self) -> Self {
-        self.value.purposes = None;
-        self
-    }
-    /// Finish building the request model.
-    pub fn build(self) -> CreateSSHKeyRequestBody {
-        self.value
-    }
-}
-///Who this key belongs to
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum CreateSSHKeyRequestBodyOwner {
-    #[default]
-    #[serde(rename = "me")]
-    Me,
-    #[serde(rename = "project")]
-    Project,
-}
-impl CreateSSHKeyRequestBodyOwner {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Me => "me",
-            Self::Project => "project",
-        }
-    }
-}
-impl ::std::fmt::Display for CreateSSHKeyRequestBodyOwner {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for CreateSSHKeyRequestBodyOwner {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateApplicationResponseBody {
@@ -1141,6 +1031,76 @@ impl CreateRoleRequestBodyBuilder {
     }
     /// Finish building the request model.
     pub fn build(self) -> CreateRoleRequestBody {
+        self.value
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateSSHKeyRequestBody {
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
+    ///The public key in OpenSSH format. The type and the fingerprint are derived from it and cannot be changed
+    ///Constraint: minLength=1, maxLength=16384
+    pub public_key: String,
+    ///A purpose label, such as ci or bastion
+    ///Constraint: maxItems=16
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub purposes: Option<Option<Vec<String>>>,
+}
+impl CreateSSHKeyRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(name: String, public_key: String) -> Self {
+        Self {
+            name,
+            public_key,
+            purposes: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(name: String, public_key: String) -> CreateSSHKeyRequestBodyBuilder {
+        CreateSSHKeyRequestBodyBuilder::new(name, public_key)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct CreateSSHKeyRequestBodyBuilder {
+    value: CreateSSHKeyRequestBody,
+}
+impl CreateSSHKeyRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(name: String, public_key: String) -> Self {
+        Self {
+            value: CreateSSHKeyRequestBody::new(name, public_key),
+        }
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "purposes", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn purposes(mut self, purposes: Vec<String>) -> Self {
+        self.value.purposes = Some(Some(purposes));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "purposes", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn purposes_null(mut self) -> Self {
+        self.value.purposes = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "purposes", "` request field.")]
+    #[must_use]
+    pub fn purposes_absent(mut self) -> Self {
+        self.value.purposes = None;
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> CreateSSHKeyRequestBody {
         self.value
     }
 }
