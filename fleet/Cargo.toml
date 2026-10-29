@@ -1,0 +1,30 @@
+[package]
+name = "leaflow-fleet"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+doctest = false
+
+[features]
+default = ["proto", "rest", "rustls"]
+proto = ["dep:bytes", "dep:prost", "dep:prost-types"]
+rest = ["dep:base64", "dep:chrono", "dep:futures-util", "dep:reqwest", "dep:reqwest-middleware", "dep:serde", "dep:serde_json", "dep:thiserror", "dep:uuid"]
+rustls = ["rest", "reqwest/rustls"]
+
+[dependencies]
+base64 = { version = "0.22", optional = true }
+bytes = { version = "1", optional = true }
+chrono = { version = "0.4", features = ["serde"], optional = true }
+futures-util = { version = "0.3", optional = true }
+prost = { version = "0.14", optional = true }
+prost-types = { version = "0.14", optional = true }
+reqwest = { version = "0.13", default-features = false, features = ["query", "stream"], optional = true }
+reqwest-middleware = { version = "0.5", features = ["query"], optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+thiserror = { version = "2", optional = true }
+uuid = { version = "1", features = ["serde"], optional = true }

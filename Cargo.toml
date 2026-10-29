@@ -1,0 +1,26 @@
+[workspace]
+resolver = "3"
+members = [
+    "account",
+    "assistant",
+    "billing",
+    "canopy",
+    "compute",
+    "dns",
+    "eventbus",
+    "fleet",
+    "iam",
+    "membership",
+    "monitoring",
+    "notification",
+    "support",
+    "swas",
+    "swas-legacy",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "MIT"
+repository = "https://github.com/leaflowapis/leaflow-rs"
