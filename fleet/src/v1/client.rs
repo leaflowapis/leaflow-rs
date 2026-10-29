@@ -2472,13 +2472,14 @@ impl HttpClient {
     }
     /// Deny a privilege request
     ///
-    /// Denies one of the caller's pending requests; the waiting sudo fails. Fails with
-    /// `PRIVILEGE_REQUEST_CLOSED` as for approving.
+    /// Denies one of the caller's pending requests; the waiting sudo fails and shows `reason`,
+    /// when given, to whoever ran it. Fails with `PRIVILEGE_REQUEST_CLOSED` as for approving.
     ///
     /// `POST /api/v1/privilege-requests/{requestId}:deny`
     pub async fn deny_privilege_request(
         &self,
         request_id: impl AsRef<str>,
+        request: Option<DenyPrivilegeRequestRequest>,
     ) -> Result<PrivilegeRequestResource, ApiOpError<DenyPrivilegeRequestApiError>> {
         let request_url = format!(
             "{}{}",
@@ -2489,7 +2490,13 @@ impl HttpClient {
             )
         );
         let mut req = self.http_client.post(request_url);
-        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
+        if let Some(request) = request {
+            req = req
+                .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+                .header("content-type", "application/json");
+        } else {
+            req = req.header(reqwest::header::CONTENT_LENGTH, "0");
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5584,12 +5591,14 @@ impl HttpClient {
             }))
         }
     }
-    /// Approve the caller's privilege requests on a machine without asking
+    /// Decide the caller's privilege requests on a machine without asking
     ///
-    /// Approves the caller's privilege requests on the machine at once, until `expires_at`, or
-    /// until removed when `expires_at` is null, replacing any earlier automatic approval. It
-    /// applies to the caller's own account only, which is created if the caller has none yet,
-    /// and only while they may become root on the machine. Fails with `INVALID_ARGUMENT` when
+    /// Has the caller's privilege requests on the machine decided without asking them, in
+    /// `mode`, until `expires_at`, or until removed when `expires_at` is null, replacing any
+    /// earlier automatic approval. `automatic_review` is recommended; with `always_approve` any
+    /// program that runs as the account becomes root without anyone being asked. It applies to
+    /// the caller's own account only, which is created if the caller has none yet, and only
+    /// while they may become root on the machine. Fails with `INVALID_ARGUMENT` when
     /// `expires_at` has passed.
     ///
     /// `PUT /api/v1/machines/{machineId}/privilege-auto-approval`

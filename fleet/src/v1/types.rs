@@ -63,6 +63,12 @@ mod tri_state_serde {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UpdatePrivilegeAutoApprovalRequest {
+    ///When the automatic approval ends; null for one that lasts until removed
+    pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub mode: PrivilegeAutoApprovalMode,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateMcpServerResponse {
     pub file: McpConfigurationFile,
     pub server: McpServerResource,
@@ -426,6 +432,10 @@ pub struct PrivilegeRequestResource {
     pub machine_id: uuid::Uuid,
     ///The PAM service that asks, such as `sudo`
     pub pam_service: String,
+    /**Why the request was decided so: as the user gave it when denying, or as the automatic
+    review gave it, including why a review could not be made; null when none was given*/
+    ///Constraint: maxLength=200
+    pub reason: Option<String>,
     ///Where the login came from, when the machine knows it
     pub remote_host: String,
     /**The session the asking program runs in; null when it runs in none, such as after an
@@ -477,21 +487,25 @@ impl AsRef<str> for PrivilegeRequestState {
         self.as_str()
     }
 }
-/**Who decided a request on the platform: `user` the user, or `auto_approval` the user's
-automatic approval for the machine, at once.*/
+/**Who decided a request on the platform: `user` the user, `always_approve` the user's
+automatic approval that approves every request, or `automatic_review` the large language
+model that reviewed it.*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum PrivilegeDecider {
     #[default]
     #[serde(rename = "user")]
     User,
-    #[serde(rename = "auto_approval")]
-    AutoApproval,
+    #[serde(rename = "always_approve")]
+    AlwaysApprove,
+    #[serde(rename = "automatic_review")]
+    AutomaticReview,
 }
 impl PrivilegeDecider {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::User => "user",
-            Self::AutoApproval => "auto_approval",
+            Self::AlwaysApprove => "always_approve",
+            Self::AutomaticReview => "automatic_review",
         }
     }
 }
@@ -522,7 +536,44 @@ pub struct PrivilegeAutoApprovalResource {
     pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
     pub id: uuid::Uuid,
     pub machine_id: uuid::Uuid,
+    pub mode: PrivilegeAutoApprovalMode,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+/**How the caller's privilege requests on the machine are decided without asking them:
+- `automatic_review`, recommended: a large language model reviews each request from what
+  the machine reports about it, chiefly the command line, and approves or denies it with
+  a reason. It stops most dangerous requests, but not all of them. Each review is a
+  request to Canopy through the project's Canopy service and may incur Canopy charges. A
+  request that cannot be reviewed, such as when the project has not enabled Canopy, is
+  denied.
+- `always_approve`: every request is approved at once. Dangerous: any program that runs
+  as the account, such as a script or an AI agent, becomes root without anyone being
+  asked.*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum PrivilegeAutoApprovalMode {
+    #[default]
+    #[serde(rename = "automatic_review")]
+    AutomaticReview,
+    #[serde(rename = "always_approve")]
+    AlwaysApprove,
+}
+impl PrivilegeAutoApprovalMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::AutomaticReview => "automatic_review",
+            Self::AlwaysApprove => "always_approve",
+        }
+    }
+}
+impl ::std::fmt::Display for PrivilegeAutoApprovalMode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for PrivilegeAutoApprovalMode {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ParticipantList {
@@ -1622,6 +1673,13 @@ pub struct CreatePeerConnectionRequest {
     ///Constraint: maxLength=65536
     pub offer: String,
 }
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct DenyPrivilegeRequestRequest {
+    ///Why, shown to whoever ran sudo: plain text without control characters
+    ///Constraint: maxLength=200
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MigrationStep {
     ///A serialized `Checkpoint` of `leaflow/fleet/transport/v1/transport.proto`
@@ -1697,9 +1755,4 @@ pub struct RunCommandResponse {
 pub struct UpdateMachineRequest {
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpdatePrivilegeAutoApprovalRequest {
-    ///When the automatic approval ends; null for one that lasts until removed
-    pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
 }

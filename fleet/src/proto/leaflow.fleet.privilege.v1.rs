@@ -18,11 +18,16 @@ impl ::prost::Name for DecidePrivilegeRequestRequest {
     }
 }
 /// The response of DecidePrivilegeRequest.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct DecidePrivilegeRequestResponse {
     /// APPROVED, DENIED or EXPIRED.
     #[prost(enumeration = "PrivilegeOutcome", tag = "1")]
     pub outcome: i32,
+    /// DENIED only: why, as the platform gives it, to show whoever asked. Plain
+    /// text of at most 200 characters; empty when the platform gives none. The
+    /// daemon shows it without control characters.
+    #[prost(string, tag = "2")]
+    pub reason: ::prost::alloc::string::String,
 }
 impl ::prost::Name for DecidePrivilegeRequestResponse {
     const NAME: &'static str = "DecidePrivilegeRequestResponse";
@@ -294,6 +299,11 @@ pub struct PrivilegeDecision {
     /// When the person decided. Informational.
     #[prost(message, optional, tag = "3")]
     pub decided_at: ::core::option::Option<::prost_types::Timestamp>,
+    /// Denied only: why, as the person gave it, to show whoever asked. Plain
+    /// text of at most 200 characters; empty when they gave none. The daemon
+    /// shows it without control characters.
+    #[prost(string, tag = "4")]
+    pub reason: ::prost::alloc::string::String,
 }
 impl ::prost::Name for PrivilegeDecision {
     const NAME: &'static str = "PrivilegeDecision";
