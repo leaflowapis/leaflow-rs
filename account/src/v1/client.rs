@@ -976,8 +976,6 @@ impl HttpClient {
     }
     /// Add an SSH key to the current account
     ///
-    /// The key takes effect in every project the caller belongs to: Fleet machines accept it within about a minute, and Compute installs it on the servers the caller creates or reinstalls from then on.
-    ///
     /// Fails with 409 `SSH_KEY_ALREADY_EXISTS` while the same key is active on any account, this one included, and with 412 `SSH_KEY_QUOTA_EXCEEDED` while the account already holds 50 active keys.
     ///
     /// `POST /account/v1/me/ssh-keys`
@@ -2588,7 +2586,7 @@ impl HttpClient {
     }
     /// Revoke an SSH key of the current account
     ///
-    /// The row remains and its status becomes `REVOKED`, so it stays answerable afterwards which key was trusted at the time. Fleet machines stop accepting the key within about a minute. A server on which Compute installed the key keeps it until it is removed there.
+    /// The row remains and its status becomes `REVOKED`, so it stays answerable afterwards which key was trusted at the time.
     ///
     /// The same key can then be added again, to this account or another.
     ///

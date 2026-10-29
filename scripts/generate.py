@@ -13,7 +13,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OPENAPI_TO_RUST = "0.23.0"
 BUF = "1.75.0"
 REDOCLY = "2.47.0"
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 PROTO_DEPENDENCIES = {"bytes": "1", "prost": "0.14", "prost-types": "0.14"}
 GOOGLE_RPC = ["google/rpc/status.proto", "google/rpc/code.proto", "google/rpc/error_details.proto"]
 
