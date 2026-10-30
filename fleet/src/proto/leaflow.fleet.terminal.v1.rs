@@ -3,7 +3,7 @@
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ClientMessage {
     /// The message.
-    #[prost(oneof = "client_message::Message", tags = "1, 2, 3")]
+    #[prost(oneof = "client_message::Message", tags = "1, 2, 3, 4")]
     pub message: ::core::option::Option<client_message::Message>,
 }
 /// Nested message and enum types in `ClientMessage`.
@@ -21,6 +21,10 @@ pub mod client_message {
         /// participant applies, and the shell gets SIGWINCH.
         #[prost(message, tag = "3")]
         Resize(super::TerminalSize),
+        /// Answers of the participant's terminal to terminal queries, written to
+        /// the terminal only when the participant is the answerer.
+        #[prost(message, tag = "4")]
+        Answer(super::TerminalAnswer),
     }
 }
 impl ::prost::Name for ClientMessage {
@@ -81,6 +85,10 @@ pub struct TerminalAttach {
     /// The output offset the participant has applied up to. 0: nothing yet.
     #[prost(uint64, tag = "1")]
     pub offset: u64,
+    /// The participant's terminal answers terminal queries in the output, and
+    /// the participant sends those answers as TerminalAnswer.
+    #[prost(bool, tag = "2")]
+    pub answers_queries: bool,
 }
 impl ::prost::Name for TerminalAttach {
     const NAME: &'static str = "TerminalAttach";
@@ -107,6 +115,11 @@ pub struct TerminalAttached {
     /// The size the terminal has now.
     #[prost(message, optional, tag = "3")]
     pub size: ::core::option::Option<TerminalSize>,
+    /// The end of the output when the participant attached: the output from
+    /// offset up to here is replayed, what follows is new. Equal to offset when
+    /// nothing is replayed.
+    #[prost(uint64, tag = "4")]
+    pub replay_end: u64,
 }
 impl ::prost::Name for TerminalAttached {
     const NAME: &'static str = "TerminalAttached";
@@ -133,6 +146,23 @@ impl ::prost::Name for TerminalInput {
     }
     fn type_url() -> ::prost::alloc::string::String {
         "type.googleapis.com/leaflow.fleet.terminal.v1.TerminalInput".into()
+    }
+}
+/// Answers of the participant's terminal to terminal queries in the output.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct TerminalAnswer {
+    /// The bytes, at most 64 KiB.
+    #[prost(bytes = "bytes", tag = "1")]
+    pub data: ::prost::bytes::Bytes,
+}
+impl ::prost::Name for TerminalAnswer {
+    const NAME: &'static str = "TerminalAnswer";
+    const PACKAGE: &'static str = "leaflow.fleet.terminal.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.terminal.v1.TerminalAnswer".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.terminal.v1.TerminalAnswer".into()
     }
 }
 /// Output of the terminal.
