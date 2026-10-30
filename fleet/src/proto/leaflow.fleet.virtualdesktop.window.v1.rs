@@ -198,6 +198,33 @@ pub struct Window {
     /// none.
     #[prost(message, optional, tag = "20")]
     pub icon: ::core::option::Option<super::super::display::v1::Icon>,
+    /// The application chose where the window goes (ICCCM WM_NORMAL_HINTS
+    /// USPosition or PPosition), as a floating toolbar over the selected text
+    /// does. A participant that places windows itself (see "Native windows")
+    /// then keeps it where geometry says, as a window manager does. Otherwise
+    /// it places the window: a dialog centred over the window it is transient
+    /// for, any other window where its desktop puts new windows.
+    #[prost(bool, tag = "21")]
+    pub position_requested: bool,
+    /// How a frame goes around the requested position, as the application
+    /// declared it (ICCCM WM_NORMAL_HINTS win_gravity). UNSPECIFIED: NORTH_WEST.
+    #[prost(enumeration = "WindowGravity", tag = "22")]
+    pub gravity: i32,
+    /// How the window takes the keyboard focus (ICCCM WM_HINTS input and
+    /// WM_TAKE_FOCUS). UNSPECIFIED: PASSIVE.
+    #[prost(enumeration = "FocusModel", tag = "23")]
+    pub focus_model: i32,
+    /// Showing the window gives it the keyboard focus. False when its
+    /// application shows it without taking the focus (EWMH _NET_WM_USER_TIME 0),
+    /// as a toolbar that appears beside a selection does, or when its
+    /// focus_model is NO_INPUT. Unset: true.
+    #[prost(bool, optional, tag = "24")]
+    pub focus_on_map: ::core::option::Option<bool>,
+    /// The window does not take WM_DELETE_WINDOW (ICCCM): WindowClose ends its
+    /// application's connection to the display, and with it every window of the
+    /// application. A participant may warn first.
+    #[prost(bool, tag = "25")]
+    pub close_kills: bool,
 }
 impl ::prost::Name for Window {
     const NAME: &'static str = "Window";
@@ -989,6 +1016,116 @@ impl WindowAction {
             "WINDOW_ACTION_CLOSE" => Some(Self::Close),
             "WINDOW_ACTION_ABOVE" => Some(Self::Above),
             "WINDOW_ACTION_BELOW" => Some(Self::Below),
+            _ => None,
+        }
+    }
+}
+/// How a window takes the keyboard focus (ICCCM §4.1.7).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum FocusModel {
+    Unspecified = 0,
+    /// It never takes the focus, such as an on-screen keyboard or a floating
+    /// palette: showing or clicking it leaves the focus where it is.
+    NoInput = 1,
+    /// It takes the focus when activated.
+    Passive = 2,
+    /// It takes the focus when activated, and may move it among its own
+    /// windows.
+    LocallyActive = 3,
+    /// It is told when activated and decides itself whether to take the focus,
+    /// as some Java windows do.
+    GloballyActive = 4,
+}
+impl FocusModel {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "FOCUS_MODEL_UNSPECIFIED",
+            Self::NoInput => "FOCUS_MODEL_NO_INPUT",
+            Self::Passive => "FOCUS_MODEL_PASSIVE",
+            Self::LocallyActive => "FOCUS_MODEL_LOCALLY_ACTIVE",
+            Self::GloballyActive => "FOCUS_MODEL_GLOBALLY_ACTIVE",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "FOCUS_MODEL_UNSPECIFIED" => Some(Self::Unspecified),
+            "FOCUS_MODEL_NO_INPUT" => Some(Self::NoInput),
+            "FOCUS_MODEL_PASSIVE" => Some(Self::Passive),
+            "FOCUS_MODEL_LOCALLY_ACTIVE" => Some(Self::LocallyActive),
+            "FOCUS_MODEL_GLOBALLY_ACTIVE" => Some(Self::GloballyActive),
+            _ => None,
+        }
+    }
+}
+/// How a participant that draws a frame around a window it shows where the
+/// application asked (ICCCM win_gravity) places that frame: the named point of
+/// the frame goes where the same point of the requested client area, geometry,
+/// is. The client area then moves inside the frame, except for STATIC.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum WindowGravity {
+    Unspecified = 0,
+    /// The top-left corner.
+    NorthWest = 1,
+    /// The middle of the top edge.
+    North = 2,
+    /// The top-right corner.
+    NorthEast = 3,
+    /// The middle of the left edge.
+    West = 4,
+    /// The centre.
+    Center = 5,
+    /// The middle of the right edge.
+    East = 6,
+    /// The bottom-left corner.
+    SouthWest = 7,
+    /// The middle of the bottom edge.
+    South = 8,
+    /// The bottom-right corner.
+    SouthEast = 9,
+    /// The client area stays where geometry is, and the frame goes around it.
+    Static = 10,
+}
+impl WindowGravity {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "WINDOW_GRAVITY_UNSPECIFIED",
+            Self::NorthWest => "WINDOW_GRAVITY_NORTH_WEST",
+            Self::North => "WINDOW_GRAVITY_NORTH",
+            Self::NorthEast => "WINDOW_GRAVITY_NORTH_EAST",
+            Self::West => "WINDOW_GRAVITY_WEST",
+            Self::Center => "WINDOW_GRAVITY_CENTER",
+            Self::East => "WINDOW_GRAVITY_EAST",
+            Self::SouthWest => "WINDOW_GRAVITY_SOUTH_WEST",
+            Self::South => "WINDOW_GRAVITY_SOUTH",
+            Self::SouthEast => "WINDOW_GRAVITY_SOUTH_EAST",
+            Self::Static => "WINDOW_GRAVITY_STATIC",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "WINDOW_GRAVITY_UNSPECIFIED" => Some(Self::Unspecified),
+            "WINDOW_GRAVITY_NORTH_WEST" => Some(Self::NorthWest),
+            "WINDOW_GRAVITY_NORTH" => Some(Self::North),
+            "WINDOW_GRAVITY_NORTH_EAST" => Some(Self::NorthEast),
+            "WINDOW_GRAVITY_WEST" => Some(Self::West),
+            "WINDOW_GRAVITY_CENTER" => Some(Self::Center),
+            "WINDOW_GRAVITY_EAST" => Some(Self::East),
+            "WINDOW_GRAVITY_SOUTH_WEST" => Some(Self::SouthWest),
+            "WINDOW_GRAVITY_SOUTH" => Some(Self::South),
+            "WINDOW_GRAVITY_SOUTH_EAST" => Some(Self::SouthEast),
+            "WINDOW_GRAVITY_STATIC" => Some(Self::Static),
             _ => None,
         }
     }

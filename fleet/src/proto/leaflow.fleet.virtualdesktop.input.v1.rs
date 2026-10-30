@@ -255,12 +255,15 @@ impl ::prost::Name for PointerWheel {
 /// caret or the editor changes.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct TextInputState {
-    /// The window of the focused editor. 0 when no window has focus.
+    /// The window that has the keyboard focus. 0 when no window has it.
     #[prost(uint64, tag = "1")]
     pub window_id: u64,
-    /// An editable control or a terminal has focus and accepts text, whether
-    /// or not its caret is known. The participant keeps a local text field focused
-    /// while it is set, so that its own input method can start.
+    /// The window takes typed text: an editor, a terminal, or any window that
+    /// reads keys, whether or not the session knows its editor or caret. Unset
+    /// while no window has the keyboard focus or an application grabbed the
+    /// keyboard, as an open menu does. The participant keeps its own input
+    /// method on while it is set, with a local text field focused where it needs
+    /// one.
     #[prost(bool, tag = "2")]
     pub enabled: bool,
     /// The caret, relative to the window, for placing the input method's
@@ -277,7 +280,8 @@ pub struct TextInputState {
     pub cursor_source: i32,
     /// Identifies the focused editor within the session, opaque. Different
     /// editors of one window differ; moving the caret or resizing does not change
-    /// it. Empty when nothing editable has focus or it cannot be verified.
+    /// it. Empty when the session cannot tell which editor has the focus; text
+    /// then goes where the keys go, as typed keys where nothing else takes it.
     #[prost(string, tag = "6")]
     pub input_context_id: ::prost::alloc::string::String,
     /// Grows whenever editing focus moves, is lost or comes back; not when the
@@ -290,11 +294,24 @@ pub struct TextInputState {
     /// treats it as the caret.
     #[prost(message, optional, tag = "8")]
     pub control_rectangle: ::core::option::Option<super::super::display::v1::Rectangle>,
-    /// The editor's native input context takes Composition messages: preedit
-    /// text and the real keys consumed while composing. Otherwise the participant
-    /// sends only InsertText.
+    /// The editor shows preedit text itself: its native input context takes
+    /// Composition messages, the preedit and the real keys consumed while
+    /// composing, and the participant does not draw its input method's preedit.
+    /// Otherwise the participant draws the preedit itself, at cursor_rectangle,
+    /// else control_rectangle, else where the person last pressed in the window,
+    /// and sends only InsertText.
     #[prost(bool, tag = "9")]
     pub composition_supported: bool,
+    /// What the editor is for, as its application declared it to its input
+    /// method (IBus ContentType, GTK input-purpose). A participant switches its
+    /// input method off for PASSWORD and PIN, as a native one does. UNSPECIFIED
+    /// when it declared nothing.
+    #[prost(enumeration = "InputPurpose", tag = "10")]
+    pub purpose: i32,
+    /// How the editor wants its text, as its application declared it (IBus
+    /// ContentType, GTK input-hints).
+    #[prost(enumeration = "InputHint", repeated, tag = "11")]
+    pub hints: ::prost::alloc::vec::Vec<i32>,
 }
 impl ::prost::Name for TextInputState {
     const NAME: &'static str = "TextInputState";
@@ -315,15 +332,15 @@ pub struct InsertText {
     /// The text, UTF-8. Not empty.
     #[prost(string, tag = "2")]
     pub text: ::prost::alloc::string::String,
-    /// The window of the editor, from TextInputState. A window that is gone or
-    /// no longer focused cancels the insertion; it is never activated for it.
+    /// The window, from TextInputState. A window that is gone or no longer
+    /// focused cancels the insertion; it is never activated for it.
     #[prost(uint64, tag = "3")]
     pub window_id: u64,
-    /// TextInputState.input_context_id of the editor.
+    /// TextInputState.input_context_id of the editor. Empty when it named none.
     #[prost(string, tag = "4")]
     pub input_context_id: ::prost::alloc::string::String,
     /// TextInputState.focus_serial when the composition began. Checked for
-    /// INSERT_FROM_COMPOSITION only.
+    /// INSERT_FROM_COMPOSITION with an input_context_id only.
     #[prost(uint64, tag = "5")]
     pub focus_serial: u64,
     /// What the insertion is.
@@ -361,14 +378,15 @@ pub struct Composition {
     #[prost(uint64, tag = "5")]
     pub resize_counter: u64,
     /// Chosen by the participant at BEGIN, unique on the connection; the later
-    /// phases repeat it.
+    /// phases repeat it. A KEY release may name any composition, or none.
     #[prost(uint64, tag = "6")]
     pub composition_id: u64,
     /// The step.
     #[prost(enumeration = "CompositionPhase", tag = "7")]
     pub phase: i32,
-    /// UPDATE and COMMIT: the preedit or committed text, UTF-8, at most 64 KiB.
-    /// May be empty to end an empty composition. Empty for the other phases.
+    /// UPDATE: the whole preedit text now. COMMIT: the whole result. UTF-8, at
+    /// most 64 KiB. May be empty: an empty UPDATE hides the preedit, an empty
+    /// COMMIT ends the composition without text. Empty for the other phases.
     #[prost(string, tag = "8")]
     pub text: ::prost::alloc::string::String,
     /// UPDATE and COMMIT: the start of the preedit selection, in UTF-16 code
@@ -393,7 +411,11 @@ impl ::prost::Name for Composition {
         "type.googleapis.com/leaflow.fleet.virtualdesktop.input.v1.Composition".into()
     }
 }
-/// A real key consumed while composing. Never made up from text.
+/// A real key consumed while composing. Never made up from text. The session
+/// knows a key by the participant and its code, as a keyboard does: a release
+/// lets go the key of that code the participant holds, whatever composition it
+/// names, and a press of a key already held changes nothing. The key that ends
+/// a composition is released after it; its release is still sent.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CompositionKey {
     /// A press or a release.
@@ -452,8 +474,9 @@ impl ::prost::Name for InputError {
 ///    TEXT_INPUT_NOT_DELIVERED      the text could not be handed over;
 ///    TEXT_INPUT_UNCONFIRMED        the application did not confirm the text
 ///                                  (see paused);
-///    NATIVE_COMPOSITION_CANCELLED  the native input context ended the
-///                                  composition.
+///    NATIVE_COMPOSITION_CANCELLED  the composition ended without its COMMIT,
+///                                  as when another participant typed into
+///                                  its editor.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TextInputError {
     /// input_seq of the dropped input.
@@ -912,6 +935,146 @@ impl ::prost::Name for GetPointerPositionResponse {
             .into()
     }
 }
+/// What an editor is for (IBus InputPurpose, GTK GtkInputPurpose).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum InputPurpose {
+    Unspecified = 0,
+    /// Any text.
+    FreeForm = 1,
+    /// Letters only.
+    Alpha = 2,
+    /// Digits only.
+    Digits = 3,
+    /// A number.
+    Number = 4,
+    /// A phone number.
+    Phone = 5,
+    /// A URL.
+    Url = 6,
+    /// An email address.
+    Email = 7,
+    /// The name of a person.
+    Name = 8,
+    /// A password: any text, hidden.
+    Password = 9,
+    /// A PIN: digits, hidden.
+    Pin = 10,
+    /// A terminal: any text and control keys.
+    Terminal = 11,
+}
+impl InputPurpose {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "INPUT_PURPOSE_UNSPECIFIED",
+            Self::FreeForm => "INPUT_PURPOSE_FREE_FORM",
+            Self::Alpha => "INPUT_PURPOSE_ALPHA",
+            Self::Digits => "INPUT_PURPOSE_DIGITS",
+            Self::Number => "INPUT_PURPOSE_NUMBER",
+            Self::Phone => "INPUT_PURPOSE_PHONE",
+            Self::Url => "INPUT_PURPOSE_URL",
+            Self::Email => "INPUT_PURPOSE_EMAIL",
+            Self::Name => "INPUT_PURPOSE_NAME",
+            Self::Password => "INPUT_PURPOSE_PASSWORD",
+            Self::Pin => "INPUT_PURPOSE_PIN",
+            Self::Terminal => "INPUT_PURPOSE_TERMINAL",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "INPUT_PURPOSE_UNSPECIFIED" => Some(Self::Unspecified),
+            "INPUT_PURPOSE_FREE_FORM" => Some(Self::FreeForm),
+            "INPUT_PURPOSE_ALPHA" => Some(Self::Alpha),
+            "INPUT_PURPOSE_DIGITS" => Some(Self::Digits),
+            "INPUT_PURPOSE_NUMBER" => Some(Self::Number),
+            "INPUT_PURPOSE_PHONE" => Some(Self::Phone),
+            "INPUT_PURPOSE_URL" => Some(Self::Url),
+            "INPUT_PURPOSE_EMAIL" => Some(Self::Email),
+            "INPUT_PURPOSE_NAME" => Some(Self::Name),
+            "INPUT_PURPOSE_PASSWORD" => Some(Self::Password),
+            "INPUT_PURPOSE_PIN" => Some(Self::Pin),
+            "INPUT_PURPOSE_TERMINAL" => Some(Self::Terminal),
+            _ => None,
+        }
+    }
+}
+/// How an editor wants its text (IBus InputHints, GTK GtkInputHints).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum InputHint {
+    Unspecified = 0,
+    /// Check for typos.
+    Spellcheck = 1,
+    /// Do not check for typos.
+    NoSpellcheck = 2,
+    /// Offer word completion.
+    WordCompletion = 3,
+    /// Lowercase text.
+    Lowercase = 4,
+    /// Uppercase every character.
+    UppercaseChars = 5,
+    /// Capitalize every word.
+    UppercaseWords = 6,
+    /// Capitalize every sentence.
+    UppercaseSentences = 7,
+    /// Show no on-screen keyboard.
+    InhibitOsk = 8,
+    /// The text runs vertically.
+    VerticalWriting = 9,
+    /// Offer emoji.
+    Emoji = 10,
+    /// Offer no emoji.
+    NoEmoji = 11,
+    /// Keep no typing history of it.
+    Private = 12,
+}
+impl InputHint {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "INPUT_HINT_UNSPECIFIED",
+            Self::Spellcheck => "INPUT_HINT_SPELLCHECK",
+            Self::NoSpellcheck => "INPUT_HINT_NO_SPELLCHECK",
+            Self::WordCompletion => "INPUT_HINT_WORD_COMPLETION",
+            Self::Lowercase => "INPUT_HINT_LOWERCASE",
+            Self::UppercaseChars => "INPUT_HINT_UPPERCASE_CHARS",
+            Self::UppercaseWords => "INPUT_HINT_UPPERCASE_WORDS",
+            Self::UppercaseSentences => "INPUT_HINT_UPPERCASE_SENTENCES",
+            Self::InhibitOsk => "INPUT_HINT_INHIBIT_OSK",
+            Self::VerticalWriting => "INPUT_HINT_VERTICAL_WRITING",
+            Self::Emoji => "INPUT_HINT_EMOJI",
+            Self::NoEmoji => "INPUT_HINT_NO_EMOJI",
+            Self::Private => "INPUT_HINT_PRIVATE",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "INPUT_HINT_UNSPECIFIED" => Some(Self::Unspecified),
+            "INPUT_HINT_SPELLCHECK" => Some(Self::Spellcheck),
+            "INPUT_HINT_NO_SPELLCHECK" => Some(Self::NoSpellcheck),
+            "INPUT_HINT_WORD_COMPLETION" => Some(Self::WordCompletion),
+            "INPUT_HINT_LOWERCASE" => Some(Self::Lowercase),
+            "INPUT_HINT_UPPERCASE_CHARS" => Some(Self::UppercaseChars),
+            "INPUT_HINT_UPPERCASE_WORDS" => Some(Self::UppercaseWords),
+            "INPUT_HINT_UPPERCASE_SENTENCES" => Some(Self::UppercaseSentences),
+            "INPUT_HINT_INHIBIT_OSK" => Some(Self::InhibitOsk),
+            "INPUT_HINT_VERTICAL_WRITING" => Some(Self::VerticalWriting),
+            "INPUT_HINT_EMOJI" => Some(Self::Emoji),
+            "INPUT_HINT_NO_EMOJI" => Some(Self::NoEmoji),
+            "INPUT_HINT_PRIVATE" => Some(Self::Private),
+            _ => None,
+        }
+    }
+}
 /// Where a caret rectangle came from.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -955,12 +1118,13 @@ impl CursorSource {
 #[repr(i32)]
 pub enum InputType {
     Unspecified = 0,
-    /// Ordinary text ("insertText"), such as from a virtual keyboard. It goes to
-    /// the editor focused once the input before it has been applied.
+    /// Ordinary text ("insertText"), such as from a virtual keyboard. It goes
+    /// where the keys go once the input before it has been applied.
     InsertText = 1,
-    /// The result of a composition ("insertFromComposition"). It goes only to
-    /// the editor the composition began in, and is cancelled when that editor
-    /// lost focus since.
+    /// The result of a composition ("insertFromComposition"). With an
+    /// input_context_id it goes only to the editor the composition began in, and
+    /// is cancelled when that editor lost focus since; without one, as
+    /// INSERT_TEXT.
     InsertFromComposition = 2,
 }
 impl InputType {
@@ -985,22 +1149,29 @@ impl InputType {
         }
     }
 }
-/// A step of a composition.
+/// A step of a composition. A composition ends with its COMMIT or CANCEL, or
+/// when its editor loses the focus (a TextInputState with another
+/// focus_serial); a step that did not reach the editor never ends it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum CompositionPhase {
     Unspecified = 0,
-    /// A composition begins ("compositionstart").
+    /// A composition begins ("compositionstart"), in the editor the
+    /// TextInputState names. It shows nothing yet.
     Begin = 1,
-    /// The preedit text changed ("compositionupdate").
+    /// The preedit text changed ("compositionupdate"). The session shows the
+    /// latest UPDATE and may skip earlier ones the editor has not caught up
+    /// with.
     Update = 2,
     /// A real key the input method consumed while composing. The session hands
-    /// it to the editor's native input context and waits until that context
-    /// consumed it.
+    /// it to the editor's native input context, which consumes it, so that the
+    /// application sees the key but never as text. Its press or release never
+    /// ends the composition.
     Key = 3,
-    /// The composition ended with text ("compositionend").
+    /// The composition ended with text ("compositionend"): the text is inserted
+    /// and the preedit goes.
     Commit = 4,
-    /// The composition was abandoned.
+    /// The composition was abandoned: the preedit goes.
     Cancel = 5,
 }
 impl CompositionPhase {
