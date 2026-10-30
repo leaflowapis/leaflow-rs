@@ -180,9 +180,10 @@ impl ::prost::Name for CameraLimits {
     }
 }
 /// Limits of the gamepads one participant provides. 0: the session's limit.
+/// They bound what devices exist; how fast states come is never limited.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct GamepadLimits {
-    /// The most gamepads, at most 8.
+    /// The most gamepads, at most 16.
     #[prost(uint32, tag = "1")]
     pub max_devices: u32,
     /// The most axes of one gamepad, at most 32.
@@ -191,16 +192,6 @@ pub struct GamepadLimits {
     /// The most buttons of one gamepad, at most 64.
     #[prost(uint32, tag = "3")]
     pub max_buttons: u32,
-    /// The most changed states per second of one gamepad, at most 250.
-    #[prost(uint32, tag = "4")]
-    pub max_updates_per_second: u32,
-    /// The most bytes of states queued, in flight included, at most 64 KiB.
-    #[prost(uint32, tag = "5")]
-    pub max_queue_size_bytes: u32,
-    /// The oldest a queued state may get, at most 200 milliseconds; older
-    /// states are dropped, never their button changes replayed late.
-    #[prost(message, optional, tag = "6")]
-    pub max_queue_time: ::core::option::Option<::prost_types::Duration>,
 }
 impl ::prost::Name for GamepadLimits {
     const NAME: &'static str = "GamepadLimits";

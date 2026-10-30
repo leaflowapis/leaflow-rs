@@ -164,11 +164,12 @@ impl ::prost::Name for GamepadButton {
         "type.googleapis.com/leaflow.fleet.gamepad.v1.GamepadButton".into()
     }
 }
-/// A state was written to the device and reported (SYN_REPORT), not merely
+/// States were written to the device and reported (SYN_REPORT), not merely
 /// received.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GamepadApplied {
-    /// GamepadState.sequence.
+    /// The newest state written (GamepadState.sequence). It covers every earlier
+    /// state, those merged into it included.
     #[prost(uint64, tag = "1")]
     pub sequence: u64,
     /// Why it could not be written. Unset on success.
@@ -251,7 +252,7 @@ pub enum GamepadCloseReason {
     DeviceUnavailable = 3,
     /// The participant broke the rules above.
     ProtocolError = 4,
-    /// A limit of GamepadLimits was exceeded.
+    /// The participant has as many gamepads as GamepadLimits allows.
     ResourceExhausted = 5,
 }
 impl GamepadCloseReason {
