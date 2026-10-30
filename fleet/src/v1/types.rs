@@ -1301,12 +1301,12 @@ pub struct PeerConnection {
     pub answer: String,
     ///The signed `PeerAuthorization` of the PeerConnection, the same one the session holds
     pub authorization: SignedMessage,
-    /**The session's ICE candidates that arrived until it reported the end of its candidates, or
-    500 milliseconds after one candidate of each type its ICE servers yield had arrived
-    (server reflexive when the RTC configuration has STUN servers and the policy is not
-    `relay`, relayed when it has TURN servers), and at most until 10 seconds after its
-    answer. Candidates the session gathers later are not passed on.*/
+    /**The session's ICE candidates passed so far, at most 64, in the order the session sent
+    them. Later reads return the same ones first.*/
+    ///Constraint: maxItems=64
     pub candidates: Vec<IceCandidate>,
+    ///The session reported that it has gathered all its candidates; no more follow
+    pub candidates_complete: bool,
     ///The PeerConnection; its 16 bytes are `peer_connection_id` of the transport protocol
     pub id: uuid::Uuid,
 }

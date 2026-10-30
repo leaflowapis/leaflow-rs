@@ -354,6 +354,16 @@ pub struct Welcome {
     /// its participants.
     #[prost(bool, tag = "6")]
     pub resumed: bool,
+    /// The STUN servers (RFC 7064 stun: URLs) from which a session process learns
+    /// its server-reflexive addresses ahead of its PeerConnections. A session
+    /// process shares one UDP socket per address family among its PeerConnections,
+    /// asks these servers for the socket's mapping when it starts and again at
+    /// most every 20 seconds, which also keeps the mapping alive, and gives each
+    /// PeerConnection the known address as its srflx candidate at once instead of
+    /// asking the servers again. Session processes only; empty when
+    /// PeerConnections relay only.
+    #[prost(string, repeated, tag = "7")]
+    pub stun_urls: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 impl ::prost::Name for Welcome {
     const NAME: &'static str = "Welcome";

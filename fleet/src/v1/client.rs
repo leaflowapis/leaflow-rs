@@ -443,6 +443,11 @@ pub enum GetMcpConfigurationApiError {
 pub enum GetParticipantApiError {
     Default(Error),
 }
+///Typed error responses for `get-peer-connection`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetPeerConnectionApiError {
+    Default(Error),
+}
 ///Typed error responses for `get-privilege-auto-approval`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetPrivilegeAutoApprovalApiError {
@@ -1312,7 +1317,8 @@ impl HttpClient {
     /// Admits one participant with the given public key to the session: signs its authorization,
     /// has the session accept it, and starts its first PeerConnection with the offer. The answer
     /// carries the participant, its authorization and the PeerConnection with the session's
-    /// answer. The participant lasts while it is renewed.
+    /// answer and the ICE candidates the session has passed so far; read its later candidates
+    /// with `get-peer-connection`. The participant lasts while it is renewed.
     ///
     /// Joining again with the public key of one of the caller's participants of the session that
     /// has not ended, with the same `client_name`, `read_only` and `permissions`, returns that
@@ -1430,8 +1436,9 @@ impl HttpClient {
     /// Start a PeerConnection
     ///
     /// Starts another PeerConnection of the participant with the offer, such as after a path
-    /// failed, and returns the session's answer, its ICE candidates and the signed
-    /// PeerAuthorization. Move the participant's connection to it with
+    /// failed, and returns the session's answer, the ICE candidates it has passed so far and the
+    /// signed PeerAuthorization; read its later candidates with `get-peer-connection`. Move the
+    /// participant's connection to it with
     /// `prepare-participant-migration` and `commit-participant-migration`.
     ///
     /// Only the participant's user may start one.
@@ -3152,6 +3159,120 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetParticipantApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get a PeerConnection
+    ///
+    /// Returns the PeerConnection with the ICE candidates the session has passed so far. The
+    /// session passes its candidates as it gathers them (RFC 8838), so most arrive after the
+    /// PeerConnection started: read it until `candidates_complete`, and add the candidates that
+    /// are new since the last read to the PeerConnection. A client keeps those that arrive before
+    /// it has set the answer as the remote description, and adds them once it has.
+    ///
+    /// With `known_candidates`, the request waits until the session has passed more candidates
+    /// than that or reported the end of its candidates, for at most 20 seconds, and then returns
+    /// the PeerConnection as it is.
+    ///
+    /// A PeerConnection can be read for 5 minutes after it started. Only the participant's user
+    /// may read it.
+    ///
+    /// Fails with:
+    /// - `PARTICIPANT_NOT_FOUND` when the participant has ended;
+    /// - `PEER_CONNECTION_NOT_FOUND` when the participant has no such PeerConnection, it was
+    ///   abandoned, the session gave it up, or it started more than 5 minutes ago.
+    ///
+    /// `GET /api/v1/sessions/{sessionId}/participants/{participantId}/peer-connections/{peerConnectionId}`
+    pub async fn get_peer_connection(
+        &self,
+        session_id: impl AsRef<str>,
+        participant_id: i64,
+        peer_connection_id: impl AsRef<str>,
+        known_candidates: Option<i32>,
+    ) -> Result<PeerConnection, ApiOpError<GetPeerConnectionApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/sessions/{}/participants/{}/peer-connections/{}",
+                __pct_encode_path_segment(session_id.as_ref()),
+                __pct_encode_path_segment(&participant_id.to_string()),
+                __pct_encode_path_segment(peer_connection_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = known_candidates {
+                query_params.push(("known_candidates".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetPeerConnectionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetPeerConnectionApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
