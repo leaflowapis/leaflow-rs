@@ -894,7 +894,7 @@ pub struct MachineFeature {
     pub details: Vec<String>,
     ///The protocol package that defines the feature, such as `leaflow.fleet.command.v1`
     pub name: String,
-    ///Why it cannot be used, such as `Xvfb is not installed`; empty while available
+    ///Why it cannot be used, such as `Xwayland is not installed`; empty while available
     pub reason: String,
     pub state: FeatureState,
 }

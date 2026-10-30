@@ -88,7 +88,7 @@ pub struct Feature {
     #[prost(enumeration = "FeatureState", tag = "2")]
     pub state: i32,
     /// UNAVAILABLE only: why, plain text for people, at most 1024 bytes, such
-    /// as "Xvfb is not installed".
+    /// as "Xwayland is not installed".
     #[prost(string, tag = "3")]
     pub reason: ::prost::alloc::string::String,
     /// What the feature can do on this machine, as the dotted names its package

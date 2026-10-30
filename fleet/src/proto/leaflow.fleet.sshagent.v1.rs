@@ -75,7 +75,8 @@ pub struct SshAgentPolicy {
     /// on a tie the selected one stays.
     #[prost(uint32, tag = "1")]
     pub provider_priority: u32,
-    /// The most connections at once, at most 32. 0: the session's limit.
+    /// The most connections at once. 0: as many as the provider takes
+    /// (ProviderHello.max_connections).
     #[prost(uint32, tag = "2")]
     pub max_connections: u32,
     /// The largest agent message, at most 256 KiB. 0: the session's limit.

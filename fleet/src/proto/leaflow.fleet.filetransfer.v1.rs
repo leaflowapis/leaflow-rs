@@ -484,7 +484,8 @@ pub struct FileTransferPolicy {
     /// The participant may use FileSystemService and choose where uploads go.
     #[prost(bool, tag = "3")]
     pub file_system_allowed: bool,
-    /// The most entries, directories included, of one offer. 0: 1024.
+    /// The most entries, directories included, of one offer. 0: as many as one
+    /// offer holds.
     #[prost(uint32, tag = "4")]
     pub max_entries: u32,
 }

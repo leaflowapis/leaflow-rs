@@ -410,13 +410,13 @@ impl ::prost::Name for PrintDocumentEnd {
 /// nothing else, such as files or devices.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct PrintingPolicy {
-    /// The largest document, at most 128 MiB. 0: no documents.
+    /// The largest document. 0: no documents.
     #[prost(uint64, tag = "1")]
     pub max_document_size_bytes: u64,
-    /// The most jobs received or submitted at a time, at most 4. 0: no jobs.
+    /// The most jobs received or submitted at a time. 0: no jobs.
     #[prost(uint32, tag = "2")]
     pub max_jobs: u32,
-    /// The most printers shared, at most 16. 0: none.
+    /// The most printers shared. 0: none.
     #[prost(uint32, tag = "3")]
     pub max_printers: u32,
 }

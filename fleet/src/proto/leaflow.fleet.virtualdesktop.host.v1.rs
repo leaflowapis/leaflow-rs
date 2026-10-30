@@ -9,9 +9,6 @@ pub struct DesktopOptions {
     /// Agent's default.
     #[prost(message, optional, tag = "2")]
     pub size: ::core::option::Option<super::super::display::v1::Size>,
-    /// The largest size the canvas may grow to. Unset: the Agent's default.
-    #[prost(message, optional, tag = "3")]
-    pub max_size: ::core::option::Option<super::super::display::v1::Size>,
     /// SESSION_MODE_DESKTOP only: the desktop environment to start, one the
     /// feature's details name after "desktop.". Empty: the Agent's default.
     #[prost(string, tag = "4")]

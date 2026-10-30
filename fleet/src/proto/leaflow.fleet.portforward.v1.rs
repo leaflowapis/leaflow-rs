@@ -355,10 +355,10 @@ pub struct PortForwardPolicy {
     /// Where the participant may connect for REMOTE_TO_LOCAL.
     #[prost(message, optional, tag = "6")]
     pub local_targets: ::core::option::Option<EndpointPolicy>,
-    /// The most forwards at once, at most 32. 0: 8.
+    /// The most forwards at once. 0: no limit.
     #[prost(uint32, tag = "7")]
     pub max_forwards: u32,
-    /// The most connections and associations at once, at most 256. 0: 32.
+    /// The most connections and associations at once. 0: no limit.
     #[prost(uint32, tag = "8")]
     pub max_connections: u32,
     /// The longest wait for one connection to a target, at most 60 seconds.
