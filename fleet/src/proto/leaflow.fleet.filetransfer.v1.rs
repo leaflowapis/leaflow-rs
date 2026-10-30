@@ -331,6 +331,13 @@ pub struct DirectoryEntry {
     /// The POSIX permission bits. Informational only.
     #[prost(uint32, tag = "5")]
     pub mode: u32,
+    /// Its media type (Shared MIME-info Database), as GIO's
+    /// standard::content-type gives it: that of the target for a symbolic link,
+    /// "inode/symlink" for one whose target is missing, "inode/directory" and the
+    /// other inode types by kind, "application/x-zerosize" for an empty file,
+    /// otherwise by name and, where the name leaves it open, by content.
+    #[prost(string, tag = "6")]
+    pub mime_type: ::prost::alloc::string::String,
 }
 impl ::prost::Name for DirectoryEntry {
     const NAME: &'static str = "DirectoryEntry";
@@ -434,6 +441,69 @@ impl ::prost::Name for RemoveFileResponse {
     }
     fn type_url() -> ::prost::alloc::string::String {
         "type.googleapis.com/leaflow.fleet.filetransfer.v1.RemoveFileResponse".into()
+    }
+}
+/// The request of CopyFile.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CopyFileRequest {
+    /// The file, symbolic link or directory.
+    #[prost(string, tag = "1")]
+    pub source_path: ::prost::alloc::string::String,
+    /// The path of the copy. Its parent must exist.
+    #[prost(string, tag = "2")]
+    pub destination_path: ::prost::alloc::string::String,
+}
+impl ::prost::Name for CopyFileRequest {
+    const NAME: &'static str = "CopyFileRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.filetransfer.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.filetransfer.v1.CopyFileRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.filetransfer.v1.CopyFileRequest".into()
+    }
+}
+/// The response of CopyFile.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CopyFileResponse {}
+impl ::prost::Name for CopyFileResponse {
+    const NAME: &'static str = "CopyFileResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.filetransfer.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.filetransfer.v1.CopyFileResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.filetransfer.v1.CopyFileResponse".into()
+    }
+}
+/// The request of TrashFile.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct TrashFileRequest {
+    /// The file or directory.
+    #[prost(string, tag = "1")]
+    pub path: ::prost::alloc::string::String,
+}
+impl ::prost::Name for TrashFileRequest {
+    const NAME: &'static str = "TrashFileRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.filetransfer.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.filetransfer.v1.TrashFileRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.filetransfer.v1.TrashFileRequest".into()
+    }
+}
+/// The response of TrashFile.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct TrashFileResponse {}
+impl ::prost::Name for TrashFileResponse {
+    const NAME: &'static str = "TrashFileResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.filetransfer.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.filetransfer.v1.TrashFileResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.filetransfer.v1.TrashFileResponse".into()
     }
 }
 /// The request of CreateFileOffer.
@@ -541,5 +611,7 @@ pub mod file_system_service {
     pub const CREATE_DIRECTORY: &str = "/leaflow.fleet.filetransfer.v1.FileSystemService/CreateDirectory";
     pub const RENAME_FILE: &str = "/leaflow.fleet.filetransfer.v1.FileSystemService/RenameFile";
     pub const REMOVE_FILE: &str = "/leaflow.fleet.filetransfer.v1.FileSystemService/RemoveFile";
+    pub const COPY_FILE: &str = "/leaflow.fleet.filetransfer.v1.FileSystemService/CopyFile";
+    pub const TRASH_FILE: &str = "/leaflow.fleet.filetransfer.v1.FileSystemService/TrashFile";
     pub const CREATE_FILE_OFFER: &str = "/leaflow.fleet.filetransfer.v1.FileSystemService/CreateFileOffer";
 }
