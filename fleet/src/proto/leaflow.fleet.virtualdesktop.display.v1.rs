@@ -190,6 +190,27 @@ impl ::prost::Name for Size {
         "type.googleapis.com/leaflow.fleet.virtualdesktop.display.v1.Size".into()
     }
 }
+/// A point in pixels (X11 x, y). The field that holds it states the coordinate
+/// space.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct Point {
+    /// The horizontal coordinate. Negative when it lies left of the origin.
+    #[prost(sint32, tag = "1")]
+    pub x: i32,
+    /// The vertical coordinate. Negative when it lies above the origin.
+    #[prost(sint32, tag = "2")]
+    pub y: i32,
+}
+impl ::prost::Name for Point {
+    const NAME: &'static str = "Point";
+    const PACKAGE: &'static str = "leaflow.fleet.virtualdesktop.display.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.virtualdesktop.display.v1.Point".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.virtualdesktop.display.v1.Point".into()
+    }
+}
 /// An axis-aligned rectangle in pixels (X11 RECTANGLE). The field that holds it
 /// states the coordinate space.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]

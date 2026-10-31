@@ -201,9 +201,10 @@ pub struct Window {
     /// The application chose where the window goes (ICCCM WM_NORMAL_HINTS
     /// USPosition or PPosition), as a floating toolbar over the selected text
     /// does. A participant that places windows itself (see "Native windows")
-    /// then keeps it where geometry says, as a window manager does. Otherwise
-    /// it places the window: a dialog centred over the window it is transient
-    /// for, any other window where its desktop puts new windows.
+    /// then puts it at requested_position, as a window manager does, with
+    /// gravity. Otherwise it places the window: a dialog centred over the
+    /// window it is transient for, any other window where its desktop puts new
+    /// windows.
     #[prost(bool, tag = "21")]
     pub position_requested: bool,
     /// How a frame goes around the requested position, as the application
@@ -225,6 +226,14 @@ pub struct Window {
     /// application. A participant may warn first.
     #[prost(bool, tag = "25")]
     pub close_kills: bool,
+    /// The top-left corner of the client area the application asked for when it
+    /// created the window, in canvas coordinates, before the session placed it.
+    /// The session places a window it is shown (inside its work area, centred
+    /// over the parent) and geometry is where it went; this is the request
+    /// itself, as Xpra's requested-position. Unset when the application made
+    /// none.
+    #[prost(message, optional, tag = "26")]
+    pub requested_position: ::core::option::Option<super::super::display::v1::Point>,
 }
 impl ::prost::Name for Window {
     const NAME: &'static str = "Window";
