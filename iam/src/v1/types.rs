@@ -22,169 +22,6 @@ mod tri_state_serde {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpdatePolicyRequestBody {
-    ///Why it was granted, written for a reader. It is replaced together with the change, so that what remains does not explain an earlier version
-    ///Constraint: maxLength=255
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    ///Must match the current effect of the policy. The effect itself cannot be changed; delete the policy and create another instead. It is still required in the request because the write replaces the policy in full, and omitting it would let a caller believe an effect had been changed while the field was ignored. A mismatch answers PROJECT_POLICY_EFFECT_IMMUTABLE
-    pub effect: UpdatePolicyRequestBodyEffect,
-    ///Permission names attached directly, replaced in full. Anything not listed is withdrawn rather than kept
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub permissions: Option<Option<Vec<String>>>,
-    ///The resource scope of this policy, replaced in full. What the scope contains can change; whether the policy has one cannot. A base policy cannot take a scope, and a scoped policy cannot have its scope cleared
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub resources: Option<Option<Vec<ResourceRefResource>>>,
-    ///Each must be a role already defined in this project, replaced in full. As when attaching, `OWNER` and `ADMIN` are not accepted
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub roles: Option<Option<Vec<String>>>,
-}
-impl UpdatePolicyRequestBody {
-    /// Construct this request with every required wire field.
-    pub fn new(effect: UpdatePolicyRequestBodyEffect) -> Self {
-        Self {
-            effect,
-            description: None,
-            permissions: None,
-            resources: None,
-            roles: None,
-        }
-    }
-    /// Start a dependency-free builder with every required wire field.
-    pub fn builder(effect: UpdatePolicyRequestBodyEffect) -> UpdatePolicyRequestBodyBuilder {
-        UpdatePolicyRequestBodyBuilder::new(effect)
-    }
-}
-/// Dependency-free builder for [`#struct_name`].
-#[derive(Debug, Clone)]
-#[must_use]
-pub struct UpdatePolicyRequestBodyBuilder {
-    value: UpdatePolicyRequestBody,
-}
-impl UpdatePolicyRequestBodyBuilder {
-    /// Start a builder with every required wire field.
-    pub fn new(effect: UpdatePolicyRequestBodyEffect) -> Self {
-        Self {
-            value: UpdatePolicyRequestBody::new(effect),
-        }
-    }
-    #[doc = concat!("Set the optional `", "description", "` request field.")]
-    #[must_use]
-    pub fn description(mut self, description: String) -> Self {
-        self.value.description = Some(description);
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "permissions", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn permissions(mut self, permissions: Vec<String>) -> Self {
-        self.value.permissions = Some(Some(permissions));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "permissions", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn permissions_null(mut self) -> Self {
-        self.value.permissions = Some(None);
-        self
-    }
-    #[doc = concat!("Omit the optional nullable `", "permissions", "` request field.")]
-    #[must_use]
-    pub fn permissions_absent(mut self) -> Self {
-        self.value.permissions = None;
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "resources", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn resources(mut self, resources: Vec<ResourceRefResource>) -> Self {
-        self.value.resources = Some(Some(resources));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "resources", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn resources_null(mut self) -> Self {
-        self.value.resources = Some(None);
-        self
-    }
-    #[doc = concat!("Omit the optional nullable `", "resources", "` request field.")]
-    #[must_use]
-    pub fn resources_absent(mut self) -> Self {
-        self.value.resources = None;
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "roles", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn roles(mut self, roles: Vec<String>) -> Self {
-        self.value.roles = Some(Some(roles));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "roles", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn roles_null(mut self) -> Self {
-        self.value.roles = Some(None);
-        self
-    }
-    #[doc = concat!("Omit the optional nullable `", "roles", "` request field.")]
-    #[must_use]
-    pub fn roles_absent(mut self) -> Self {
-        self.value.roles = None;
-        self
-    }
-    /// Finish building the request model.
-    pub fn build(self) -> UpdatePolicyRequestBody {
-        self.value
-    }
-}
-///Must match the current effect of the policy. The effect itself cannot be changed; delete the policy and create another instead. It is still required in the request because the write replaces the policy in full, and omitting it would let a caller believe an effect had been changed while the field was ignored. A mismatch answers PROJECT_POLICY_EFFECT_IMMUTABLE
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum UpdatePolicyRequestBodyEffect {
-    #[default]
-    #[serde(rename = "allow")]
-    Allow,
-    #[serde(rename = "deny")]
-    Deny,
-}
-impl UpdatePolicyRequestBodyEffect {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Allow => "allow",
-            Self::Deny => "deny",
-        }
-    }
-}
-impl ::std::fmt::Display for UpdatePolicyRequestBodyEffect {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for UpdatePolicyRequestBodyEffect {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RoleListResponseBody {
     pub items: Option<Vec<RoleResource>>,
 }
@@ -266,52 +103,17 @@ impl AsRef<str> for ProjectResourceStatus {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct PolicyListResponseBody {
-    pub items: Option<Vec<PolicyResource>>,
+pub struct PermissionListResponseBody {
+    pub items: Option<Vec<PermissionResource>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct PolicyResource {
-    ///The base policy is the one whose effect is `allow` and which covers every resource. Each member holds exactly one, and it carries their ordinary roles. Change it with PUT /members/{userId}/roles and PUT /members/{userId}/permissions
-    pub base: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    ///Why it was granted, written for a reader
-    pub description: String,
-    pub effect: PolicyResourceEffect,
-    pub id: uuid::Uuid,
-    ///Permission names attached directly to this person, without passing through a role
-    pub permissions: Option<Vec<String>>,
-    ///Empty means the whole project
-    pub resources: Option<Vec<ResourceRefResource>>,
-    ///The role codes this policy carries
-    pub roles: Option<Vec<String>>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub user_id: String,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum PolicyResourceEffect {
-    #[default]
-    #[serde(rename = "allow")]
-    Allow,
-    #[serde(rename = "deny")]
-    Deny,
-}
-impl PolicyResourceEffect {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Allow => "allow",
-            Self::Deny => "deny",
-        }
-    }
-}
-impl ::std::fmt::Display for PolicyResourceEffect {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for PolicyResourceEffect {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
+pub struct PermissionResource {
+    ///The code of the permission, such as compute:instance.delete. **There is no display name here** — what a permission reads as is localised, and translation belongs to the layer rendering it. Until a translation catches up, the code itself is what is shown
+    pub name: String,
+    ///Reserved for the project owner. Attaching it to a custom role has no effect
+    pub owner_only: bool,
+    ///The kind of resource this permission is decided against; empty means it is decided at project level. **It need not be the object being operated on** — a compute route carries no project_id and is isolated through its parent network, so compute:route.create is decided against compute:private_network. A non-empty value also means the permission can be scoped to particular instances; create and list are always empty
+    pub resource_type: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct OwnershipTransferResponseBody {
@@ -359,6 +161,10 @@ impl AsRef<str> for ProjectTraitResourceEffect {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MemberPermissionListResponseBody {
+    pub items: Option<Vec<MemberPermissionResource>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LengthAwarePageSSHKeyResource {
@@ -432,7 +238,52 @@ pub struct MemberResource {
     pub first_name: String,
     pub grant: GrantResource,
     pub last_name: String,
+    ///The permissions granted to this person directly, apart from their roles
+    pub permissions: Option<Vec<MemberPermissionResource>>,
     pub user_id: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MemberPermissionResource {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub effect: MemberPermissionResourceEffect,
+    ///The id of this grant, used to revoke it
+    pub id: uuid::Uuid,
+    ///The code of the permission, such as compute:instance.delete
+    ///Constraint: maxLength=128
+    pub permission: String,
+    ///The resource identifier, which may carry a glob. Null with `resource_type` means the grant holds project-wide
+    ///Constraint: maxLength=255
+    pub resource_id: Option<String>,
+    ///The kind of resource this grant holds on, such as fleet:machine. Null with `resource_id` means it holds project-wide
+    ///Constraint: maxLength=128
+    pub resource_type: Option<String>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum MemberPermissionResourceEffect {
+    #[default]
+    #[serde(rename = "allow")]
+    Allow,
+    #[serde(rename = "deny")]
+    Deny,
+}
+impl MemberPermissionResourceEffect {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Allow => "allow",
+            Self::Deny => "deny",
+        }
+    }
+}
+impl ::std::fmt::Display for MemberPermissionResourceEffect {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for MemberPermissionResourceEffect {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LengthAwarePageInvitationResource {
@@ -475,7 +326,7 @@ pub struct GrantResource {
     pub owner: bool,
     ///The role codes held, for display only
     pub roles: Option<Vec<String>>,
-    ///**The rules compiled from every policy that applies. Do not walk them to reach a decision.** They are here to render what a user may do; each request is decided by the service handling it
+    ///**The rules compiled from the roles and grants that apply. Do not walk them to reach a decision.** They are here to render what a user may do; each request is decided by the service handling it
     pub rules: Option<Vec<RuleResource>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -511,6 +362,13 @@ impl AsRef<str> for RuleResourceEffect {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ResourceRefResource {
+    ///A string rather than a UUID; a DNS zone is named by its domain, which IAM does not hold. Matching is glob, so `*.example.com` covers a set of subdomains, while a value carrying no glob metacharacter matches exactly
+    pub id: String,
+    ///Of the form compute:instance or dns:zone, in the same namespace as permission names
+    pub r#type: String,
 }
 /**A failed request. The envelope follows the Google REST error format: `code` is the HTTP
 status, `status` is its canonical name, and `reason` is the stable machine-readable code
@@ -567,6 +425,45 @@ pub struct FieldViolation {
     ///Why the field was rejected, such as `REQUIRED` or `OUT_OF_RANGE`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateMemberPermissionRequestBody {
+    pub effect: CreateMemberPermissionRequestBodyEffect,
+    ///The code of the permission to grant
+    ///Constraint: minLength=1, maxLength=128
+    pub permission: String,
+    ///The resource identifier to hold on, which may carry a glob. Give it together with `resource_type`
+    ///Constraint: maxLength=255
+    pub resource_id: Option<String>,
+    ///The kind of resource to hold on; give it together with `resource_id`. Both null grant the permission project-wide
+    ///Constraint: maxLength=128
+    pub resource_type: Option<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CreateMemberPermissionRequestBodyEffect {
+    #[default]
+    #[serde(rename = "allow")]
+    Allow,
+    #[serde(rename = "deny")]
+    Deny,
+}
+impl CreateMemberPermissionRequestBodyEffect {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Allow => "allow",
+            Self::Deny => "deny",
+        }
+    }
+}
+impl ::std::fmt::Display for CreateMemberPermissionRequestBodyEffect {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CreateMemberPermissionRequestBodyEffect {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateApplicationResponseBody {
@@ -663,31 +560,6 @@ impl AsRef<str> for CreateApplicationRequestBodyType {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CatalogListResponseBody {
-    pub items: Option<Vec<CatalogResource>>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CatalogResource {
-    pub permissions: Option<Vec<PermissionResource>>,
-    ///The resource types this service declares. A scoped rule can only land on one of them
-    pub resource_types: Option<Vec<ResourceTypeResource>>,
-    pub service: String,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ResourceTypeResource {
-    ///The code of the resource type, such as dns:zone. There is no display name here either; what it reads as is decided by the layer rendering it
-    pub name: String,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct PermissionResource {
-    ///The code of the permission, such as compute:instance.delete. **There is no display name here** — what a permission reads as is localised, and translation belongs to the layer rendering it. Until a translation catches up, the code itself is what is shown
-    pub name: String,
-    ///Reserved for the project owner. Attaching it to a custom role has no effect
-    pub owner_only: bool,
-    ///The kind of resource this permission is decided against; empty means it is decided at project level. **It need not be the object being operated on** — a compute route carries no project_id and is isolated through its parent network, so compute:route.create is decided against compute:private_network. A non-empty value also means the permission can be scoped to particular instances; create and list are always empty
-    pub resource_type: String,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BatchGetMembersResponseBody {
     ///The people that resolved. Ids that never belonged to this project are absent, as are ids that do not resolve at all.
     pub items: Vec<ResolvedMemberResource>,
@@ -703,181 +575,6 @@ pub struct ResolvedMemberResource {
     ///True when this person is no longer a member of the project.
     pub left: bool,
     pub user_id: String,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AttachPolicyRequestBody {
-    ///Why it was granted, written for a reader
-    ///Constraint: maxLength=255
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    pub effect: AttachPolicyRequestBodyEffect,
-    ///Permission names attached directly, which avoids creating a role only one person holds
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub permissions: Option<Option<Vec<String>>>,
-    ///The policy holds only on these resources. Leaving it empty makes sense only together with `deny`, since an `allow` covering every resource is the base policy, which already exists
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub resources: Option<Option<Vec<ResourceRefResource>>>,
-    ///Each must be a role already defined in this project. `OWNER` and `ADMIN` are not accepted, being rules rather than sets of permissions
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub roles: Option<Option<Vec<String>>>,
-    ///Must already be a member of this project
-    ///Constraint: minLength=1, maxLength=255
-    pub user_id: String,
-}
-impl AttachPolicyRequestBody {
-    /// Construct this request with every required wire field.
-    pub fn new(effect: AttachPolicyRequestBodyEffect, user_id: String) -> Self {
-        Self {
-            effect,
-            user_id,
-            description: None,
-            permissions: None,
-            resources: None,
-            roles: None,
-        }
-    }
-    /// Start a dependency-free builder with every required wire field.
-    pub fn builder(
-        effect: AttachPolicyRequestBodyEffect,
-        user_id: String,
-    ) -> AttachPolicyRequestBodyBuilder {
-        AttachPolicyRequestBodyBuilder::new(effect, user_id)
-    }
-}
-/// Dependency-free builder for [`#struct_name`].
-#[derive(Debug, Clone)]
-#[must_use]
-pub struct AttachPolicyRequestBodyBuilder {
-    value: AttachPolicyRequestBody,
-}
-impl AttachPolicyRequestBodyBuilder {
-    /// Start a builder with every required wire field.
-    pub fn new(effect: AttachPolicyRequestBodyEffect, user_id: String) -> Self {
-        Self {
-            value: AttachPolicyRequestBody::new(effect, user_id),
-        }
-    }
-    #[doc = concat!("Set the optional `", "description", "` request field.")]
-    #[must_use]
-    pub fn description(mut self, description: String) -> Self {
-        self.value.description = Some(description);
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "permissions", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn permissions(mut self, permissions: Vec<String>) -> Self {
-        self.value.permissions = Some(Some(permissions));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "permissions", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn permissions_null(mut self) -> Self {
-        self.value.permissions = Some(None);
-        self
-    }
-    #[doc = concat!("Omit the optional nullable `", "permissions", "` request field.")]
-    #[must_use]
-    pub fn permissions_absent(mut self) -> Self {
-        self.value.permissions = None;
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "resources", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn resources(mut self, resources: Vec<ResourceRefResource>) -> Self {
-        self.value.resources = Some(Some(resources));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "resources", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn resources_null(mut self) -> Self {
-        self.value.resources = Some(None);
-        self
-    }
-    #[doc = concat!("Omit the optional nullable `", "resources", "` request field.")]
-    #[must_use]
-    pub fn resources_absent(mut self) -> Self {
-        self.value.resources = None;
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "roles", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn roles(mut self, roles: Vec<String>) -> Self {
-        self.value.roles = Some(Some(roles));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "roles", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn roles_null(mut self) -> Self {
-        self.value.roles = Some(None);
-        self
-    }
-    #[doc = concat!("Omit the optional nullable `", "roles", "` request field.")]
-    #[must_use]
-    pub fn roles_absent(mut self) -> Self {
-        self.value.roles = None;
-        self
-    }
-    /// Finish building the request model.
-    pub fn build(self) -> AttachPolicyRequestBody {
-        self.value
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ResourceRefResource {
-    ///A string rather than a UUID; a DNS zone is named by its domain, which IAM does not hold. Matching is glob, so `*.example.com` covers a set of subdomains, while a value carrying no glob metacharacter matches exactly
-    pub id: String,
-    ///Of the form compute:instance or dns:zone, in the same namespace as permission names
-    pub r#type: String,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum AttachPolicyRequestBodyEffect {
-    #[default]
-    #[serde(rename = "allow")]
-    Allow,
-    #[serde(rename = "deny")]
-    Deny,
-}
-impl AttachPolicyRequestBodyEffect {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Allow => "allow",
-            Self::Deny => "deny",
-        }
-    }
-}
-impl ::std::fmt::Display for AttachPolicyRequestBodyEffect {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for AttachPolicyRequestBodyEffect {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ApplicationResource {
@@ -1121,11 +818,6 @@ pub struct RenameSSHKeyRequestBody {
 pub struct RotateApplicationSecretResponseBody {
     pub rotated_at: chrono::DateTime<chrono::Utc>,
     pub secret: String,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct SetMemberPermissionsRequestBody {
-    ///**Every** permission name to be attached directly to this person, replaced in full. The permissions a role grants are neither listed here nor touched by this write
-    pub permissions: Option<Vec<String>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SetMemberRolesRequestBody {

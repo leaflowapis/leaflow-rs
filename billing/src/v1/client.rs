@@ -4514,13 +4514,14 @@ impl HttpClient {
     }
     /// List billing accounts
     ///
-    /// Billing accounts owned by the authenticated user.
+    /// Billing accounts owned by the authenticated user. Filter by status with `status`; omit it to list every status.
     ///
     /// `GET /api/v1/billing-accounts`
     pub async fn list_billing_accounts(
         &self,
         page: Option<i64>,
         page_size: Option<i64>,
+        status: Option<Vec<BillingAccountStatus>>,
     ) -> Result<BillingAccountList, ApiOpError<ListBillingAccountsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/billing-accounts");
         let mut req = self.http_client.get(request_url);
@@ -4531,6 +4532,29 @@ impl HttpClient {
             }
             if let Some(v) = page_size {
                 query_params.push(("page_size".to_string(), v.to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);

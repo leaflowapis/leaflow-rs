@@ -324,11 +324,6 @@ impl AsRef<str> for ListSshKeysStatus {
         self.as_str()
     }
 }
-///Typed error responses for `attach-policy`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum AttachPolicyApiError {
-    Default(Error),
-}
 ///Typed error responses for `batch-get-members`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum BatchGetMembersApiError {
@@ -337,6 +332,11 @@ pub enum BatchGetMembersApiError {
 ///Typed error responses for `create-application`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CreateApplicationApiError {
+    Default(Error),
+}
+///Typed error responses for `create-member-permission`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateMemberPermissionApiError {
     Default(Error),
 }
 ///Typed error responses for `create-role`. One variant per declared non-2xx response.
@@ -354,6 +354,11 @@ pub enum CreateSshKeyApiError {
 pub enum DeleteApplicationApiError {
     Default(Error),
 }
+///Typed error responses for `delete-member-permission`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DeleteMemberPermissionApiError {
+    Default(Error),
+}
 ///Typed error responses for `delete-project`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DeleteProjectApiError {
@@ -364,19 +369,9 @@ pub enum DeleteProjectApiError {
 pub enum DeleteRoleApiError {
     Default(Error),
 }
-///Typed error responses for `detach-policy`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum DetachPolicyApiError {
-    Default(Error),
-}
 ///Typed error responses for `get-application`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetApplicationApiError {
-    Default(Error),
-}
-///Typed error responses for `get-policy`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetPolicyApiError {
     Default(Error),
 }
 ///Typed error responses for `get-project`. One variant per declared non-2xx response.
@@ -409,6 +404,16 @@ pub enum IssueInvitationApiError {
 pub enum ListApplicationsApiError {
     Default(Error),
 }
+///Typed error responses for `list-invitations`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListInvitationsApiError {
+    Default(Error),
+}
+///Typed error responses for `list-member-permissions`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListMemberPermissionsApiError {
+    Default(Error),
+}
 ///Typed error responses for `list-members`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListMembersApiError {
@@ -417,16 +422,6 @@ pub enum ListMembersApiError {
 ///Typed error responses for `list-permissions`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListPermissionsApiError {
-    Default(Error),
-}
-///Typed error responses for `list-policies`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListPoliciesApiError {
-    Default(Error),
-}
-///Typed error responses for `list-project-invitations`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListProjectInvitationsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-quotas`. One variant per declared non-2xx response.
@@ -469,11 +464,6 @@ pub enum RevokeSshKeyApiError {
 pub enum RotateApplicationSecretApiError {
     Default(Error),
 }
-///Typed error responses for `set-member-permissions`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum SetMemberPermissionsApiError {
-    Default(Error),
-}
 ///Typed error responses for `set-member-roles`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum SetMemberRolesApiError {
@@ -494,11 +484,6 @@ pub enum TransferProjectOwnershipApiError {
 pub enum UpdateApplicationApiError {
     Default(Error),
 }
-///Typed error responses for `update-policy`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum UpdatePolicyApiError {
-    Default(Error),
-}
 ///Typed error responses for `update-project`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum UpdateProjectApiError {
@@ -510,86 +495,6 @@ pub enum UpdateRoleApiError {
     Default(Error),
 }
 impl HttpClient {
-    /// Attach a policy
-    ///
-    /// This creates an **additional** policy, which either carries a resource scope or has `deny` as its effect. An `allow` covering every resource is a base policy, of which each member holds exactly one, and it is changed with set-member-roles and set-member-permissions. `roles` cannot contain `OWNER` or `ADMIN`. Requires `iam:members.manage`.
-    ///
-    /// `POST /api/v1/policies`
-    pub async fn attach_policy(
-        &self,
-        request: AttachPolicyRequestBody,
-    ) -> Result<PolicyResource, ApiOpError<AttachPolicyApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/policies");
-        let mut req = self.http_client.post(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 201u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "201",
-                )),
-            }))
-        } else {
-            let typed: Option<AttachPolicyApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(AttachPolicyApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Resolve members by id, including those who have left
     ///
     /// Resolves a set of account ids to the people behind them, scoped to the current project and **including members who have since left it**.
@@ -743,6 +648,98 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(CreateApplicationApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Grant a permission to a member
+    ///
+    /// Creates one permission row. The same row twice answers 409; changing a grant means revoking the row and creating another, so that each row records when it was granted.
+    ///
+    /// `OWNER` and `ADMIN` cannot be granted here, being facts on the membership. A permission that carries no resource dimension cannot be scoped: IAM refuses the row at grant time rather than storing a scope that would never hold.
+    ///
+    /// Requires `iam:members.manage`.
+    ///
+    /// `POST /api/v1/members/{userId}/permissions`
+    pub async fn create_member_permission(
+        &self,
+        user_id: impl AsRef<str>,
+        request: CreateMemberPermissionRequestBody,
+    ) -> Result<MemberPermissionResource, ApiOpError<CreateMemberPermissionApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/members/{}/permissions",
+                __pct_encode_path_segment(user_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 201u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "201",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateMemberPermissionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateMemberPermissionApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -1006,6 +1003,82 @@ impl HttpClient {
             }))
         }
     }
+    /// Revoke a permission granted directly to a member
+    ///
+    /// Removes that one row. Requires `iam:members.manage`.
+    ///
+    /// `DELETE /api/v1/members/{userId}/permissions/{permissionId}`
+    pub async fn delete_member_permission(
+        &self,
+        user_id: impl AsRef<str>,
+        permission_id: impl AsRef<str>,
+    ) -> Result<(), ApiOpError<DeleteMemberPermissionApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/members/{}/permissions/{}",
+                __pct_encode_path_segment(user_id.as_ref()),
+                __pct_encode_path_segment(permission_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            req = req.header(name, value);
+        }
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 204u16 {
+            let _ = body_text;
+            let _ = raw_body;
+            let _ = headers;
+            Ok(())
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "204",
+                )),
+            }))
+        } else {
+            let typed: Option<DeleteMemberPermissionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DeleteMemberPermissionApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Delete a project
     ///
     /// Only the owner can do this, and it cannot be undone. The project enters DELETING and each service begins removing the resources under it. The project itself remains readable afterwards, answering that it is gone rather than 404.
@@ -1153,80 +1226,6 @@ impl HttpClient {
             }))
         }
     }
-    /// Detach a policy
-    ///
-    /// A base policy cannot be detached; it is where a member's roles sit. Use remove-member to take someone out of the project. Requires `iam:members.manage`.
-    ///
-    /// `DELETE /api/v1/policies/{policyId}`
-    pub async fn detach_policy(
-        &self,
-        policy_id: impl AsRef<str>,
-    ) -> Result<(), ApiOpError<DetachPolicyApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/policies/{}",
-                __pct_encode_path_segment(policy_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.delete(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            req = req.header(name, value);
-        }
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 204u16 {
-            let _ = body_text;
-            let _ = raw_body;
-            let _ = headers;
-            Ok(())
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "204",
-                )),
-            }))
-        } else {
-            let typed: Option<DetachPolicyApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DetachPolicyApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Get an application
     ///
     /// An application that has been deleted is still returned, with `status` `ARCHIVED`.
@@ -1293,90 +1292,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetApplicationApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Get a policy
-    ///
-    /// Visible to any member, on the same rule as list-policies; no further permission is required.
-    ///
-    /// `GET /api/v1/policies/{policyId}`
-    pub async fn get_policy(
-        &self,
-        policy_id: impl AsRef<str>,
-    ) -> Result<PolicyResource, ApiOpError<GetPolicyApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/policies/{}",
-                __pct_encode_path_segment(policy_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetPolicyApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetPolicyApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -1473,7 +1388,7 @@ impl HttpClient {
     }
     /// Get the caller's standing in this project
     ///
-    /// Facts rather than a conclusion. There is no `allowed` field here, because each service holds the catalogue mapping its operations to permissions and decides on its own.
+    /// Facts rather than a conclusion. There is no `allowed` field here, because each service holds the permissions its operations need and decides on its own.
     ///
     /// `GET /api/v1/membership`
     pub async fn get_project_membership(
@@ -1883,6 +1798,182 @@ impl HttpClient {
             }))
         }
     }
+    /// List the invitations this project is still waiting on
+    ///
+    /// Visible to any member, on the same rule as the member list. Who has been invited is part of who is in the project.
+    ///
+    /// `GET /api/v1/invitations`
+    pub async fn list_invitations(
+        &self,
+        limit: Option<i64>,
+        offset: Option<i64>,
+    ) -> Result<LengthAwarePageInvitationResource, ApiOpError<ListInvitationsApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/invitations");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = limit {
+                query_params.push(("limit".to_string(), v.to_string()));
+            }
+            if let Some(v) = offset {
+                query_params.push(("offset".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListInvitationsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListInvitationsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List the permissions granted directly to a member
+    ///
+    /// Every row states one permission this person holds apart from their roles: project-wide when `resource_type` and `resource_id` are null, otherwise only on that resource. What a role grants is not listed here; the member's grant carries the roles and their compiled rules.
+    ///
+    /// Visible to any member, on the same rule as the member list.
+    ///
+    /// `GET /api/v1/members/{userId}/permissions`
+    pub async fn list_member_permissions(
+        &self,
+        user_id: impl AsRef<str>,
+    ) -> Result<MemberPermissionListResponseBody, ApiOpError<ListMemberPermissionsApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/members/{}/permissions",
+                __pct_encode_path_segment(user_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListMemberPermissionsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListMemberPermissionsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// List the members of a project
     ///
     /// `GET /api/v1/members`
@@ -1977,12 +2068,12 @@ impl HttpClient {
     }
     /// List every permission the platform can grant
     ///
-    /// Each service registers its own catalogue with IAM at start-up, so this is the platform-wide list rather than the permissions of IAM alone. **IAM does not decide anything with it** — each service decides using the caller's grant together with its own catalogue, and this list only serves to render the choices. A service that has never started does not appear here.
+    /// Each service registers the permissions it enforces with IAM at start-up, so this is the platform-wide list rather than the permissions of IAM alone. **IAM does not decide anything with it** — each service decides using the caller's grant together with the permissions compiled into its own binary, and this list only serves to render the choices. A service that has never started does not appear here.
     ///
     /// `GET /api/v1/permissions`
     pub async fn list_permissions(
         &self,
-    ) -> Result<CatalogListResponseBody, ApiOpError<ListPermissionsApiError>> {
+    ) -> Result<PermissionListResponseBody, ApiOpError<ListPermissionsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/permissions");
         let mut req = self.http_client.get(request_url);
         if let Some(api_key) = &self.api_key {
@@ -2033,182 +2124,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListPermissionsApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// List the policies in this project
-    ///
-    /// Visible to any member, on the same rule as the member list. What has been granted to whom is part of who is in the project.
-    ///
-    /// `GET /api/v1/policies`
-    pub async fn list_policies(
-        &self,
-        user_id: Option<impl AsRef<str>>,
-    ) -> Result<PolicyListResponseBody, ApiOpError<ListPoliciesApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/policies");
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = user_id {
-                query_params.push(("userId".to_string(), v.as_ref().to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListPoliciesApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListPoliciesApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// List the invitations this project is still waiting on
-    ///
-    /// Visible to any member, on the same rule as the member list. Who has been invited is part of who is in the project.
-    ///
-    /// `GET /api/v1/invitations`
-    pub async fn list_project_invitations(
-        &self,
-        limit: Option<i64>,
-        offset: Option<i64>,
-    ) -> Result<LengthAwarePageInvitationResource, ApiOpError<ListProjectInvitationsApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/invitations");
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = limit {
-                query_params.push(("limit".to_string(), v.to_string()));
-            }
-            if let Some(v) = offset {
-                query_params.push(("offset".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListProjectInvitationsApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListProjectInvitationsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -2878,94 +2793,6 @@ impl HttpClient {
             }))
         }
     }
-    /// Set the permissions attached directly to a member
-    ///
-    /// Replaces, in full, the permissions attached directly to the base policy. A direct permission grants one person something without creating a role only they hold, and it does not follow later changes to any role. Requires `iam:members.manage`.
-    ///
-    /// `PUT /api/v1/members/{userId}/permissions`
-    pub async fn set_member_permissions(
-        &self,
-        user_id: impl AsRef<str>,
-        request: SetMemberPermissionsRequestBody,
-    ) -> Result<PolicyResource, ApiOpError<SetMemberPermissionsApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/members/{}/permissions",
-                __pct_encode_path_segment(user_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.put(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<SetMemberPermissionsApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(SetMemberPermissionsApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Set the roles a member holds
     ///
     /// The list is replaced in full rather than added to or removed from. The `OWNER` role of the owner is unaffected.
@@ -3295,94 +3122,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(UpdateApplicationApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Update a policy
-    ///
-    /// Replaced in full rather than field by field — `resources`, `roles` and `permissions` are each overwritten, and an omitted one becomes empty. The **kind** of a policy cannot change — a base policy (an `allow` covering every resource) cannot take a resource scope, and a scoped policy cannot have its scope cleared. Delete and recreate to change the kind. Requires `iam:members.manage`.
-    ///
-    /// `PUT /api/v1/policies/{policyId}`
-    pub async fn update_policy(
-        &self,
-        policy_id: impl AsRef<str>,
-        request: UpdatePolicyRequestBody,
-    ) -> Result<PolicyResource, ApiOpError<UpdatePolicyApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/policies/{}",
-                __pct_encode_path_segment(policy_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.put(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<UpdatePolicyApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(UpdatePolicyApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

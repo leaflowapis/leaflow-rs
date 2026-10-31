@@ -5398,6 +5398,7 @@ impl AsRef<str> for BillingAccountSuspendedBy {
         self.as_str()
     }
 }
+///Whether the account is usable, suspended, or closed.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum BillingAccountStatus {
     #[default]
