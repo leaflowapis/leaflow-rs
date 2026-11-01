@@ -6623,6 +6623,8 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         currency: Option<impl AsRef<str>>,
+        r#type: Option<PriceType>,
+        usage_type: Option<UsageType>,
         if_none_match: Option<impl AsRef<str>>,
     ) -> Result<PriceList, ApiOpError<ListPricesByPlanApiError>> {
         let request_url = format!(
@@ -6644,6 +6646,12 @@ impl HttpClient {
             }
             if let Some(v) = currency {
                 query_params.push(("currency".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = r#type {
+                query_params.push(("type".to_string(), v.to_string()));
+            }
+            if let Some(v) = usage_type {
+                query_params.push(("usage_type".to_string(), v.to_string()));
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
