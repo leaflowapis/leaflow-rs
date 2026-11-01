@@ -1248,6 +1248,86 @@ impl AsRef<str> for SearchTasksRequestBodyActionType {
         self.as_str()
     }
 }
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct SearchAttachmentsRequestBody {
+    ///Constraint: maxLength=1024
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    ///True for uploads no message references, false for the rest.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub draft: Option<bool>,
+    ///Read these attachments. Cannot be combined with cursor.
+    ///Constraint: minItems=1, maxItems=200, uniqueItems=true
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ids: Option<Vec<String>>,
+    ///Optional parts of the response. `counts` adds `counts`.
+    ///Constraint: uniqueItems=true
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include: Option<Vec<SearchAttachmentsRequestBodyIncludeItem>>,
+    ///Constraint: minimum=1, maximum=200
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    ///Matches filenames, case-insensitively.
+    ///Constraint: maxLength=100
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub q: Option<String>,
+    ///How the assistant sees the file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<SearchAttachmentsRequestBodyType>,
+}
+///How the assistant sees the file.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum SearchAttachmentsRequestBodyType {
+    #[default]
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "binary")]
+    Binary,
+}
+impl SearchAttachmentsRequestBodyType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Image => "image",
+            Self::Text => "text",
+            Self::Binary => "binary",
+        }
+    }
+}
+impl ::std::fmt::Display for SearchAttachmentsRequestBodyType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for SearchAttachmentsRequestBodyType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum SearchAttachmentsRequestBodyIncludeItem {
+    #[default]
+    #[serde(rename = "counts")]
+    Counts,
+}
+impl SearchAttachmentsRequestBodyIncludeItem {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Counts => "counts",
+        }
+    }
+}
+impl ::std::fmt::Display for SearchAttachmentsRequestBodyIncludeItem {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for SearchAttachmentsRequestBodyIncludeItem {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RejectionListResponseBody {
     pub rejections: Option<Vec<RejectionResource>>,
@@ -3172,6 +3252,75 @@ impl AsRef<str> for AttachmentResourceType {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AttachmentListResponseBody {
+    pub attachments: Vec<AttachmentFileResource>,
+    ///Null unless `include` asked for it.
+    pub counts: Option<AttachmentCountsResource>,
+    ///Null on the last page.
+    #[serde(rename = "nextCursor")]
+    pub next_cursor: Option<String>,
+}
+///Counts over everything the criteria match, ignoring `ids` and the cursor.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AttachmentCountsResource {
+    pub total: i64,
+    #[serde(rename = "totalBytes")]
+    pub total_bytes: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AttachmentFileResource {
+    #[serde(rename = "byteSize")]
+    pub byte_size: i64,
+    #[serde(rename = "createdAt")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    /**When this draft is cleared if no message ever references it. Null once a message uses it —
+    a file that belongs to a conversation is kept as long as the conversation is.*/
+    #[serde(rename = "draftExpiresAt")]
+    pub draft_expires_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub filename: String,
+    ///Null unless type is image.
+    pub height: Option<i64>,
+    pub id: String,
+    ///Detected at intake, not the Content-Type the client sent.
+    pub mime: String,
+    ///How the assistant will see this file.
+    pub r#type: AttachmentFileResourceType,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    ///Null unless type is image.
+    pub width: Option<i64>,
+}
+///How the assistant will see this file.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AttachmentFileResourceType {
+    #[default]
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "binary")]
+    Binary,
+}
+impl AttachmentFileResourceType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Image => "image",
+            Self::Text => "text",
+            Self::Binary => "binary",
+        }
+    }
+}
+impl ::std::fmt::Display for AttachmentFileResourceType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AttachmentFileResourceType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AnswerQuestionRequestBody {
     ///A map from question id to the answer.
     pub answers: AnswerQuestionRequestBodyAnswers,
@@ -3487,6 +3636,11 @@ impl ToolResultRequestBodyBuilder {
 pub struct TurnStartedResponseBody {
     #[serde(rename = "turnId")]
     pub turn_id: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UpdateAttachmentRequestBody {
+    ///Constraint: minLength=1, maxLength=255
+    pub filename: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateFolderRequestBody {

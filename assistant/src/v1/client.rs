@@ -368,6 +368,11 @@ pub enum CreateUploadApiError {
 pub enum DecideToolCallsApiError {
     Default(Error),
 }
+///Typed error responses for `delete-attachment`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DeleteAttachmentApiError {
+    Default(Error),
+}
 ///Typed error responses for `delete-binding`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DeleteBindingApiError {
@@ -411,6 +416,11 @@ pub enum DeleteUploadApiError {
 ///Typed error responses for `download-attachment`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DownloadAttachmentApiError {
+    Default(Error),
+}
+///Typed error responses for `get-attachment`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetAttachmentApiError {
     Default(Error),
 }
 ///Typed error responses for `get-binding`. One variant per declared non-2xx response.
@@ -598,6 +608,11 @@ pub enum RotateChannelSecretApiError {
 pub enum RunTaskApiError {
     Default(Error),
 }
+///Typed error responses for `search-attachments`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum SearchAttachmentsApiError {
+    Default(Error),
+}
 ///Typed error responses for `search-tasks`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum SearchTasksApiError {
@@ -626,6 +641,11 @@ pub enum SubmitToolResultApiError {
 ///Typed error responses for `submit-weixin-verify-code`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum SubmitWeixinVerifyCodeApiError {
+    Default(Error),
+}
+///Typed error responses for `update-attachment`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum UpdateAttachmentApiError {
     Default(Error),
 }
 ///Typed error responses for `update-channel`. One variant per declared non-2xx response.
@@ -1896,6 +1916,82 @@ impl HttpClient {
             }))
         }
     }
+    /// Remove a file from the library
+    ///
+    /// Hides the file from the library. Conversations that already use it keep it: the attachment
+    /// stays readable by id and keeps rendering in their history. Its bytes are released when the
+    /// project is deleted. A draft is cleared for good when its expiry passes. Idempotent.
+    ///
+    /// `DELETE /api/v1/attachments/{attachment}`
+    pub async fn delete_attachment(
+        &self,
+        attachment: impl AsRef<str>,
+    ) -> Result<(), ApiOpError<DeleteAttachmentApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/attachments/{}",
+                __pct_encode_path_segment(attachment.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            req = req.header(name, value);
+        }
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 204u16 {
+            let _ = body_text;
+            let _ = raw_body;
+            let _ = headers;
+            Ok(())
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "204",
+                )),
+            }))
+        } else {
+            let typed: Option<DeleteAttachmentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DeleteAttachmentApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Remove a binding
     ///
     /// `DELETE /api/v1/bindings/{binding}`
@@ -2489,11 +2585,11 @@ impl HttpClient {
     }
     /// Download a file
     ///
-    /// Returns the original bytes for an attachment id. The response carries long-lived cache headers because the content never changes. Returns 404 when the attachment does not exist or does not belong to the current user.
+    /// Returns the original bytes for an attachment id, including one removed from the library. The response carries long-lived cache headers because the content never changes. Returns 404 when the attachment does not exist or does not belong to the current user.
     ///
     /// Only an attachment whose `type` is `image` comes back with its own image type and is usable as the address of an `<img>`. Everything else is served as `application/octet-stream` with `Content-Disposition: attachment`, deliberately: an uploaded file is arbitrary bytes under a name its uploader chose, and serving it back inline would run it on this origin.
     ///
-    /// `GET /api/v1/attachments/{attachment}`
+    /// `GET /api/v1/attachments/{attachment}:download`
     pub async fn download_attachment(
         &self,
         attachment: impl AsRef<str>,
@@ -2502,7 +2598,7 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/attachments/{}",
+                "/api/v1/attachments/{}:download",
                 __pct_encode_path_segment(attachment.as_ref())
             )
         );
@@ -2563,11 +2659,11 @@ impl HttpClient {
     }
     /// Download a file
     ///
-    /// Returns the original bytes for an attachment id. The response carries long-lived cache headers because the content never changes. Returns 404 when the attachment does not exist or does not belong to the current user.
+    /// Returns the original bytes for an attachment id, including one removed from the library. The response carries long-lived cache headers because the content never changes. Returns 404 when the attachment does not exist or does not belong to the current user.
     ///
     /// Only an attachment whose `type` is `image` comes back with its own image type and is usable as the address of an `<img>`. Everything else is served as `application/octet-stream` with `Content-Disposition: attachment`, deliberately: an uploaded file is arbitrary bytes under a name its uploader chose, and serving it back inline would run it on this origin.
     ///
-    /// `GET /api/v1/attachments/{attachment}`
+    /// `GET /api/v1/attachments/{attachment}:download`
     ///Select `*/*` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
     pub async fn download_attachment_binary(
         &self,
@@ -2577,7 +2673,7 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/attachments/{}",
+                "/api/v1/attachments/{}:download",
                 __pct_encode_path_segment(attachment.as_ref())
             )
         );
@@ -2781,11 +2877,11 @@ impl HttpClient {
     }
     /// Download a file
     ///
-    /// Returns the original bytes for an attachment id. The response carries long-lived cache headers because the content never changes. Returns 404 when the attachment does not exist or does not belong to the current user.
+    /// Returns the original bytes for an attachment id, including one removed from the library. The response carries long-lived cache headers because the content never changes. Returns 404 when the attachment does not exist or does not belong to the current user.
     ///
     /// Only an attachment whose `type` is `image` comes back with its own image type and is usable as the address of an `<img>`. Everything else is served as `application/octet-stream` with `Content-Disposition: attachment`, deliberately: an uploaded file is arbitrary bytes under a name its uploader chose, and serving it back inline would run it on this origin.
     ///
-    /// `GET /api/v1/attachments/{attachment}`
+    /// `GET /api/v1/attachments/{attachment}:download`
     ///Select `*/*` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
     ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
     pub async fn download_attachment_binary_stream<__Param0: AsRef<str>>(
@@ -2799,7 +2895,7 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/attachments/{}",
+                "/api/v1/attachments/{}:download",
                 __pct_encode_path_segment(attachment.as_ref())
             )
         );
@@ -2982,6 +3078,94 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(DownloadAttachmentApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get a file
+    ///
+    /// Metadata for one attachment. The bytes are at /api/v1/attachments/{attachment}:download.
+    ///
+    /// Returns 404 when the attachment does not exist, does not belong to the current user, or was
+    /// removed from the library. Removed files stay readable through their conversations but are no
+    /// longer described here.
+    ///
+    /// `GET /api/v1/attachments/{attachment}`
+    pub async fn get_attachment(
+        &self,
+        attachment: impl AsRef<str>,
+    ) -> Result<AttachmentFileResource, ApiOpError<GetAttachmentApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/attachments/{}",
+                __pct_encode_path_segment(attachment.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetAttachmentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetAttachmentApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -6239,6 +6423,96 @@ impl HttpClient {
             }))
         }
     }
+    /// Search attachments
+    ///
+    /// The caller's files in this project, most recently uploaded first. These are the files
+    /// uploaded while composing messages, plus uploads that no message has referenced yet.
+    ///
+    /// A file with no message referencing it is a draft: `draftExpiresAt` says when it is cleared.
+    /// Sending a message with the id makes it permanent and that field becomes null.
+    ///
+    /// Files removed from the library are not listed, but conversations that already use them keep
+    /// them and download-by-id still works.
+    ///
+    /// `QUERY /api/v1/attachments`
+    pub async fn search_attachments(
+        &self,
+        request: SearchAttachmentsRequestBody,
+    ) -> Result<AttachmentListResponseBody, ApiOpError<SearchAttachmentsApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/attachments");
+        let mut req = self.http_client.request(
+            reqwest::Method::from_bytes("QUERY".as_bytes()).expect("invalid HTTP method"),
+            request_url,
+        );
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<SearchAttachmentsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(SearchAttachmentsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Search tasks
     ///
     /// The caller's tasks in this project, most recently created first.
@@ -6750,6 +7024,96 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(SubmitWeixinVerifyCodeApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Rename a file
+    ///
+    /// Changes the name shown in the library and given to the assistant. The bytes and the attachment
+    /// id do not change; conversations that already use it see the new name from their next request
+    /// on.
+    ///
+    /// `PATCH /api/v1/attachments/{attachment}`
+    pub async fn update_attachment(
+        &self,
+        attachment: impl AsRef<str>,
+        request: UpdateAttachmentRequestBody,
+    ) -> Result<AttachmentFileResource, ApiOpError<UpdateAttachmentApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/attachments/{}",
+                __pct_encode_path_segment(attachment.as_ref())
+            )
+        );
+        let mut req = self.http_client.patch(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<UpdateAttachmentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(UpdateAttachmentApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
