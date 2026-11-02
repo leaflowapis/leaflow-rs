@@ -1027,13 +1027,19 @@ pub struct DragPolicy {
     /// The participant may drag out of the session.
     #[prost(bool, tag = "2")]
     pub download_allowed: bool,
-    /// The formats that may be dragged, exactly. Empty: none; files travel only
-    /// as offers.
+    /// The formats that may be dragged, exactly, unless all_mime_types_allowed
+    /// is true. Empty with all_mime_types_allowed false: none. Files travel only
+    /// as offers and still need the matching direction of FileTransferPolicy.
     #[prost(string, repeated, tag = "3")]
     pub allowed_mime_types: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     /// The longest a drag may last, at most 5 minutes. Unset or 0: no drags.
     #[prost(message, optional, tag = "4")]
     pub max_duration: ::core::option::Option<::prost_types::Duration>,
+    /// The participant may drag any format the source offers, including private
+    /// application formats. Does not grant a direction or permission to files;
+    /// upload_allowed, download_allowed and FileTransferPolicy still apply.
+    #[prost(bool, tag = "5")]
+    pub all_mime_types_allowed: bool,
 }
 impl ::prost::Name for DragPolicy {
     const NAME: &'static str = "DragPolicy";

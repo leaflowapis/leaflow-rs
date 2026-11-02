@@ -676,6 +676,13 @@ pub struct EndpointCapabilities {
 ///The video parameters this endpoint accepts. Video is asynchronous on every endpoint that supports it. Create returns a task, and the task is polled separately.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VideoCapabilities {
+    ///Continuous duration capability. Mutually exclusive with nonempty seconds.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub duration_range: Option<Option<VideoDurationRange>>,
     ///Resolution tiers the upstream accepts, such as 720p or 1080p. Null means unknown.
     pub resolutions: Option<Vec<String>>,
     ///Durations the upstream accepts, in seconds. Null means unknown.
@@ -688,6 +695,16 @@ pub struct VideoCapabilities {
     pub supports_input_reference: Option<bool>,
     ///Whether a generated video can be remixed into another task. Null means unknown.
     pub supports_remix: Option<bool>,
+}
+///Accepted durations are min + n * step seconds, up to max. Independent of per-second pricing.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VideoDurationRange {
+    ///Constraint: minimum=1
+    pub max: i64,
+    ///Constraint: minimum=1
+    pub min: i64,
+    ///Constraint: minimum=1
+    pub step: i64,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ReasoningCapabilities {
