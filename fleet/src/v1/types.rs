@@ -667,54 +667,6 @@ pub struct ParticipantList {
     pub items: Vec<ParticipantResource>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct McpToolList {
-    pub items: Vec<McpToolResource>,
-    ///Null on the last page
-    pub next_page_token: Option<String>,
-    ///Servers whose tools are missing because they could not be started or reached
-    pub unavailable_servers: Vec<McpUnavailableServer>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct McpUnavailableServer {
-    pub failure: McpServerFailure,
-    pub name: String,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct McpToolResource {
-    ///Its MCP `ToolAnnotations`, such as `readOnlyHint`; hints of the server, not guarantees
-    pub annotations: Option<McpToolResourceAnnotations>,
-    pub description: String,
-    ///The JSON Schema of its arguments
-    pub input_schema: McpToolResourceInputSchema,
-    pub name: String,
-    ///The JSON Schema of its structured result; null when it has none
-    pub output_schema: Option<McpToolResourceOutputSchema>,
-    ///The server that offers it
-    pub server: String,
-    pub title: String,
-}
-///The JSON Schema of its structured result; null when it has none
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct McpToolResourceOutputSchema {
-    /// Additional properties not explicitly defined in the schema
-    #[serde(flatten)]
-    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
-}
-///The JSON Schema of its arguments
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct McpToolResourceInputSchema {
-    /// Additional properties not explicitly defined in the schema
-    #[serde(flatten)]
-    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
-}
-///Its MCP `ToolAnnotations`, such as `readOnlyHint`; hints of the server, not guarantees
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct McpToolResourceAnnotations {
-    /// Additional properties not explicitly defined in the schema
-    #[serde(flatten)]
-    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct McpConfigurationResource {
     pub file: McpConfigurationFile,
     pub servers: Vec<McpServerResource>,

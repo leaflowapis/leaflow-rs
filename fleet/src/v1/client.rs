@@ -532,11 +532,6 @@ pub enum ListMachineRegistrationsApiError {
 pub enum ListMachinesApiError {
     Default(Error),
 }
-///Typed error responses for `list-mcp-tools`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListMcpToolsApiError {
-    Default(Error),
-}
 ///Typed error responses for `list-privilege-auto-approvals`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListPrivilegeAutoApprovalsApiError {
@@ -557,7 +552,7 @@ pub enum ListSessionParticipantsApiError {
 pub enum ListSessionsApiError {
     Default(Error),
 }
-///Typed error responses for `listTools`. One variant per declared non-2xx response.
+///Typed error responses for `list-tools`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListToolsApiError {
     Default(Error),
@@ -906,12 +901,12 @@ impl HttpClient {
     }
     /// Call a live builtin or external MCP tool
     ///
-    /// Uses the same current permissions, directory account and graphical session as listTools.
+    /// Uses the same current permissions, directory account and graphical session as list-tools.
     /// Listing is not a precondition: callers may use a previously discovered ToolRef, and this
     /// operation never sends a discovery request or refreshes schemas before executing it.
     /// A removed tool or MCP server returns TOOL_NOT_FOUND, as does a direct builtin computer.*
     /// call while virtual desktop capability is unavailable. Actual permission errors remain
-    /// permission errors; a missing target window is not a missing tool. Use listTools only when
+    /// permission errors; a missing target window is not a missing tool. Use list-tools only when
     /// discovery or refresh is needed, and do not cache or reuse execution results.
     /// Source is explicit: MCP names never select or impersonate builtin tools. The arguments
     /// object is at most 256 KiB. The complete result is at most 8 MiB in the protobuf transport,
@@ -4346,128 +4341,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListMachinesApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// List the caller's MCP tools on a machine
-    ///
-    /// Lists the tools of the caller's servers on the machine, or of one of them, that match
-    /// `query`: every word of it, ignoring case, in the tool's name, title or description. They
-    /// are ordered by server, then by tool name. Servers that are not running are started to
-    /// learn their tools; one that cannot be is named in `unavailable_servers`, and the others are
-    /// listed anyway. Slow servers do not hold the request up: those still starting are named
-    /// with `timeout` and go on starting, so that a later request lists their tools. Requires
-    /// `fleet:machines.login` on the machine.
-    ///
-    /// Fails with:
-    /// - `MCP_SERVER_NOT_FOUND` when `server` is not configured;
-    /// - `MACHINE_OFFLINE` when the machine is not connected and does not connect again in time;
-    /// - `FEATURE_UNAVAILABLE` when the machine does not offer `leaflow.fleet.mcp.v1`;
-    /// - `USER_NOT_FOUND`, `USER_NOT_ALLOWED`, `ACCOUNT_EXPIRED` or `PAM_PERMISSION_DENIED` when
-    ///   the machine refuses the account, as for opening a session;
-    /// - `MCP_START_FAILED` when the machine could not start MCP for the caller's account;
-    /// - `MACHINE_TIMEOUT` when the machine did not answer in time.
-    ///
-    /// `GET /api/v1/machines/{machineId}/mcp-tools`
-    #[deprecated]
-    pub async fn list_mcp_tools(
-        &self,
-        machine_id: impl AsRef<str>,
-        server: Option<impl AsRef<str>>,
-        query: Option<impl AsRef<str>>,
-        page_size: Option<i64>,
-        page_token: Option<impl AsRef<str>>,
-    ) -> Result<McpToolList, ApiOpError<ListMcpToolsApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/machines/{}/mcp-tools",
-                __pct_encode_path_segment(machine_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = server {
-                query_params.push(("server".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = query {
-                query_params.push(("query".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = page_size {
-                query_params.push(("page_size".to_string(), v.to_string()));
-            }
-            if let Some(v) = page_token {
-                query_params.push(("page_token".to_string(), v.as_ref().to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListMcpToolsApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListMcpToolsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
