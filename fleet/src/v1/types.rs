@@ -188,11 +188,42 @@ pub struct ToolDescriptor {
     ///Untrusted display metadata; never grants authorization
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ToolDescriptorMetadata>,
+    /**The name to call it by. Builtin tools are named computer.*; MCP tools are named
+    `<server>__<tool>`, so a name selects exactly one tool.*/
+    ///Constraint: minLength=1, maxLength=194
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output_schema: Option<ToolDescriptorOutputSchema>,
+    ///Whether the tool is builtin or comes from an MCP server. For filtering only.
+    pub source: ToolDescriptorSource,
     pub title: String,
-    pub tool: ToolRef,
+}
+///Whether the tool is builtin or comes from an MCP server. For filtering only.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ToolDescriptorSource {
+    #[default]
+    #[serde(rename = "builtin")]
+    Builtin,
+    #[serde(rename = "mcp")]
+    Mcp,
+}
+impl ToolDescriptorSource {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Builtin => "builtin",
+            Self::Mcp => "mcp",
+        }
+    }
+}
+impl ::std::fmt::Display for ToolDescriptorSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ToolDescriptorSource {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct ToolDescriptorOutputSchema {
@@ -1697,14 +1728,17 @@ pub struct CallToolRequest {
     ///Constraint: minimum=1, maximum=240
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout_seconds: Option<i64>,
-    pub tool: ToolRef,
+    /**The name from list-tools. Builtin tools are computer.*; MCP tools are
+    `<server>__<tool>`. The name selects the tool; source is not part of the call.*/
+    ///Constraint: minLength=1, maxLength=194
+    pub tool: String,
 }
 impl CallToolRequest {
     /// Construct this request with every required wire field.
     pub fn new(
         arguments: CallToolRequestArguments,
         client_instance_id: uuid::Uuid,
-        tool: ToolRef,
+        tool: String,
     ) -> Self {
         Self {
             arguments,
@@ -1718,7 +1752,7 @@ impl CallToolRequest {
     pub fn builder(
         arguments: CallToolRequestArguments,
         client_instance_id: uuid::Uuid,
-        tool: ToolRef,
+        tool: String,
     ) -> CallToolRequestBuilder {
         CallToolRequestBuilder::new(arguments, client_instance_id, tool)
     }
@@ -1734,7 +1768,7 @@ impl CallToolRequestBuilder {
     pub fn new(
         arguments: CallToolRequestArguments,
         client_instance_id: uuid::Uuid,
-        tool: ToolRef,
+        tool: String,
     ) -> Self {
         Self {
             value: CallToolRequest::new(arguments, client_instance_id, tool),
@@ -1755,42 +1789,6 @@ impl CallToolRequestBuilder {
     /// Finish building the request model.
     pub fn build(self) -> CallToolRequest {
         self.value
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ToolRef {
-    ///Constraint: minLength=1, maxLength=128
-    pub name: String,
-    ///Required only for mcp; forbidden for builtin
-    ///Constraint: minLength=1, maxLength=64
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub server: Option<String>,
-    pub source: ToolRefSource,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ToolRefSource {
-    #[default]
-    #[serde(rename = "builtin")]
-    Builtin,
-    #[serde(rename = "mcp")]
-    Mcp,
-}
-impl ToolRefSource {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Builtin => "builtin",
-            Self::Mcp => "mcp",
-        }
-    }
-}
-impl ::std::fmt::Display for ToolRefSource {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ToolRefSource {
-    fn as_ref(&self) -> &str {
-        self.as_str()
     }
 }
 ///A JSON object, at most 256 KiB when encoded
