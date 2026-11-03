@@ -387,7 +387,7 @@ impl ::prost::Name for DragSourceCancel {
     }
 }
 /// A drag reaches the other side.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct DragStart {
     /// Chosen by the source side, unique on the connection.
     #[prost(string, tag = "1")]

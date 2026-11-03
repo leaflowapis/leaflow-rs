@@ -38,16 +38,13 @@ impl ::prost::Name for FileTransferMessage {
         "type.googleapis.com/leaflow.fleet.filetransfer.v1.FileTransferMessage".into()
     }
 }
-/// Files the sender offers. At most FileTransferPolicy.max_entries entries and
-/// 512 KiB.
-#[derive(Clone, PartialEq, ::prost::Message)]
+/// 文件声明，不携带清单正文。清单通过 FileContentRequest.manifest 按需读取，
+/// 剪贴板、拖拽、文件管理和直接传输都引用同一份连接内声明。
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct FileTransferOffer {
     /// Chosen by the sender, unique on the connection.
     #[prost(string, tag = "1")]
     pub transfer_id: ::prost::alloc::string::String,
-    /// The files and directories. A directory comes before its contents.
-    #[prost(message, repeated, tag = "2")]
-    pub entries: ::prost::alloc::vec::Vec<FileEntry>,
     /// The sum of the regular files' sizes.
     #[prost(uint64, tag = "3")]
     pub total_size_bytes: u64,
@@ -56,6 +53,10 @@ pub struct FileTransferOffer {
     /// user's private transfer directory. Existing files are never overwritten.
     #[prost(string, tag = "4")]
     pub destination_directory: ::prost::alloc::string::String,
+    /// 清单的准确条目数，包含目录，必须大于 0。只受 FileTransferPolicy.max_entries
+    /// 约束；不能按一条控制消息可以容纳多少条目再缩减。
+    #[prost(uint64, tag = "5")]
+    pub entry_count: u64,
 }
 impl ::prost::Name for FileTransferOffer {
     const NAME: &'static str = "FileTransferOffer";
@@ -115,6 +116,12 @@ pub struct FileTransferRequest {
     /// direction of the participant's ClipboardPolicy as well.
     #[prost(bool, tag = "4")]
     pub clipboard: bool,
+    /// 本请求的分片序号，从 0 连续增加。
+    #[prost(uint64, tag = "5")]
+    pub part_index: u64,
+    /// 本请求的最后一片。完整选择到齐后才能确认和读取正文。
+    #[prost(bool, tag = "6")]
+    pub last_part: bool,
 }
 impl ::prost::Name for FileTransferRequest {
     const NAME: &'static str = "FileTransferRequest";
@@ -138,9 +145,15 @@ pub struct FileTransferResponse {
     /// The files the receiver may fetch.
     #[prost(string, repeated, tag = "3")]
     pub file_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    /// Why the sender refused. Unset on success.
+    /// 拒绝原因，仅最后一片可携带。成功时不设置；失败时此前分片不授权读取。
     #[prost(message, optional, tag = "4")]
     pub error: ::core::option::Option<super::super::super::super::google::rpc::Status>,
+    /// 本响应的分片序号，从 0 连续增加。
+    #[prost(uint64, tag = "5")]
+    pub part_index: u64,
+    /// 本响应的最后一片，收到后才生效。
+    #[prost(bool, tag = "6")]
+    pub last_part: bool,
 }
 impl ::prost::Name for FileTransferResponse {
     const NAME: &'static str = "FileTransferResponse";
@@ -170,8 +183,8 @@ impl ::prost::Name for FileTransferCancel {
         "type.googleapis.com/leaflow.fleet.filetransfer.v1.FileTransferCancel".into()
     }
 }
-/// What the receiver stored of an offer. Sent once, when it has fetched
-/// everything it chose, or on failure.
+/// 接收方交付的文件。选择的文件全部完成或发生失败时发送一个逻辑结果，可由多个
+/// 分片组成。只有最后一片到齐后才能发布终态并释放整项传输的来源。
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FileTransferResult {
     /// The transfer.
@@ -180,9 +193,15 @@ pub struct FileTransferResult {
     /// The files verified and stored.
     #[prost(string, repeated, tag = "2")]
     pub file_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    /// Why the rest failed. Unset when nothing failed.
+    /// 其余文件的失败原因，仅最后一片可携带。全部成功时不设置。
     #[prost(message, optional, tag = "3")]
     pub error: ::core::option::Option<super::super::super::super::google::rpc::Status>,
+    /// 本结果的分片序号，从 0 连续增加。
+    #[prost(uint64, tag = "4")]
+    pub part_index: u64,
+    /// 本结果的最后一片，收到后才生效。
+    #[prost(bool, tag = "5")]
+    pub last_part: bool,
 }
 impl ::prost::Name for FileTransferResult {
     const NAME: &'static str = "FileTransferResult";
@@ -194,16 +213,33 @@ impl ::prost::Name for FileTransferResult {
         "type.googleapis.com/leaflow.fleet.filetransfer.v1.FileTransferResult".into()
     }
 }
-/// Asks for the content of one regular file the sender confirmed. The only
-/// message the opener of a content channel sends.
+/// 请求声明的清单或已确认的一个普通文件。这是 content 通道发起方发送的唯一消息。
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct FileContentRequest {
     /// The transfer.
     #[prost(string, tag = "1")]
     pub transfer_id: ::prost::alloc::string::String,
-    /// The file.
-    #[prost(string, tag = "2")]
-    pub file_id: ::prost::alloc::string::String,
+    /// 必须选择一项，不能以空文件 id 代指清单。
+    #[prost(oneof = "file_content_request::Content", tags = "2, 3")]
+    pub content: ::core::option::Option<file_content_request::Content>,
+}
+/// Nested message and enum types in `FileContentRequest`.
+pub mod file_content_request {
+    /// 必须选择一项，不能以空文件 id 代指清单。
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Content {
+        /// 已确认的普通文件的 id。
+        #[prost(string, tag = "2")]
+        FileId(::prost::alloc::string::String),
+        /// 必须为 true。清单是逐条 FileEntry 的 protobuf 长度前缀编码：每条先发送
+        /// protobuf varint 长度，再发送该 FileEntry 的编码字节；目录先于其内容。
+        /// FileContent.data 可在任意字节处拆分，包括长度前缀和单个条目内部。
+        /// 接收方递增校验条目 id、父目录、名称和类型，最后核对 entry_count、
+        /// total_size_bytes 和 FileContentEnd.sha256。摘要覆盖全部长度前缀和条目字节。
+        /// 清单读取成功仅确认元数据，不选择文件、不发送 FileTransferResult。
+        #[prost(bool, tag = "3")]
+        Manifest(bool),
+    }
 }
 impl ::prost::Name for FileContentRequest {
     const NAME: &'static str = "FileContentRequest";
@@ -215,7 +251,7 @@ impl ::prost::Name for FileContentRequest {
         "type.googleapis.com/leaflow.fleet.filetransfer.v1.FileContentRequest".into()
     }
 }
-/// Part of a file's content, from the source.
+/// 来源发送的文件正文或清单字节。
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FileContent {
     /// The part.
@@ -245,8 +281,8 @@ impl ::prost::Name for FileContent {
         "type.googleapis.com/leaflow.fleet.filetransfer.v1.FileContent".into()
     }
 }
-/// The end of a file. The receiver checks the size and the digest before
-/// storing it.
+/// 文件正文或清单的结束。接收方校验摘要，并核对文件长度或清单条目及总大小，
+/// 校验通过后才交付。
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FileContentEnd {
     /// SHA-256 of the whole content, 32 bytes. Empty with error.
@@ -524,7 +560,7 @@ impl ::prost::Name for CreateFileOfferRequest {
     }
 }
 /// The response of CreateFileOffer.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CreateFileOfferResponse {
     /// The offer, also valid on the filetransfer channel.
     #[prost(message, optional, tag = "1")]
@@ -554,8 +590,8 @@ pub struct FileTransferPolicy {
     /// The participant may use FileSystemService and choose where uploads go.
     #[prost(bool, tag = "3")]
     pub file_system_allowed: bool,
-    /// The most entries, directories included, of one offer. 0: as many as one
-    /// offer holds.
+    /// 一份声明最多可含的条目数，包含目录。0 表示不限制；不能再按控制消息大小设置
+    /// 额外的条目数上限。清单通过受通道额度约束的 content 流读取。
     #[prost(uint32, tag = "4")]
     pub max_entries: u32,
 }
