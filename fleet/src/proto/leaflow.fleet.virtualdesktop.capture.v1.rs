@@ -26,6 +26,9 @@ pub struct CaptureScreenshotRequest {
     pub max_height: u32,
     /// The image format: "image/png" (W3C PNG), "image/jpeg" (ISO/IEC 10918-1)
     /// or "image/webp" (RFC 9649). Empty: the session chooses.
+    /// PNG/WebP 保留单窗口及弹层合成的透明度，包括 Shape 区域外的透明像素；
+    /// 画布没有窗口的区域仍为不透明黑色。JPEG 仅适用于实际不透明的合成结果；
+    /// 否则返回 INVALID_ARGUMENT / IMAGE_FORMAT_LOSES_TRANSPARENCY，不静默丢失 alpha。
     #[prost(string, tag = "6")]
     pub mime_type: ::prost::alloc::string::String,
     /// The quality of a lossy format, 1 to 100. 0: the session's default.
@@ -97,7 +100,7 @@ impl ::prost::Name for CaptureScreenshotResponse {
     }
 }
 /// A window in a capture.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CapturedWindow {
     /// The window.
     #[prost(uint64, tag = "1")]
@@ -108,6 +111,15 @@ pub struct CapturedWindow {
     /// Its Window.resize_counter when captured.
     #[prost(uint64, tag = "3")]
     pub resize_counter: u64,
+    /// 捕获时的 Window.shape_counter，供依赖截图的动作拒绝过期区域状态。
+    #[prost(uint64, tag = "4")]
+    pub shape_counter: u64,
+    /// 捕获时的窗口局部 X Shape 区域，presence 含义与 Window 相同；geometry 则仍在
+    /// 整张截图的原始坐标空间。不能把相对窗口的区域直接当作画布或缩放后图像坐标。
+    #[prost(message, optional, tag = "5")]
+    pub bounding_region: ::core::option::Option<super::super::display::v1::Region>,
+    #[prost(message, optional, tag = "6")]
+    pub input_region: ::core::option::Option<super::super::display::v1::Region>,
 }
 impl ::prost::Name for CapturedWindow {
     const NAME: &'static str = "CapturedWindow";

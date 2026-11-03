@@ -190,6 +190,24 @@ impl ::prost::Name for Size {
         "type.googleapis.com/leaflow.fleet.virtualdesktop.display.v1.Size".into()
     }
 }
+/// 矩形的并集，遵循 X Shape/XFixes region 语义；矩形重叠不重复计入。
+/// 字段声明其坐标空间。作为可选消息使用时，未设置与设置为空有不同含义，接收方
+/// 必须保留 presence，不能把明确的空区域还原成默认矩形。
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Region {
+    #[prost(message, repeated, tag = "1")]
+    pub rectangles: ::prost::alloc::vec::Vec<Rectangle>,
+}
+impl ::prost::Name for Region {
+    const NAME: &'static str = "Region";
+    const PACKAGE: &'static str = "leaflow.fleet.virtualdesktop.display.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.virtualdesktop.display.v1.Region".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.virtualdesktop.display.v1.Region".into()
+    }
+}
 /// A point in pixels (X11 x, y). The field that holds it states the coordinate
 /// space.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]

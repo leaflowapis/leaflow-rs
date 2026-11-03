@@ -468,10 +468,26 @@ pub struct Authorization {
     /// session's clock.
     #[prost(message, optional, tag = "13")]
     pub issued_at: ::core::option::Option<::prost_types::Timestamp>,
-    /// When it ends. The session refuses it, and ends the participant's
-    /// connection, once this time and 5 more minutes have passed.
+    /// 普通 WebRTC 授权保留 5 分钟时钟宽限；control_only 授权最多在 issued_at
+    /// 的 15 分钟后到期，且在此时刻立即失效，没有到期宽限。会话拒绝新调用、
+    /// 取消进行中的调用并释放其输入/租约，不能因未建连接而不清理。
     #[prost(message, optional, tag = "14")]
     pub expires_at: ::core::option::Option<::prost_types::Timestamp>,
+    /// 仅允许 Fleet 经此会话 control 转发工具调用，不允许建立 PeerConnection。
+    /// true 时 participant_public_key 必须为空，身份由平台已认证的调用者及签名授权
+    /// 确立；不能伪造一个 WebRTC Connection 或声称已完成持钥握手。false 保持原有
+    /// WebRTC 参与者规则，要求 32 字节公钥及 transport Hello 持钥证明。
+    #[prost(bool, tag = "15")]
+    pub control_only: bool,
+    /// control_only 时必填的客户端实例 UUID，区别同一用户的并发调用方；由客户端
+    /// 创建并由服务绑定进授权，不是身份凭据，也不按 client_name 的展示标签授权。
+    /// 该运行身份无需工具目录/结果数据库或缓存；公开 API 仍逐次认证并校验权限。
+    /// 旧授权到期或调用者结束后，同一实例的新有效签名授权可以重新准入，但其
+    /// issued_at 必须严格高于此身份已接受的高水位，身份/权限仍须一致，且旧执行
+    /// 已完全退出。过期或旧签名不得重放；旧调用的取消、计时器和清理不能作用于
+    /// 新执行代际。安全状态须有界并按最长授权有效期回收，不能永久耗尽实例额度。
+    #[prost(string, tag = "16")]
+    pub client_instance_id: ::prost::alloc::string::String,
 }
 impl ::prost::Name for Authorization {
     const NAME: &'static str = "Authorization";

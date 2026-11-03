@@ -142,6 +142,93 @@ pub struct UpdateAccountRequest {
     pub username: Option<DirectoryName>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolList {
+    pub items: Vec<ToolDescriptor>,
+    pub next_page_token: String,
+    pub session_id: String,
+    pub unavailable_sources: Vec<ToolListUnavailableSourcesItem>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolListUnavailableSourcesItem {
+    pub code: i64,
+    pub mcp_server: String,
+    pub reason: String,
+    pub source: ToolListUnavailableSourcesItemSource,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ToolListUnavailableSourcesItemSource {
+    #[default]
+    #[serde(rename = "builtin")]
+    Builtin,
+    #[serde(rename = "mcp")]
+    Mcp,
+}
+impl ToolListUnavailableSourcesItemSource {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Builtin => "builtin",
+            Self::Mcp => "mcp",
+        }
+    }
+}
+impl ::std::fmt::Display for ToolListUnavailableSourcesItemSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ToolListUnavailableSourcesItemSource {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolDescriptor {
+    pub description: String,
+    pub input_schema: ToolDescriptorInputSchema,
+    ///Untrusted display metadata; never grants authorization
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<ToolDescriptorMetadata>,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_schema: Option<ToolDescriptorOutputSchema>,
+    pub title: String,
+    pub tool: ToolRef,
+}
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolDescriptorOutputSchema {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+///Untrusted display metadata; never grants authorization
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolDescriptorMetadata {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolDescriptorInputSchema {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolActivityList {
+    ///Constraint: maxItems=64
+    pub items: Vec<ToolActivityListItemsItem>,
+}
+/**ToolActivity in protobuf JSON with original field names. Includes session_id,
+participant_id, operation_id, instance_id, sequence, observed_at, phase, action and
+optional target (window_id, position x/y, resize_counter, shape_counter). All uint64
+values are decimal strings. No input text, key values, arguments or image data.*/
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolActivityListItemsItem {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SessionList {
     pub items: Vec<SessionResource>,
     ///Constraint: minimum=1
@@ -1540,6 +1627,227 @@ pub struct CreateGroupRequest {
 }
 ///A username or a group name, as useradd(8) and groupadd(8) accept it
 pub type DirectoryName = String;
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CallToolResponse {
+    pub content: Vec<ToolContent>,
+    pub is_error: bool,
+    ///Untrusted result extensions such as MCP _meta, without duplicated content or images
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<CallToolResponseMetadata>,
+    pub operation_id: String,
+    pub session_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub structured_content: Option<CallToolResponseStructuredContent>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct CallToolResponseStructuredContent {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+///Untrusted result extensions such as MCP _meta, without duplicated content or images
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct CallToolResponseMetadata {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+///Exactly one of text, image or json is present
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolContent {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image: Option<ToolImage>,
+    ///An unrecognized external content block, preserved as data
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub json: Option<ToolContentJson>,
+    ///Untrusted content extensions such as MCP annotations or _meta, without duplicated body or image data
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<ToolContentMetadata>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+}
+///Untrusted content extensions such as MCP annotations or _meta, without duplicated body or image data
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolContentMetadata {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+///An unrecognized external content block, preserved as data
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolContentJson {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolImage {
+    ///Base64 of Agent's original encoded image bytes, never a URL
+    pub data: String,
+    ///Constraint: minimum=1
+    pub height: i64,
+    pub mime_type: ToolImageMimeType,
+    /**ScreenshotContext in protobuf JSON with original field names: reference, window_id,
+    area, windows (including resize_counter and shape_counter), captured_at, revision,
+    quiet. uint64 values are decimal strings to preserve precision. Images do not change
+    this original geometry. The opaque reference binds coordinate actions to this capture.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub screenshot: Option<ToolImageScreenshot>,
+    ///Constraint: minimum=1
+    pub width: i64,
+}
+/**ScreenshotContext in protobuf JSON with original field names: reference, window_id,
+area, windows (including resize_counter and shape_counter), captured_at, revision,
+quiet. uint64 values are decimal strings to preserve precision. Images do not change
+this original geometry. The opaque reference binds coordinate actions to this capture.*/
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolImageScreenshot {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ToolImageMimeType {
+    #[default]
+    #[serde(rename = "image/png")]
+    ImagePng,
+    #[serde(rename = "image/jpeg")]
+    ImageJpeg,
+    #[serde(rename = "image/webp")]
+    ImageWebp,
+}
+impl ToolImageMimeType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::ImagePng => "image/png",
+            Self::ImageJpeg => "image/jpeg",
+            Self::ImageWebp => "image/webp",
+        }
+    }
+}
+impl ::std::fmt::Display for ToolImageMimeType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ToolImageMimeType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CallToolRequest {
+    ///A JSON object, at most 256 KiB when encoded
+    pub arguments: CallToolRequestArguments,
+    pub client_instance_id: uuid::Uuid,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub read_only: Option<bool>,
+    ///Constraint: minimum=1, maximum=240
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout_seconds: Option<i64>,
+    pub tool: ToolRef,
+}
+impl CallToolRequest {
+    /// Construct this request with every required wire field.
+    pub fn new(
+        arguments: CallToolRequestArguments,
+        client_instance_id: uuid::Uuid,
+        tool: ToolRef,
+    ) -> Self {
+        Self {
+            arguments,
+            client_instance_id,
+            tool,
+            read_only: None,
+            timeout_seconds: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(
+        arguments: CallToolRequestArguments,
+        client_instance_id: uuid::Uuid,
+        tool: ToolRef,
+    ) -> CallToolRequestBuilder {
+        CallToolRequestBuilder::new(arguments, client_instance_id, tool)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct CallToolRequestBuilder {
+    value: CallToolRequest,
+}
+impl CallToolRequestBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(
+        arguments: CallToolRequestArguments,
+        client_instance_id: uuid::Uuid,
+        tool: ToolRef,
+    ) -> Self {
+        Self {
+            value: CallToolRequest::new(arguments, client_instance_id, tool),
+        }
+    }
+    #[doc = concat!("Set the optional `", "read_only", "` request field.")]
+    #[must_use]
+    pub fn read_only(mut self, read_only: bool) -> Self {
+        self.value.read_only = Some(read_only);
+        self
+    }
+    #[doc = concat!("Set the optional `", "timeout_seconds", "` request field.")]
+    #[must_use]
+    pub fn timeout_seconds(mut self, timeout_seconds: i64) -> Self {
+        self.value.timeout_seconds = Some(timeout_seconds);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> CallToolRequest {
+        self.value
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolRef {
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
+    ///Required only for mcp; forbidden for builtin
+    ///Constraint: minLength=1, maxLength=64
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub server: Option<String>,
+    pub source: ToolRefSource,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ToolRefSource {
+    #[default]
+    #[serde(rename = "builtin")]
+    Builtin,
+    #[serde(rename = "mcp")]
+    Mcp,
+}
+impl ToolRefSource {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Builtin => "builtin",
+            Self::Mcp => "mcp",
+        }
+    }
+}
+impl ::std::fmt::Display for ToolRefSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ToolRefSource {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///A JSON object, at most 256 KiB when encoded
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct CallToolRequestArguments {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CallMcpToolResponse {
     ///The tool's MCP `CallToolResult`, with `content`, `structuredContent` and `isError`

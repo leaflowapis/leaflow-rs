@@ -106,6 +106,11 @@ pub mod leaflow {
                 include!("leaflow.fleet.terminal.v1.rs");
             }
         }
+        pub mod tool {
+            pub mod v1 {
+                include!("leaflow.fleet.tool.v1.rs");
+            }
+        }
         pub mod transport {
             pub mod v1 {
                 include!("leaflow.fleet.transport.v1.rs");
