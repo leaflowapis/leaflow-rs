@@ -345,11 +345,102 @@ impl ::prost::Name for ListApplicationsResponse {
             .into()
     }
 }
-/// The request of LaunchApplication.
+/// The request of Open. The session resolves one object; callers do not need
+/// to choose an executable-versus-document mode. Permission and lease checks
+/// are the same as for launching or opening through ApplicationService.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct OpenRequest {
+    /// One absolute local path, absolute URI, or installed desktop file ID.
+    /// Paths are canonicalized; NUL, relative paths and parent-directory path
+    /// components are invalid. Local paths are limited to 4096 UTF-8 bytes,
+    /// desktop IDs to 1024 and the complete target to 8192.
+    /// Executable programs, including AppImages and native binaries, are run
+    /// directly; ordinary documents and folders open in their default handler.
+    /// File classification uses the filesystem and MIME information, not an
+    /// application-name or filename-extension allowlist. An executable bit on
+    /// an otherwise ordinary document does not turn its content into code.
+    /// Empty: OPEN_TARGET_REQUIRED. Invalid: OPEN_TARGET_INVALID. Missing local
+    /// objects: FILE_NOT_FOUND. Unknown desktop IDs: APPLICATION_NOT_FOUND.
+    /// Error details identify field=target and the concrete issue.
+    #[prost(string, tag = "1")]
+    pub target: ::prost::alloc::string::String,
+    /// Program arguments after argv\[0\], passed unchanged without shell expansion,
+    /// interpolation or joining. At most 256 arguments, each at most 8192 UTF-8
+    /// bytes, and at most 65536 bytes together; NUL is invalid. A malformed vector
+    /// fails with OPEN_ARGUMENTS_INVALID and identifies its index or size limit.
+    /// Arguments on a document, directory, URI handler or desktop entry fail with
+    /// OPEN_OPTIONS_NOT_APPLICABLE; they are never silently ignored.
+    #[prost(string, repeated, tag = "2")]
+    pub arguments: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// An action of a desktop entry. Not valid for other target kinds.
+    #[prost(string, tag = "3")]
+    pub action_id: ::prost::alloc::string::String,
+    /// Files or URLs supplied to a desktop entry's Exec field codes. Not valid
+    /// for other target kinds; document open uses target instead.
+    #[prost(string, repeated, tag = "4")]
+    pub uris: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// The same trust decision as OpenUri. Unspecified never approves an
+    /// untrusted desktop launcher on behalf of the person.
+    #[prost(enumeration = "LauncherConfirmation", tag = "5")]
+    pub launcher_confirmation: i32,
+}
+impl ::prost::Name for OpenRequest {
+    const NAME: &'static str = "OpenRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.virtualdesktop.application.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.virtualdesktop.application.v1.OpenRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.virtualdesktop.application.v1.OpenRequest"
+            .into()
+    }
+}
+/// Open was accepted. The started application belongs to the session, not this
+/// call: cancelling, timing out or disconnecting never terminates it. Session
+/// lifetime and explicit termination still apply. Waiting for a matched window
+/// is bounded (at most 30 seconds for StartupNotify, otherwise 5 seconds).
+/// No matched window is a successful result, not a reason to repeat Open: an
+/// application may still be starting, have no window, or reuse another process.
+/// A registered alternative handler may be tried only when the previous handler
+/// was definitely not started. Missing associations fail with
+/// URI_HANDLER_NOT_FOUND and report the detected MIME and bounded candidate
+/// desktop IDs when known. A spawn failure or nonzero startup exit fails with
+/// APPLICATION_START_FAILED, with stage, started, pid and exit status when
+/// known. Started or uncertain failures must not be automatically replayed.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct OpenResponse {
+    /// The startup notification ID, when one was used.
+    #[prost(string, tag = "1")]
+    pub startup_id: ::prost::alloc::string::String,
+    /// The matched window; unset when none was observed or required.
+    #[prost(uint64, optional, tag = "2")]
+    pub window_id: ::core::option::Option<u64>,
+    /// The session revision at which the request was accepted or wait ended.
+    #[prost(uint64, tag = "3")]
+    pub revision: u64,
+    /// The initial process actually spawned. Unset for activation of an existing
+    /// handler without an observable spawn; never guessed from an unrelated
+    /// window. This is not necessarily the eventual window-owning process.
+    #[prost(uint32, optional, tag = "4")]
+    pub pid: ::core::option::Option<u32>,
+}
+impl ::prost::Name for OpenResponse {
+    const NAME: &'static str = "OpenResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.virtualdesktop.application.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.virtualdesktop.application.v1.OpenResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.virtualdesktop.application.v1.OpenResponse"
+            .into()
+    }
+}
+/// The request of LaunchApplication, for a menu entry or its action.
+/// Open accepts general paths and URIs.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct LaunchApplicationRequest {
-    /// The application. An unknown one, or one whose TryExec fails, fails with
-    /// NOT_FOUND.
+    /// The application. An unknown entry, or one whose TryExec fails, fails with
+    /// NOT_FOUND and reason APPLICATION_NOT_FOUND.
     #[prost(string, tag = "1")]
     pub desktop_file_id: ::prost::alloc::string::String,
     /// An ApplicationAction.action_id to run instead of the application. Empty:
@@ -373,10 +464,16 @@ impl ::prost::Name for LaunchApplicationRequest {
             .into()
     }
 }
-/// The response of LaunchApplication. When the program exits with a failure
-/// before showing a window the call fails with ABORTED; when no window appears
-/// within 30 seconds (StartupNotify) or 5 seconds (otherwise) it fails with
-/// DEADLINE_EXCEEDED, though the program may still be running.
+/// The response of LaunchApplication. A spawned application belongs to the
+/// session, not to this RPC: cancelling, timing out or disconnecting this call
+/// never terminates the application. Session lifetime and explicit termination
+/// still apply. A spawn failure, or a nonzero exit before a window appears,
+/// fails with reason APPLICATION_START_FAILED; metadata distinguishes whether
+/// a process was already started and its pid when known. Do not blindly retry.
+/// When no window appears within the bounded startup wait (at most 30 seconds
+/// for StartupNotify, otherwise 5 seconds), the call succeeds with no window_id;
+/// this is not a failed launch and must not trigger another launch. The program
+/// may still be starting, forward to an existing instance, or have no window.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct LaunchApplicationResponse {
     /// The startup notification ID given to the program (DESKTOP_STARTUP_ID).
@@ -389,6 +486,12 @@ pub struct LaunchApplicationResponse {
     /// The session revision at which the startup sequence ended.
     #[prost(uint64, tag = "3")]
     pub revision: u64,
+    /// The initial process spawned for this launch. It may exit after forwarding
+    /// to another process; it is not necessarily the process owning window_id.
+    /// Unset when activation happened without an observable spawned process,
+    /// such as D-Bus activation.
+    #[prost(uint32, optional, tag = "4")]
+    pub pid: ::core::option::Option<u32>,
 }
 impl ::prost::Name for LaunchApplicationResponse {
     const NAME: &'static str = "LaunchApplicationResponse";
@@ -441,6 +544,10 @@ pub struct OpenUriResponse {
     /// The session revision at which the startup sequence ended.
     #[prost(uint64, tag = "3")]
     pub revision: u64,
+    /// The initial spawned process, when one was observable. Unset for a
+    /// successful request handled by an existing application over D-Bus.
+    #[prost(uint32, optional, tag = "4")]
+    pub pid: ::core::option::Option<u32>,
 }
 impl ::prost::Name for OpenUriResponse {
     const NAME: &'static str = "OpenUriResponse";
@@ -669,6 +776,7 @@ impl LauncherConfirmation {
 pub mod application_service {
     pub const NAME: &str = "leaflow.fleet.virtualdesktop.application.v1.ApplicationService";
     pub const LIST_APPLICATIONS: &str = "/leaflow.fleet.virtualdesktop.application.v1.ApplicationService/ListApplications";
+    pub const OPEN: &str = "/leaflow.fleet.virtualdesktop.application.v1.ApplicationService/Open";
     pub const LAUNCH_APPLICATION: &str = "/leaflow.fleet.virtualdesktop.application.v1.ApplicationService/LaunchApplication";
     pub const OPEN_URI: &str = "/leaflow.fleet.virtualdesktop.application.v1.ApplicationService/OpenUri";
     pub const LIST_PROCESSES: &str = "/leaflow.fleet.virtualdesktop.application.v1.ApplicationService/ListProcesses";
