@@ -151,6 +151,11 @@ pub struct Participant {
     /// Neither unique nor verified: it lets people tell participants apart.
     #[prost(string, tag = "5")]
     pub client_name: ::prost::alloc::string::String,
+    /// 通过 Fleet 转发工具调用的真实控制调用者，没有 WebRTC Connection/ClientHello，
+    /// 不发送帧、不提供 viewport、不成为 driver。仍有可见身份、权限和输入 lease；
+    /// 不能当作已在 Fleet 原生参与者数据库登记的连接。
+    #[prost(bool, tag = "6")]
+    pub control_only: bool,
 }
 impl ::prost::Name for Participant {
     const NAME: &'static str = "Participant";

@@ -234,6 +234,20 @@ pub struct Window {
     /// none.
     #[prost(message, optional, tag = "26")]
     pub requested_position: ::core::option::Option<super::super::display::v1::Point>,
+    /// X Shape Bounding，窗口客户区局部像素坐标。未设置：已知为默认完整矩形；设置
+    /// 为空：没有可见区域。有效可见区域为它与客户区范围的交集，不改变 geometry。
+    /// 捕获与合成必须将外部像素视为透明，不能把 backing 中的存储当作可见内容。
+    #[prost(message, optional, tag = "27")]
+    pub bounding_region: ::core::option::Option<super::super::display::v1::Region>,
+    /// X Shape Input，同一局部坐标。未设置：默认客户区范围；设置为空：全部输入透传。
+    /// 实际输入区域还须与 bounding_region 及客户区范围求交。输入透明窗口仍可显示，
+    /// 不能仅因它不接收输入而丢弃其图像，也不能只按 geometry 阻挡下面的窗口。
+    #[prost(message, optional, tag = "28")]
+    pub input_region: ::core::option::Option<super::super::display::v1::Region>,
+    /// 区域状态的代际。支持上述区域的实现从 1 开始，区域变化递增，不复用窗口的
+    /// resize_counter。0 表示旧实现未提供。形状改变本身不能伪造一次尺寸确认。
+    #[prost(uint64, tag = "29")]
+    pub shape_counter: u64,
 }
 impl ::prost::Name for Window {
     const NAME: &'static str = "Window";

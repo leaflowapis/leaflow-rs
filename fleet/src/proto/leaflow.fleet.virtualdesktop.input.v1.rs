@@ -535,6 +535,11 @@ pub struct Point {
     /// reason WINDOW_RESIZED, before anything happens. 0: not checked.
     #[prost(uint64, tag = "4")]
     pub resize_counter: u64,
+    /// 调用者观察到的 Window.shape_counter。非零且已改变时，在任何输入执行前返回
+    /// FAILED_PRECONDITION，reason WINDOW_SHAPE_CHANGED；0 不做此代际检查。无论是否
+    /// 提供代际，输入命中都必须遵守当前的有效 Input/Bounding 区域，不能只看外接框。
+    #[prost(uint64, tag = "5")]
+    pub shape_counter: u64,
 }
 impl ::prost::Name for Point {
     const NAME: &'static str = "Point";
