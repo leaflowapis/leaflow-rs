@@ -395,8 +395,10 @@ pub struct DragStart {
     /// The session window the drag came from. 0 for a drag of the participant.
     #[prost(uint64, tag = "2")]
     pub source_window_id: u64,
-    /// The formats the source provides, most faithful first, at most 32 unique
-    /// ones of at most 255 bytes each.
+    /// The formats the source provides, most faithful first. Names are non-empty,
+    /// distinct media types without control characters. Do not truncate the list
+    /// or its names; the channel's message framing applies to the declaration,
+    /// while format data is read on demand over the data channel.
     #[prost(string, repeated, tag = "3")]
     pub mime_types: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     /// The actions the source allows, most preferred first.
