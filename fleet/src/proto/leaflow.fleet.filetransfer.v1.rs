@@ -183,8 +183,10 @@ impl ::prost::Name for FileTransferCancel {
         "type.googleapis.com/leaflow.fleet.filetransfer.v1.FileTransferCancel".into()
     }
 }
-/// 接收方交付的文件。选择的文件全部完成或发生失败时发送一个逻辑结果，可由多个
-/// 分片组成。只有最后一片到齐后才能发布终态并释放整项传输的来源。
+/// 接收方交付的文件。选择的条目均已保存或明确跳过，或发生失败时发送一个逻辑结果，
+/// 可由多个分片组成。只有最后一片到齐后才能发布终态并释放整项传输的来源。
+/// 无错误时，已保存与已跳过条目的并集必须等于已确认的选择；两者不能重复或相交。
+/// 跳过不表示传输或校验成功，也不属于失败。
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FileTransferResult {
     /// The transfer.
@@ -193,7 +195,7 @@ pub struct FileTransferResult {
     /// The files verified and stored.
     #[prost(string, repeated, tag = "2")]
     pub file_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    /// 其余文件的失败原因，仅最后一片可携带。全部成功时不设置。
+    /// 未完成条目的失败原因，仅最后一片可携带。正常结束（包括跳过）时不设置。
     #[prost(message, optional, tag = "3")]
     pub error: ::core::option::Option<super::super::super::super::google::rpc::Status>,
     /// 本结果的分片序号，从 0 连续增加。
@@ -202,6 +204,10 @@ pub struct FileTransferResult {
     /// 本结果的最后一片，收到后才生效。
     #[prost(bool, tag = "5")]
     pub last_part: bool,
+    /// 接收端明确跳过的条目。只可包含已确认选择的 id；不计为已传输、已校验或已保存。
+    /// 可在任意结果分片中携带，必须与 file_ids 一起等末片到齐后再结算。
+    #[prost(string, repeated, tag = "6")]
+    pub skipped_file_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 impl ::prost::Name for FileTransferResult {
     const NAME: &'static str = "FileTransferResult";
