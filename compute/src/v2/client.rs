@@ -9926,6 +9926,8 @@ impl HttpClient {
     ///
     /// In rescue mode, everything only the instance's own system can take is refused with 409 `INSTANCE_UNRESCUE_REQUIRED`: starting, stopping, rebooting, rebuilding, resetting the password, changing `instance_type_id`, attaching or detaching volumes and network interfaces, capturing a private image and running commands. Leave rescue mode with `:unrescue` first. The console stays available, releasing the instance works as usual, and the instance is charged as when running. A suspension that begins in rescue mode takes the instance out of rescue before stopping it, and starting it again once the suspension ends boots its own system.
     ///
+    /// The rescue environment does not accept passwords. The remote console signs in as `login_username` automatically, and SSH accepts `login_username` with the public keys the instance was created or last rebuilt with.
+    ///
     /// A rescue the compute service could not boot leaves the instance as it was, or in `error`; request it again or reboot the instance.
     ///
     /// The request does not name an image. The rescue image is the region's enabled rescue image for the architecture of the instance's boot volume. A region and architecture with no enabled rescue image is refused with `RESCUE_IMAGE_NOT_CONFIGURED` (409).
@@ -9934,7 +9936,6 @@ impl HttpClient {
     pub async fn rescue_instance(
         &self,
         instance_id: impl AsRef<str>,
-        request: RescueInstanceRequestBody,
     ) -> Result<RescueInstanceResponseBody, ApiOpError<RescueInstanceApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9945,9 +9946,7 @@ impl HttpClient {
             )
         );
         let mut req = self.http_client.post(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
+        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }

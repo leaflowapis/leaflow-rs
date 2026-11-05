@@ -477,7 +477,7 @@ pub struct CreateApplicationRequestBody {
     pub name: String,
     ///Constraint: minItems=1, maxItems=10
     pub redirect_uris: Vec<String>,
-    ///The scopes the application may request. Omitted means the defaults, `profile` and `email`; a scope not in the platform's list is refused
+    ///The scopes the application may request. Omitted means the defaults, `profile` and `email`; a scope not in the platform's list is refused. `profile` and `email` are granted at every sign-in, and any other scope only when the authorization request names it explicitly
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scopes: Option<Vec<String>>,
     pub r#type: CreateApplicationRequestBodyType,
