@@ -339,6 +339,11 @@ pub enum AcceptInvitationApiError {
 pub enum AcceptInvitationByTokenApiError {
     Default(Error),
 }
+///Typed error responses for `authorize-application`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum AuthorizeApplicationApiError {
+    Default(Error),
+}
 ///Typed error responses for `cancel-account-deletion`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CancelAccountDeletionApiError {
@@ -367,6 +372,11 @@ pub enum GetAccountApiError {
 ///Typed error responses for `get-account-deletion`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetAccountDeletionApiError {
+    Default(Error),
+}
+///Typed error responses for `get-application`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetApplicationApiError {
     Default(Error),
 }
 ///Typed error responses for `get-identity-verification`. One variant per declared non-2xx response.
@@ -402,6 +412,11 @@ pub enum GetSshKeyApiError {
 ///Typed error responses for `list-agreements`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListAgreementsApiError {
+    Default(Error),
+}
+///Typed error responses for `list-authorized-applications`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListAuthorizedApplicationsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-consents`. One variant per declared non-2xx response.
@@ -447,6 +462,11 @@ pub enum RenameSshKeyApiError {
 ///Typed error responses for `request-account-deletion`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum RequestAccountDeletionApiError {
+    Default(Error),
+}
+///Typed error responses for `revoke-authorized-application`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum RevokeAuthorizedApplicationApiError {
     Default(Error),
 }
 ///Typed error responses for `revoke-ssh-key`. One variant per declared non-2xx response.
@@ -717,6 +737,93 @@ impl HttpClient {
             }))
         }
     }
+    /// Authorize an application to act in a project
+    ///
+    /// Permits the application to exchange the access tokens of this account for scoped tokens of the project. Within the project, the application then holds exactly the permissions of this account and none beyond them.
+    ///
+    /// The caller must be a member of the project. Repeating the request returns the existing authorization. Authorizing a disabled application fails with 412 `APPLICATION_DISABLED`.
+    ///
+    /// An access token issued to an application is rejected, so that an application cannot authorize itself.
+    ///
+    /// `POST /account/v1/me/authorized-applications`
+    pub async fn authorize_application(
+        &self,
+        request: AuthorizeApplicationRequestBody,
+    ) -> Result<AuthorizedApplicationResource, ApiOpError<AuthorizeApplicationApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url, "/account/v1/me/authorized-applications"
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 201u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "201",
+                )),
+            }))
+        } else {
+            let typed: Option<AuthorizeApplicationApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(AuthorizeApplicationApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Cancel the deletion of the current account
     ///
     /// Returns the account to use. Cancelling when no deletion is open returns `state` `none`. Fails with 409 `ACCOUNT_DELETION_NOT_CANCELLABLE` once `scheduled_at` has passed.
@@ -892,6 +999,8 @@ impl HttpClient {
     /// A scoped token states identity only — the user and the project — and **carries no permissions**. Permissions are evaluated on every request, so a change of role takes effect immediately rather than at the next expiry.
     ///
     /// A project that is suspended, banned or being deleted still issues tokens; those states restrict writes, and the project remains readable.
+    ///
+    /// An access token issued to an application is exchanged only for a project for which the user has authorized that application. Otherwise, the exchange fails with 403 `APPLICATION_AUTHORIZATION_REQUIRED`, whose `meta` contains the `client_id` and the `project_id`; the application should then direct the user to the authorization page. For a disabled application the exchange fails with 412 `APPLICATION_DISABLED`, and for a deleted application with 404 `APPLICATION_NOT_FOUND`, even if its access token has not yet expired.
     ///
     /// `POST /account/v1/projects/{projectId}/scoped-tokens`
     pub async fn create_scoped_token(
@@ -1190,6 +1299,94 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetAccountDeletionApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get an application by its client ID
+    ///
+    /// Returns the application requesting authorization, so that the authorization page can identify the requester. Any authenticated account may read it, since the `client_id` is part of every authorization request.
+    ///
+    /// A deleted application is reported as not found. A disabled application is returned with `status` `DISABLED` and cannot be authorized.
+    ///
+    /// The authorization page returns the user only to a `redirect_uri` that exactly matches one of `redirect_uris`; if none matches, the user is not redirected.
+    ///
+    /// `GET /account/v1/applications/{clientId}`
+    pub async fn get_application(
+        &self,
+        client_id: impl AsRef<str>,
+    ) -> Result<ApplicationResource, ApiOpError<GetApplicationApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/account/v1/applications/{}",
+                __pct_encode_path_segment(client_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetApplicationApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetApplicationApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -1775,6 +1972,104 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListAgreementsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List the applications the current account has authorized
+    ///
+    /// Returns one item for each application and project, most recent first. An authorization is omitted once it has been revoked, once the membership under which it was granted has ended, or once the application has been deleted.
+    ///
+    /// When called with an access token issued to an application, only the authorizations of that application are returned.
+    ///
+    /// `GET /account/v1/me/authorized-applications`
+    pub async fn list_authorized_applications(
+        &self,
+        limit: Option<i64>,
+        offset: Option<i64>,
+    ) -> Result<
+        LengthAwarePageAuthorizedApplicationResource,
+        ApiOpError<ListAuthorizedApplicationsApiError>,
+    > {
+        let request_url = format!(
+            "{}{}",
+            self.base_url, "/account/v1/me/authorized-applications"
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = limit {
+                query_params.push(("limit".to_string(), v.to_string()));
+            }
+            if let Some(v) = offset {
+                query_params.push(("offset".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListAuthorizedApplicationsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListAuthorizedApplicationsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -2566,6 +2861,93 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(RequestAccountDeletionApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Revoke an application's authorization
+    ///
+    /// After revocation, the application can no longer exchange tokens for the project. A scoped token already issued to it remains valid until it expires. Repeating the request returns the same authorization.
+    ///
+    /// When called with an access token issued to an application, only the authorizations of that application can be revoked; this allows an application to disconnect itself.
+    ///
+    /// `DELETE /account/v1/me/authorized-applications/{authorizationId}`
+    pub async fn revoke_authorized_application(
+        &self,
+        authorization_id: impl AsRef<str>,
+    ) -> Result<AuthorizedApplicationResource, ApiOpError<RevokeAuthorizedApplicationApiError>>
+    {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/account/v1/me/authorized-applications/{}",
+                __pct_encode_path_segment(authorization_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<RevokeAuthorizedApplicationApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(RevokeAuthorizedApplicationApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

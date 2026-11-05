@@ -587,8 +587,15 @@ impl HttpClient {
     /// The `secret` is present only for a confidential application, and only in this response.
     /// It is not stored and cannot be read again; use `:rotateSecret` to obtain a new one.
     ///
-    /// Any account of this platform may sign in to the application. Membership of this project
-    /// is confirmed only when a token is exchanged for a scoped token.
+    /// Any account of this platform may sign in to the application and is always asked for
+    /// consent. `profile` and `email` are granted at every sign-in; any other scope selected here
+    /// is granted only when the authorization request names it explicitly.
+    ///
+    /// To call the Leaflow API on behalf of a user, the application requests `iam`, and the user
+    /// must then authorize the application for each project in which it is to act, as described
+    /// in the Account API. Within an authorized project, the application holds exactly the
+    /// permissions of the user and none beyond them. Members of this project must authorize the
+    /// application in the same way as any other user.
     ///
     /// `POST /api/v1/applications`
     pub async fn create_application(
