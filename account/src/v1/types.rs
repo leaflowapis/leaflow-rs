@@ -291,6 +291,17 @@ pub struct InvitationResource {
     pub roles: Option<Vec<String>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LengthAwarePageAuthorizedApplicationResource {
+    ///The items in this page
+    pub items: Vec<AuthorizedApplicationResource>,
+    ///Maximum number of items in this page, echoing the request
+    pub limit: i64,
+    ///Number of items skipped, echoing the request
+    pub offset: i64,
+    ///Total number of matches, not only this page
+    pub total: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LanguageOption {
     pub code: Locale,
     ///The endonym of the language, written in that language itself. It does not follow `Accept-Language`
@@ -540,6 +551,81 @@ impl ::std::fmt::Display for ConsentResourceMethod {
     }
 }
 impl AsRef<str> for ConsentResourceMethod {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///An application that the account has authorized to act in one of its projects
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AuthorizedApplicationResource {
+    pub application: ApplicationResource,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub id: uuid::Uuid,
+    pub project: ProjectResource,
+    pub status: AuthorizedApplicationResourceStatus,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AuthorizedApplicationResourceStatus {
+    #[default]
+    #[serde(rename = "ACTIVE")]
+    Active,
+    #[serde(rename = "REVOKED")]
+    Revoked,
+}
+impl AuthorizedApplicationResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Revoked => "REVOKED",
+        }
+    }
+}
+impl ::std::fmt::Display for AuthorizedApplicationResourceStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AuthorizedApplicationResourceStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///An application, as presented to an account that is asked to authorize it
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ApplicationResource {
+    pub client_id: String,
+    pub name: String,
+    ///The URIs to which the user may be returned; a `redirect_uri` must match one of them exactly
+    pub redirect_uris: Vec<String>,
+    ///`ARCHIVED` appears only within an authorization, after the application has been deleted
+    pub status: ApplicationResourceStatus,
+}
+///`ARCHIVED` appears only within an authorization, after the application has been deleted
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ApplicationResourceStatus {
+    #[default]
+    #[serde(rename = "ACTIVE")]
+    Active,
+    #[serde(rename = "DISABLED")]
+    Disabled,
+    #[serde(rename = "ARCHIVED")]
+    Archived,
+}
+impl ApplicationResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Disabled => "DISABLED",
+            Self::Archived => "ARCHIVED",
+        }
+    }
+}
+impl ::std::fmt::Display for ApplicationResourceStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ApplicationResourceStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -823,6 +909,12 @@ pub struct AcceptInvitationByTokenRequestBody {
     ///The token carried by the invitation link
     ///Constraint: minLength=1, maxLength=128
     pub token: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AuthorizeApplicationRequestBody {
+    ///Constraint: minLength=1, maxLength=255
+    pub client_id: String,
+    pub project_id: uuid::Uuid,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateProjectRequestBody {

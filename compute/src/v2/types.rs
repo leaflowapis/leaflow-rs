@@ -548,6 +548,9 @@ pub struct RebuildInstanceResponseBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RebuildInstanceRequestBody {
     pub image_id: ImageID,
+    ///Whether the rebuilt instance joins Leaflow Fleet. If omitted, the instance's current value is retained. Because a rebuild replaces the operating system, the instance enrolls as a new Fleet machine and the previous machine is removed from Fleet. Setting the value to `true` for an image that does not support Fleet is rejected with 422 `INSTANCE_FLEET_UNSUPPORTED`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub join_fleet: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<PasswordChoice>,
 }
@@ -556,6 +559,7 @@ impl RebuildInstanceRequestBody {
     pub fn new(image_id: ImageID) -> Self {
         Self {
             image_id,
+            join_fleet: None,
             password: None,
         }
     }
@@ -576,6 +580,12 @@ impl RebuildInstanceRequestBodyBuilder {
         Self {
             value: RebuildInstanceRequestBody::new(image_id),
         }
+    }
+    #[doc = concat!("Set the optional `", "join_fleet", "` request field.")]
+    #[must_use]
+    pub fn join_fleet(mut self, join_fleet: bool) -> Self {
+        self.value.join_fleet = Some(join_fleet);
+        self
     }
     #[doc = concat!("Set the optional `", "password", "` request field.")]
     #[must_use]
@@ -612,6 +622,8 @@ pub struct PublicImageResource {
     pub region_id: RegionID,
     ///`on_sale` images can install new instances. `off_sale` means the platform withdrew the image: it stops new purchases only, and instances already running it keep running and can still be rebuilt onto it.
     pub sale_status: PublicImageResourceSaleStatus,
+    ///Whether instances created from this image can join Leaflow Fleet (`join_fleet`). The value applies to this specific image build; other builds of the same operating system may differ
+    pub supports_fleet: bool,
     ///False means a new password can only be set by rebuilding an instance created from this image
     pub supports_password_reset: bool,
 }
@@ -2181,7 +2193,7 @@ pub struct CreateSecurityGroupRuleRequestBody {
     ///Constraint: maxLength=16
     #[serde(skip_serializing_if = "Option::is_none")]
     pub protocol: Option<String>,
-    ///A CIDR of the rule's IP version. Every address when omitted.
+    ///An IP address or CIDR block of the rule's IP version. A single address admits only itself, and a block is recorded with its host bits cleared. Every address when omitted.
     ///Constraint: maxLength=64
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remote_cidr: Option<String>,
@@ -2380,6 +2392,8 @@ pub struct PrivateImageResource {
     pub status: PrivateImageResourceStatus,
     ///The subscription for this resource; its presence alone does not imply delivery.
     pub subscription_id: Option<uuid::Uuid>,
+    ///Whether instances created from this image can join Leaflow Fleet (`join_fleet`). The value is true when the operating system captured from the source instance supports Fleet
+    pub supports_fleet: bool,
     ///False means a new password can only be set by rebuilding an instance created from this image
     pub supports_password_reset: bool,
 }
@@ -2590,6 +2604,8 @@ pub struct LaunchTemplateVersion {
     pub description: Option<String>,
     pub elastic_ip: Option<LaunchTemplateElasticIP>,
     pub instance_type_id: Option<InstanceTypeID>,
+    ///Null if the version does not specify a value, in which case the image determines it.
+    pub join_fleet: Option<bool>,
     ///Null when the version describes no labels.
     pub labels: Option<LaunchTemplateVersionLabels>,
     pub launch_template_id: LaunchTemplateID,
@@ -2686,6 +2702,9 @@ pub struct NewLaunchTemplateVersion {
     pub elastic_ip: Option<LaunchTemplateElasticIP>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub instance_type_id: Option<InstanceTypeID>,
+    ///Whether instances created from this version join Leaflow Fleet, as described for `join_fleet` on instance creation. If omitted, instances join when their image supports Fleet.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub join_fleet: Option<bool>,
     ///A key may not contain a colon, whitespace or control characters.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<NewLaunchTemplateVersionLabels>,
@@ -2818,6 +2837,8 @@ pub struct Instance {
     pub elastic_ip_addresses: Option<Vec<String>>,
     ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this instance is refunded.
     pub failure_reason: Option<InstanceFailureReason>,
+    ///The identifier of the Leaflow Fleet machine reserved for this instance. The instance enrolls as this machine on its first boot after creation or a rebuild, and its enrollment status is available from Fleet. Null if the instance is not configured to join Fleet, if its operating system does not support Fleet, or if Fleet was unavailable when the instance was created or last rebuilt.
+    pub fleet_machine_id: Option<uuid::Uuid>,
     ///Hostname inside the instance; equals the instance id
     pub hostname: String,
     pub id: InstanceID,
@@ -2828,6 +2849,8 @@ pub struct Instance {
     pub instance_type_id: InstanceTypeID,
     ///IPv6 address of the primary network interface. Assigned automatically once IPv6 is enabled on the virtual private cloud
     pub ipv6_address: Option<String>,
+    ///Whether the instance is configured to join Leaflow Fleet. The value is set at creation and retained across rebuilds unless a rebuild specifies a new value.
+    pub join_fleet: bool,
     ///Your own classification of this instance, as key-value pairs. Empty when never set
     pub labels: InstanceLabels,
     ///The most recent operation started on the instance; null when none has been recorded.
@@ -2857,6 +2880,8 @@ pub struct Instance {
     /**The Billing subscription associated with this resource. It may still be pending; its
     presence does not imply delivery or metering. Null when no subscription is associated.*/
     pub subscription_id: Option<uuid::Uuid>,
+    ///Whether the operating system with which the instance was created or last rebuilt supports Leaflow Fleet. The value reflects that specific image build; other builds of the same operating system may differ.
+    pub supports_fleet: bool,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub virtual_private_cloud_id: Option<VirtualPrivateCloudID>,
 }
@@ -3161,6 +3186,11 @@ pub struct CreateInstanceRequestBody {
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub elastic_ip: Option<InstanceElasticIP>,
+    /**Whether each instance joins Leaflow Fleet. An instance that joins enrolls automatically on its first boot, without a pairing code, and project members can then access it through Fleet using their own accounts. If omitted, the value from the launch template is used; if the template does not specify one, each instance joins when its image supports Fleet (`supports_fleet`).
+
+    Setting the value to `true` for an image that does not support Fleet, or when booting from an existing volume, is rejected with 422 `INSTANCE_FLEET_UNSUPPORTED` before an order is placed. If Fleet is unavailable when an instance is created, the instance is still created and its `fleet_machine_id` is null.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub join_fleet: Option<bool>,
     ///Your own classification of each instance, as key-value pairs. A key may not contain a colon, whitespace or control characters
     #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<CreateInstanceRequestBodyLabels>,
@@ -3185,6 +3215,7 @@ impl CreateInstanceRequestBody {
             data_volumes: None,
             description: None,
             elastic_ip: None,
+            join_fleet: None,
             labels: None,
             launch_template: None,
             network_interface: None,
@@ -3243,6 +3274,12 @@ impl CreateInstanceRequestBodyBuilder {
     #[must_use]
     pub fn elastic_ip(mut self, elastic_ip: InstanceElasticIP) -> Self {
         self.value.elastic_ip = Some(elastic_ip);
+        self
+    }
+    #[doc = concat!("Set the optional `", "join_fleet", "` request field.")]
+    #[must_use]
+    pub fn join_fleet(mut self, join_fleet: bool) -> Self {
+        self.value.join_fleet = Some(join_fleet);
         self
     }
     #[doc = concat!("Set the optional `", "labels", "` request field.")]
@@ -6341,12 +6378,6 @@ pub struct RebootInstanceRequestBody {
     ///A forced reboot does not wait for the operating system to shut down and unwritten data is lost; use it when the system is unresponsive. False when omitted
     #[serde(skip_serializing_if = "Option::is_none")]
     pub force: Option<bool>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct RescueInstanceRequestBody {
-    ///Password for the rescue environment. Generate and retain a strong password before calling.
-    ///Constraint: minLength=12, maxLength=128
-    pub password: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ResetInstancePasswordResponseBody {

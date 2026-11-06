@@ -327,143 +327,6 @@ impl AsRef<str> for GetStatementUsageGroupBy {
         self.as_str()
     }
 }
-///Allowed values for the `status` query parameter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub enum ListActiveResourcesStatus {
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "suspended")]
-    Suspended,
-    #[serde(rename = "closing")]
-    Closing,
-    #[serde(rename = "closed")]
-    Closed,
-}
-impl ListActiveResourcesStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Active => "active",
-            Self::Suspended => "suspended",
-            Self::Closing => "closing",
-            Self::Closed => "closed",
-        }
-    }
-}
-impl std::fmt::Display for ListActiveResourcesStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ListActiveResourcesStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///Allowed values for the `status` query parameter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub enum ListAllowancesStatus {
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "depleted")]
-    Depleted,
-    #[serde(rename = "expired")]
-    Expired,
-    #[serde(rename = "voided")]
-    Voided,
-}
-impl ListAllowancesStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Active => "active",
-            Self::Depleted => "depleted",
-            Self::Expired => "expired",
-            Self::Voided => "voided",
-        }
-    }
-}
-impl std::fmt::Display for ListAllowancesStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ListAllowancesStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///Allowed values for the `status` query parameter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub enum ListCancellationsStatus {
-    #[serde(rename = "open")]
-    Open,
-    #[serde(rename = "requested")]
-    Requested,
-    #[serde(rename = "scheduled")]
-    Scheduled,
-    #[serde(rename = "releasing")]
-    Releasing,
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "canceled")]
-    Canceled,
-    #[serde(rename = "failed")]
-    Failed,
-}
-impl ListCancellationsStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Open => "open",
-            Self::Requested => "requested",
-            Self::Scheduled => "scheduled",
-            Self::Releasing => "releasing",
-            Self::Completed => "completed",
-            Self::Canceled => "canceled",
-            Self::Failed => "failed",
-        }
-    }
-}
-impl std::fmt::Display for ListCancellationsStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ListCancellationsStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///Allowed values for the `status` query parameter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub enum ListCreditGrantsStatus {
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "depleted")]
-    Depleted,
-    #[serde(rename = "expired")]
-    Expired,
-    #[serde(rename = "voided")]
-    Voided,
-}
-impl ListCreditGrantsStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Active => "active",
-            Self::Depleted => "depleted",
-            Self::Expired => "expired",
-            Self::Voided => "voided",
-        }
-    }
-}
-impl std::fmt::Display for ListCreditGrantsStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ListCreditGrantsStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
 ///Allowed values for the `group_by` query parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum ListSpendGroupBy {
@@ -4164,6 +4027,7 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
+        status: Option<Vec<DiscountStatus>>,
     ) -> Result<DiscountList, ApiOpError<ListAccountDiscountsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/discounts");
         let mut req = self.http_client.get(request_url);
@@ -4177,6 +4041,29 @@ impl HttpClient {
             }
             if let Some(v) = billing_account_id {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -4262,7 +4149,7 @@ impl HttpClient {
         project_ids: Option<Vec<String>>,
         meter_id: Option<impl AsRef<str>>,
         product_id: Option<impl AsRef<str>>,
-        status: Option<ListActiveResourcesStatus>,
+        status: Option<Vec<ActiveResourceStatus>>,
     ) -> Result<ActiveResourceList, ApiOpError<ListActiveResourcesApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/active-resources");
         let mut req = self.http_client.get(request_url);
@@ -4310,7 +4197,27 @@ impl HttpClient {
                 query_params.push(("product_id".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -4393,7 +4300,7 @@ impl HttpClient {
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
         meter_id: Option<impl AsRef<str>>,
-        status: Option<ListAllowancesStatus>,
+        status: Option<Vec<AllowanceStatus>>,
         product_id: Option<impl AsRef<str>>,
         project_ids: Option<Vec<String>>,
     ) -> Result<AllowanceList, ApiOpError<ListAllowancesApiError>> {
@@ -4414,7 +4321,27 @@ impl HttpClient {
                 query_params.push(("meter_id".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if let Some(v) = product_id {
                 query_params.push(("product_id".to_string(), v.as_ref().to_string()));
@@ -4637,7 +4564,7 @@ impl HttpClient {
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
         subscription_id: Option<impl AsRef<str>>,
-        status: Option<ListCancellationsStatus>,
+        status: Option<Vec<String>>,
         project_ids: Option<Vec<String>>,
     ) -> Result<CancellationList, ApiOpError<ListCancellationsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/cancellations");
@@ -4657,7 +4584,27 @@ impl HttpClient {
                 query_params.push(("subscription_id".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if let Some(v) = project_ids {
                 if v.is_empty() {
@@ -4860,7 +4807,7 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
-        status: Option<CheckoutSessionStatus>,
+        status: Option<Vec<CheckoutSessionStatus>>,
         project_ids: Option<Vec<String>>,
     ) -> Result<CheckoutSessionList, ApiOpError<ListCheckoutSessionsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/checkout-sessions");
@@ -4877,7 +4824,27 @@ impl HttpClient {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if let Some(v) = project_ids {
                 if v.is_empty() {
@@ -5080,7 +5047,7 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
-        status: Option<ListCreditGrantsStatus>,
+        status: Option<Vec<CreditGrantStatus>>,
     ) -> Result<CreditGrantList, ApiOpError<ListCreditGrantsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/credit-grants");
         let mut req = self.http_client.get(request_url);
@@ -5096,7 +5063,27 @@ impl HttpClient {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -5277,6 +5264,7 @@ impl HttpClient {
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
         invoice_id: Option<impl AsRef<str>>,
+        status: Option<Vec<CreditNoteStatus>>,
     ) -> Result<CreditNoteList, ApiOpError<ListCreditNotesApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/credit-notes");
         let mut req = self.http_client.get(request_url);
@@ -5293,6 +5281,29 @@ impl HttpClient {
             }
             if let Some(v) = invoice_id {
                 query_params.push(("invoice_id".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -5587,7 +5598,7 @@ impl HttpClient {
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
         product_id: Option<impl AsRef<str>>,
-        status: Option<FeatureGrantStatus>,
+        status: Option<Vec<FeatureGrantStatus>>,
     ) -> Result<FeatureGrantList, ApiOpError<ListFeatureGrantsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/feature-grants");
         let mut req = self.http_client.get(request_url);
@@ -5606,7 +5617,27 @@ impl HttpClient {
                 query_params.push(("product_id".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -5786,7 +5817,7 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
-        status: Option<InvoiceStatus>,
+        status: Option<Vec<InvoiceStatus>>,
         subscription_id: Option<impl AsRef<str>>,
         from: Option<impl AsRef<str>>,
         to: Option<impl AsRef<str>>,
@@ -5805,7 +5836,27 @@ impl HttpClient {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if let Some(v) = subscription_id {
                 query_params.push(("subscription_id".to_string(), v.as_ref().to_string()));
@@ -6096,7 +6147,7 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
-        status: Option<OrderStatus>,
+        status: Option<Vec<OrderStatus>>,
         from: Option<impl AsRef<str>>,
         to: Option<impl AsRef<str>>,
         project_ids: Option<Vec<String>>,
@@ -6115,7 +6166,27 @@ impl HttpClient {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if let Some(v) = from {
                 query_params.push(("from".to_string(), v.as_ref().to_string()));
@@ -6226,6 +6297,7 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
+        status: Option<Vec<String>>,
     ) -> Result<PaymentMethodList, ApiOpError<ListPaymentMethodsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/payment-methods");
         let mut req = self.http_client.get(request_url);
@@ -6239,6 +6311,29 @@ impl HttpClient {
             }
             if let Some(v) = billing_account_id {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -6950,6 +7045,7 @@ impl HttpClient {
         billing_account_id: Option<i64>,
         invoice_id: Option<impl AsRef<str>>,
         order_id: Option<impl AsRef<str>>,
+        status: Option<Vec<RefundStatus>>,
     ) -> Result<RefundList, ApiOpError<ListRefundsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/refunds");
         let mut req = self.http_client.get(request_url);
@@ -6969,6 +7065,29 @@ impl HttpClient {
             }
             if let Some(v) = order_id {
                 query_params.push(("order_id".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -7284,7 +7403,7 @@ impl HttpClient {
     pub async fn list_statements(
         &self,
         billing_account_id: Option<i64>,
-        status: Option<StatementStatus>,
+        status: Option<Vec<StatementStatus>>,
         from: Option<impl AsRef<str>>,
         to: Option<impl AsRef<str>>,
         page: Option<i64>,
@@ -7298,7 +7417,27 @@ impl HttpClient {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
             }
             if let Some(v) = status {
-                query_params.push(("status".to_string(), v.to_string()));
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if let Some(v) = from {
                 query_params.push(("from".to_string(), v.as_ref().to_string()));
@@ -7394,6 +7533,7 @@ impl HttpClient {
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
         project_ids: Option<Vec<String>>,
+        status: Option<Vec<SubscriptionStatus>>,
     ) -> Result<SubscriptionList, ApiOpError<ListSubscriptionsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/subscriptions");
         let mut req = self.http_client.get(request_url);
@@ -7432,6 +7572,29 @@ impl HttpClient {
                         parts.push(item);
                     }
                     query_params.push(("project_ids".to_string(), parts.join(",")));
+                }
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
                 }
             }
             if !query_params.is_empty() {
@@ -7514,6 +7677,7 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
+        status: Option<Vec<TopUpStatus>>,
     ) -> Result<TopUpList, ApiOpError<ListTopUpsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/top-ups");
         let mut req = self.http_client.get(request_url);
@@ -7527,6 +7691,29 @@ impl HttpClient {
             }
             if let Some(v) = billing_account_id {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -7610,6 +7797,8 @@ impl HttpClient {
         billing_account_id: Option<i64>,
         from: Option<impl AsRef<str>>,
         to: Option<impl AsRef<str>>,
+        r#type: Option<Vec<TransactionType>>,
+        status: Option<Vec<TransactionStatus>>,
     ) -> Result<TransactionList, ApiOpError<ListTransactionsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/transactions");
         let mut req = self.http_client.get(request_url);
@@ -7629,6 +7818,52 @@ impl HttpClient {
             }
             if let Some(v) = to {
                 query_params.push(("to".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = r#type {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "type"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "type",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("type".to_string(), parts.join(",")));
+                }
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -7954,6 +8189,7 @@ impl HttpClient {
         page: Option<i64>,
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
+        status: Option<Vec<WithdrawalStatus>>,
     ) -> Result<WithdrawalList, ApiOpError<ListWithdrawalsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/withdrawals");
         let mut req = self.http_client.get(request_url);
@@ -7967,6 +8203,29 @@ impl HttpClient {
             }
             if let Some(v) = billing_account_id {
                 query_params.push(("billing_account_id".to_string(), v.to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
