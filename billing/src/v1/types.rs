@@ -498,7 +498,6 @@ pub struct TopUp {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub settled_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
-    ///`pending` until the payment gateway reaches a result; the balance increases on `succeeded`. `failed`: the gateway declined the payment, which is withdrawn at the gateway; create a new top-up to pay another way. `canceled`: withdrawn without collecting money, for the reason in `cancellation_reason`. Unknown gateway outcomes stay `pending`; a browser redirect is not proof of payment. `failed` and `canceled` are final; a payment the gateway collects afterwards is credited as a separate `succeeded` top-up.
     pub status: TopUpStatus,
 }
 ///`pending` until the payment gateway reaches a result; the balance increases on `succeeded`. `failed`: the gateway declined the payment, which is withdrawn at the gateway; create a new top-up to pay another way. `canceled`: withdrawn without collecting money, for the reason in `cancellation_reason`. Unknown gateway outcomes stay `pending`; a browser redirect is not proof of payment. `failed` and `canceled` are final; a payment the gateway collects afterwards is credited as a separate `succeeded` top-up.
@@ -671,7 +670,6 @@ pub struct Subscription {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub started_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
-    ///`pending`: the order has not been accepted. `provisioning`: the owning service accepted the order and is delivering. `active`: delivery was confirmed; payment alone does not make a subscription active. `suspended`: service is stopped while a lien restricts its use. `canceled`: cancellation completed, or an undelivered purchase was canceled or failed. `terminated`: an operator or the owning service ended it immediately.
     pub status: SubscriptionStatus,
     pub r#type: PriceType,
     pub usage_type: UsageType,
@@ -1358,16 +1356,6 @@ pub struct Refund {
     ///When the last part was returned. Present with `succeeded`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub settled_at: Option<chrono::DateTime<chrono::Utc>>,
-    /**Summary of the parts in `transactions`.
-
-    - `pending`: nothing has been returned yet, and at least one part is in progress.
-    - `processing`: some parts have been returned, and at least one is still in progress.
-    - `succeeded`: every part has been returned.
-    - `failed`: no part is in progress and at least one has failed. What was returned is in
-      settled_amount.
-
-    Returns to the balance and to credit grants complete shortly after the refund is made; a
-    return to a payment method completes when the gateway confirms it.*/
     pub status: RefundStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transaction_id: Option<uuid::Uuid>,
@@ -2599,7 +2587,6 @@ pub struct Transaction {
     pub remaining_amount: Money,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub settled_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///`failed`: the operation did not succeed; for a gateway payment, the gateway declined it. `canceled`: a gateway payment was withdrawn without collecting money. Either way, the invoice it was for stays open.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<TransactionStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -3427,7 +3414,6 @@ pub struct Discount {
     pub percent_off: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub promotion_code_id: Option<uuid::Uuid>,
-    ///`scheduled` before valid_from, `active` within the validity, `expired` after valid_until, or `voided` once withdrawn.
     pub status: DiscountStatus,
     pub r#type: DiscountType,
     #[serde(skip_serializing_if = "Option::is_none")]
