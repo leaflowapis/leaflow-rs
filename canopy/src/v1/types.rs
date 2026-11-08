@@ -367,7 +367,7 @@ pub struct TotalsResource {
     pub reasoning_tokens: Option<i64>,
     pub requests: i64,
 }
-///Native Responses request. model may be omitted when continuing a project-owned stored response. store defaults to false. Only caller-executed function and custom tools are supported. background, conversation and WebSocket-only fields are rejected over HTTP.
+///Native Responses request. Only caller-executed function and custom tools are supported. background, conversation and WebSocket-only fields are rejected over HTTP.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct ResponseCreate {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -383,6 +383,7 @@ pub struct ResponseCreate {
     pub max_output_tokens: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
+    ///Continues a response created earlier on the same WebSocket connection. Over HTTP no response can be continued, and a request carrying it is refused with 404 `RESPONSE_NOT_FOUND`.
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
@@ -391,6 +392,7 @@ pub struct ResponseCreate {
     pub previous_response_id: Option<Option<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reasoning: Option<ResponseCreateReasoning>,
+    ///Must be false. True is refused with 400 `RESPONSES_STORE_UNSUPPORTED`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub store: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -464,9 +466,6 @@ pub struct ModelResource {
     ///Produced output modalities. Image input does not imply image generation.
     pub output_modalities: Option<Vec<Modality>>,
     pub status: ModelResourceStatus,
-    ///Explicitly supported API endpoints. Requests to any other endpoint are rejected before upstream admission.
-    ///Constraint: uniqueItems=true
-    pub supported_endpoints: Vec<ModelEndpoint>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ModelResourceStatus {
@@ -625,9 +624,6 @@ pub struct Model {
     ///Produced output modalities. Image input does not imply image generation.
     pub output_modalities: Option<Vec<Modality>>,
     pub owned_by: String,
-    ///Explicitly supported API endpoints. Requests to any other endpoint are rejected before upstream admission.
-    ///Constraint: uniqueItems=true
-    pub supported_endpoints: Vec<ModelEndpoint>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ModelObject {
@@ -652,105 +648,176 @@ impl AsRef<str> for ModelObject {
         self.as_str()
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ModelEndpoint {
-    #[default]
-    #[serde(rename = "/v1/chat/completions")]
-    V1ChatCompletions,
-    #[serde(rename = "/v1/responses")]
-    V1Responses,
-    #[serde(rename = "/v1/embeddings")]
-    V1Embeddings,
-    #[serde(rename = "/v1/messages")]
-    V1Messages,
-    #[serde(rename = "/v1beta/models/{model}:generateContent")]
-    V1betaModelsModelGenerateContent,
-    #[serde(rename = "/v1/images/generations")]
-    V1ImagesGenerations,
-    #[serde(rename = "/v1/images/edits")]
-    V1ImagesEdits,
-    #[serde(rename = "/v1/audio/transcriptions")]
-    V1AudioTranscriptions,
-    #[serde(rename = "/v1/audio/translations")]
-    V1AudioTranslations,
-    #[serde(rename = "/v1/audio/speech")]
-    V1AudioSpeech,
-    #[serde(rename = "/v1/realtime")]
-    V1Realtime,
-    #[serde(rename = "/v1/completions")]
-    V1Completions,
-    #[serde(rename = "/v1/rerank")]
-    V1Rerank,
-    #[serde(rename = "/v1/moderations")]
-    V1Moderations,
-    #[serde(rename = "/v1/images/variations")]
-    V1ImagesVariations,
-    #[serde(rename = "/v1/files")]
-    V1Files,
-    #[serde(rename = "/v1/uploads")]
-    V1Uploads,
-    #[serde(rename = "/v1/batches")]
-    V1Batches,
-    #[serde(rename = "/v1/fine_tuning/jobs")]
-    V1FineTuningJobs,
-    #[serde(rename = "/v1/assistants")]
-    V1Assistants,
-    #[serde(rename = "/v1/threads")]
-    V1Threads,
-    #[serde(rename = "/v1/vector_stores")]
-    V1VectorStores,
-    #[serde(rename = "/v1/containers")]
-    V1Containers,
-    #[serde(rename = "/v1/videos")]
-    V1Videos,
+///Verified capabilities of the model, the same whichever endpoint it is called through. Null values mean unknown. Current route availability is separate.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ModelCapabilities {
+    ///Present on a model that synthesizes speech or transcribes audio. Null or absent otherwise.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio: Option<Option<AudioCapabilities>>,
+    pub function_calling: Option<bool>,
+    ///Present on a model that generates or edits images. Null or absent otherwise.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub image: Option<Option<ImageCapabilities>>,
+    ///Non-standard request fields this model accepts, sent at the top level of the request body. Null or absent means none are declared.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub parameters: Option<Option<Vec<ModelParameter>>>,
+    pub reasoning: Option<ReasoningCapabilities>,
+    pub structured_output: Option<bool>,
+    ///Present on a model that generates videos. Null or absent otherwise.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub video: Option<Option<VideoCapabilities>>,
 }
-impl ModelEndpoint {
+///The video parameters this model accepts. Video is asynchronous; create returns a task, and the task is polled separately.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VideoCapabilities {
+    ///Continuous duration capability. Mutually exclusive with nonempty seconds.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub duration_range: Option<Option<VideoDurationRange>>,
+    ///Resolution tiers the upstream accepts, such as 720p or 1080p. Null means unknown.
+    pub resolutions: Option<Vec<String>>,
+    ///Durations the upstream accepts, in seconds. Null means unknown.
+    pub seconds: Option<Vec<i64>>,
+    ///Output sizes the upstream accepts, such as 1280x720. Null means unknown.
+    pub sizes: Option<Vec<String>>,
+    ///Whether the upstream accepts reusable characters. Null means unknown.
+    pub supports_characters: Option<bool>,
+    ///Whether a request may carry a reference image. Null means unknown.
+    pub supports_input_reference: Option<bool>,
+    ///Whether a generated video can be remixed into another task. Null means unknown.
+    pub supports_remix: Option<bool>,
+}
+///Accepted durations are min + n * step seconds, up to max. Independent of per-second pricing.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VideoDurationRange {
+    ///Constraint: minimum=1
+    pub max: i64,
+    ///Constraint: minimum=1
+    pub min: i64,
+    ///Constraint: minimum=1
+    pub step: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ReasoningCapabilities {
+    pub budget_tokens: Option<ReasoningCapabilitiesBudgetTokens>,
+    pub default_effort: Option<String>,
+    ///The effort values the upstream accepts, sent through unchanged. Agents send low, medium or high. Null means unknown; an empty array means effort is not configurable.
+    pub effort_levels: Option<Vec<String>>,
+    pub modes: Option<Vec<String>>,
+    pub summary: Option<Vec<String>>,
+    pub supported: bool,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ReasoningCapabilitiesBudgetTokens {
+    ///Constraint: minimum=0
+    pub max: i64,
+    ///Constraint: minimum=0
+    pub min: i64,
+}
+///A non-standard request field this model accepts. OpenAI SDK callers pass it through `extra_body`, which places it at the top level of the body.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ModelParameter {
+    ///The value the upstream assumes when the field is absent; null when there is none. The service never writes it into the request.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<serde_json::Value>,
+    pub description: String,
+    pub name: String,
+    pub required: bool,
+    pub r#type: ModelParameterType,
+    ///The accepted values of an enumerated string parameter. Null when the parameter is not enumerated.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub values: Option<Option<Vec<String>>>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ModelParameterType {
+    #[default]
+    #[serde(rename = "string")]
+    String,
+    #[serde(rename = "integer")]
+    Integer,
+    #[serde(rename = "number")]
+    Number,
+    #[serde(rename = "boolean")]
+    Boolean,
+    #[serde(rename = "object")]
+    Object,
+    #[serde(rename = "array")]
+    Array,
+}
+impl ModelParameterType {
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::V1ChatCompletions => "/v1/chat/completions",
-            Self::V1Responses => "/v1/responses",
-            Self::V1Embeddings => "/v1/embeddings",
-            Self::V1Messages => "/v1/messages",
-            Self::V1betaModelsModelGenerateContent => "/v1beta/models/{model}:generateContent",
-            Self::V1ImagesGenerations => "/v1/images/generations",
-            Self::V1ImagesEdits => "/v1/images/edits",
-            Self::V1AudioTranscriptions => "/v1/audio/transcriptions",
-            Self::V1AudioTranslations => "/v1/audio/translations",
-            Self::V1AudioSpeech => "/v1/audio/speech",
-            Self::V1Realtime => "/v1/realtime",
-            Self::V1Completions => "/v1/completions",
-            Self::V1Rerank => "/v1/rerank",
-            Self::V1Moderations => "/v1/moderations",
-            Self::V1ImagesVariations => "/v1/images/variations",
-            Self::V1Files => "/v1/files",
-            Self::V1Uploads => "/v1/uploads",
-            Self::V1Batches => "/v1/batches",
-            Self::V1FineTuningJobs => "/v1/fine_tuning/jobs",
-            Self::V1Assistants => "/v1/assistants",
-            Self::V1Threads => "/v1/threads",
-            Self::V1VectorStores => "/v1/vector_stores",
-            Self::V1Containers => "/v1/containers",
-            Self::V1Videos => "/v1/videos",
+            Self::String => "string",
+            Self::Integer => "integer",
+            Self::Number => "number",
+            Self::Boolean => "boolean",
+            Self::Object => "object",
+            Self::Array => "array",
         }
     }
 }
-impl ::std::fmt::Display for ModelEndpoint {
+impl ::std::fmt::Display for ModelParameterType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ModelEndpoint {
+impl AsRef<str> for ModelParameterType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
-///Verified capabilities keyed by API endpoint, for example /v1/chat/completions or /v1/responses. Missing keys and null values mean unknown. Current route availability is separate.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct ModelCapabilities {
-    /// Additional properties matching the spec's
-    /// `additionalProperties` value schema.
-    #[serde(flatten)]
-    pub additional_properties: std::collections::BTreeMap<String, EndpointCapabilities>,
+///The image parameters this model accepts. The client chooses among them; a value outside the list is rejected before the upstream is called.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ImageCapabilities {
+    ///The largest number of images one request may ask for. Null means unknown.
+    ///Constraint: minimum=0, maximum=128
+    pub max_n: Option<i64>,
+    ///Quality values the upstream accepts. Null means unknown.
+    pub qualities: Option<Vec<String>>,
+    ///Response formats the upstream accepts. Null means unknown.
+    pub response_formats: Option<Vec<String>>,
+    ///Size values the upstream accepts, such as 1024x1024 or auto. Null means unknown.
+    pub sizes: Option<Vec<String>>,
+    ///Whether partial images can be streamed. Null means unknown.
+    pub supports_stream: Option<bool>,
+}
+///The audio parameters this model accepts.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AudioCapabilities {
+    ///Audio container or codec values the model accepts. Null means unknown.
+    pub formats: Option<Vec<String>>,
+    ///The largest upload the model accepts, in bytes. Null means unknown.
+    ///Constraint: minimum=0
+    pub max_input_bytes: Option<i64>,
+    ///Response formats the transcription endpoint accepts, such as json or srt. Null means unknown.
+    pub response_formats: Option<Vec<String>>,
+    ///Whether the response can be streamed. Null means unknown.
+    pub supports_stream: Option<bool>,
+    ///Voices the speech endpoint accepts. Empty for transcription endpoints. Null means unknown.
+    pub voices: Option<Vec<String>>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum Modality {
@@ -934,176 +1001,6 @@ pub struct FieldViolation {
     ///Why the field was rejected, such as `REQUIRED` or `OUT_OF_RANGE`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct EndpointCapabilities {
-    ///Present on speech and transcription endpoints. Null or absent elsewhere.
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub audio: Option<Option<AudioCapabilities>>,
-    pub function_calling: Option<bool>,
-    ///Present on image generation and edit endpoints. Null or absent elsewhere.
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub image: Option<Option<ImageCapabilities>>,
-    ///Non-standard request fields this endpoint accepts, sent at the top level of the request body. Null or absent means none are declared.
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub parameters: Option<Option<Vec<ModelParameter>>>,
-    pub reasoning: Option<ReasoningCapabilities>,
-    pub structured_output: Option<bool>,
-    ///Present on the videos endpoint. Null or absent elsewhere.
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub video: Option<Option<VideoCapabilities>>,
-}
-///The video parameters this endpoint accepts. Video is asynchronous on every endpoint that supports it. Create returns a task, and the task is polled separately.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct VideoCapabilities {
-    ///Continuous duration capability. Mutually exclusive with nonempty seconds.
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub duration_range: Option<Option<VideoDurationRange>>,
-    ///Resolution tiers the upstream accepts, such as 720p or 1080p. Null means unknown.
-    pub resolutions: Option<Vec<String>>,
-    ///Durations the upstream accepts, in seconds. Null means unknown.
-    pub seconds: Option<Vec<i64>>,
-    ///Output sizes the upstream accepts, such as 1280x720. Null means unknown.
-    pub sizes: Option<Vec<String>>,
-    ///Whether the upstream accepts reusable characters. Null means unknown.
-    pub supports_characters: Option<bool>,
-    ///Whether a request may carry a reference image. Null means unknown.
-    pub supports_input_reference: Option<bool>,
-    ///Whether a generated video can be remixed into another task. Null means unknown.
-    pub supports_remix: Option<bool>,
-}
-///Accepted durations are min + n * step seconds, up to max. Independent of per-second pricing.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct VideoDurationRange {
-    ///Constraint: minimum=1
-    pub max: i64,
-    ///Constraint: minimum=1
-    pub min: i64,
-    ///Constraint: minimum=1
-    pub step: i64,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ReasoningCapabilities {
-    pub budget_tokens: Option<ReasoningCapabilitiesBudgetTokens>,
-    pub default_effort: Option<String>,
-    ///The effort values the upstream accepts, sent through unchanged. Agents send low, medium or high. Null means unknown; an empty array means effort is not configurable.
-    pub effort_levels: Option<Vec<String>>,
-    pub modes: Option<Vec<String>>,
-    pub summary: Option<Vec<String>>,
-    pub supported: bool,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ReasoningCapabilitiesBudgetTokens {
-    ///Constraint: minimum=0
-    pub max: i64,
-    ///Constraint: minimum=0
-    pub min: i64,
-}
-///A non-standard request field this endpoint accepts. OpenAI SDK callers pass it through `extra_body`, which places it at the top level of the body.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ModelParameter {
-    ///The value the upstream assumes when the field is absent; null when there is none. The service never writes it into the request.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default: Option<serde_json::Value>,
-    pub description: String,
-    pub name: String,
-    pub required: bool,
-    pub r#type: ModelParameterType,
-    ///The accepted values of an enumerated string parameter. Null when the parameter is not enumerated.
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub values: Option<Option<Vec<String>>>,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ModelParameterType {
-    #[default]
-    #[serde(rename = "string")]
-    String,
-    #[serde(rename = "integer")]
-    Integer,
-    #[serde(rename = "number")]
-    Number,
-    #[serde(rename = "boolean")]
-    Boolean,
-    #[serde(rename = "object")]
-    Object,
-    #[serde(rename = "array")]
-    Array,
-}
-impl ModelParameterType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::String => "string",
-            Self::Integer => "integer",
-            Self::Number => "number",
-            Self::Boolean => "boolean",
-            Self::Object => "object",
-            Self::Array => "array",
-        }
-    }
-}
-impl ::std::fmt::Display for ModelParameterType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ModelParameterType {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///The image parameters this endpoint accepts. The client chooses among them; a value outside the list is rejected before the upstream is called.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ImageCapabilities {
-    ///The largest number of images one request may ask for. Null means unknown.
-    ///Constraint: minimum=0, maximum=128
-    pub max_n: Option<i64>,
-    ///Quality values the upstream accepts. Null means unknown.
-    pub qualities: Option<Vec<String>>,
-    ///Response formats the upstream accepts. Null means unknown.
-    pub response_formats: Option<Vec<String>>,
-    ///Size values the upstream accepts, such as 1024x1024 or auto. Null means unknown.
-    pub sizes: Option<Vec<String>>,
-    ///Whether the endpoint can stream partial images. Null means unknown.
-    pub supports_stream: Option<bool>,
-}
-///The audio parameters this endpoint accepts.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AudioCapabilities {
-    ///Audio container or codec values the endpoint accepts. Null means unknown.
-    pub formats: Option<Vec<String>>,
-    ///The largest upload the endpoint accepts, in bytes. Null means unknown.
-    ///Constraint: minimum=0
-    pub max_input_bytes: Option<i64>,
-    ///Response formats the transcription endpoint accepts, such as json or srt. Null means unknown.
-    pub response_formats: Option<Vec<String>>,
-    ///Whether the endpoint can stream its response. Null means unknown.
-    pub supports_stream: Option<bool>,
-    ///Voices the speech endpoint accepts. Empty for transcription endpoints. Null means unknown.
-    pub voices: Option<Vec<String>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct EmbeddingRequest {
@@ -1870,25 +1767,19 @@ pub struct EmbeddingResponse {
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
 }
-///A request body in the endpoint's own protocol. Canopy reads only the model name and forwards the rest unchanged.
+///A request body in the endpoint's own protocol.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct NativeRequest {
     /// Additional properties not explicitly defined in the schema
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
 }
-///A response body in the endpoint's own protocol, as the upstream returned it.
+///A response body in the endpoint's own protocol.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct NativeResponse {
     /// Additional properties not explicitly defined in the schema
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ResponseDeleted {
-    pub deleted: bool,
-    pub id: String,
-    pub object: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct ResponseResource {
