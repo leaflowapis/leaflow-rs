@@ -556,6 +556,11 @@ pub enum CreateServiceApiError {
     Status409(Error),
     Default(Error),
 }
+///Typed error responses for `create-video`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateVideoApiError {
+    Default(InferenceError),
+}
 ///Typed error responses for `delete-response`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DeleteResponseApiError {
@@ -615,6 +620,16 @@ pub enum GetUsageSummaryApiError {
 #[derive(Debug, Clone)]
 pub enum GetUsageTimelineApiError {
     Default(Error),
+}
+///Typed error responses for `get-video`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetVideoApiError {
+    Default(InferenceError),
+}
+///Typed error responses for `get-video-content`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetVideoContentApiError {
+    Default(InferenceError),
 }
 ///Typed error responses for `list-api-keys`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
@@ -1798,6 +1813,91 @@ impl HttpClient {
             }))
         }
     }
+    /// Create a video
+    ///
+    /// Create an asynchronous video task in the verified project. Model and upstream support
+    /// determine the accepted duration, resolution and references. Poll the returned task id.
+    /// `reference_media` is a Canopy extension for ordered, typed image, video and audio URLs.
+    /// Existing `input_reference` remains a first frame.
+    /// The runtime also accepts OpenAI multipart uploads; send reference_media as a JSON text field.
+    /// No remote reference is downloaded or retained by Canopy during request preparation.
+    ///
+    /// `POST /v1/videos`
+    pub async fn create_video(
+        &self,
+        request: VideoCreateRequest,
+    ) -> Result<VideoTask, ApiOpError<CreateVideoApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/videos");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateVideoApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateVideoApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Delete a stored response
     ///
     /// `DELETE /v1/responses/{response}`
@@ -2817,6 +2917,391 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetUsageTimelineApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get a video task
+    ///
+    /// Read an existing task owned by the verified project; does not create another video.
+    ///
+    /// `GET /v1/videos/{video}`
+    pub async fn get_video(
+        &self,
+        video: impl AsRef<str>,
+    ) -> Result<VideoTask, ApiOpError<GetVideoApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!("/v1/videos/{}", __pct_encode_path_segment(video.as_ref()))
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetVideoApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetVideoApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get generated video content
+    ///
+    /// Stream a completed video owned by the verified project. Supports HTTP Range.
+    ///
+    /// `GET /v1/videos/{video}/content`
+    pub async fn get_video_content(
+        &self,
+        video: impl AsRef<str>,
+        range: Option<impl AsRef<str>>,
+    ) -> Result<bytes::Bytes, ApiOpError<GetVideoContentApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/v1/videos/{}/content",
+                __pct_encode_path_segment(video.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(v) = range {
+            req = req.header("Range", v.as_ref());
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "video/mp4");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 || status_code == 206u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200, 206",
+                    )),
+                }));
+            }
+            let typed: Option<GetVideoContentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetVideoContentApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get generated video content
+    ///
+    /// Stream a completed video owned by the verified project. Supports HTTP Range.
+    ///
+    /// `GET /v1/videos/{video}/content`
+    ///Select `video/mp4` as binary_stream; accepts response statuses 200, 206. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn get_video_content_binary_stream<__Param0: AsRef<str>, __Param1: AsRef<str>>(
+        &self,
+        video: __Param0,
+        range: Option<__Param1>,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>>
+        + 'static
+        + use<__Param0, __Param1>,
+        ApiOpError<GetVideoContentApiError>,
+    > {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/v1/videos/{}/content",
+                __pct_encode_path_segment(video.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(v) = range {
+            req = req.header("Range", v.as_ref());
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "video/mp4");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 || status_code == 206u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "video/mp4";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<GetVideoContentApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(GetVideoContentApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 || status_code == 206u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200, 206",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<GetVideoContentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetVideoContentApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

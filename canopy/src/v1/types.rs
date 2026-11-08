@@ -22,6 +22,302 @@ mod tri_state_serde {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VideoTask {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub completed_at: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<VideoTaskError>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<i64>,
+    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    pub object: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress: Option<i64>,
+    ///Output duration, not the duration of input references.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seconds: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    pub status: VideoTaskStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usage: Option<VideoUsage>,
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+///Provider measurements on a task; only completed tasks are settled.
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct VideoUsage {
+    ///Total measured input and output video duration, not a monetary quote.
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub billable_seconds: Option<f64>,
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_seconds: Option<f64>,
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_seconds: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<String>,
+    ///Output duration, kept for compatibility.
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seconds: Option<f64>,
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum VideoTaskStatus {
+    #[default]
+    #[serde(rename = "queued")]
+    Queued,
+    #[serde(rename = "in_progress")]
+    InProgress,
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "failed")]
+    Failed,
+}
+impl VideoTaskStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Queued => "queued",
+            Self::InProgress => "in_progress",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+        }
+    }
+}
+impl ::std::fmt::Display for VideoTaskStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for VideoTaskStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct VideoTaskError {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+///Provide a prompt, reference media, or both. Extra fields depend on the selected model and adapter.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VideoCreateRequest {
+    ///Whether the output has audio; separate from a reference_audio input.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audio: Option<bool>,
+    ///Backward-compatible first-frame image URL. May be combined with a last_frame, not another first_frame.
+    ///Constraint: minLength=1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_reference: Option<String>,
+    ///Constraint: minLength=1
+    pub model: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub negative_prompt: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt_extend: Option<bool>,
+    ///Constraint: minItems=1, maxItems=20
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reference_media: Option<Vec<VideoReferenceMedia>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<String>,
+    ///Constraint: minimum=1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seconds: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seed: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub watermark: Option<bool>,
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+impl VideoCreateRequest {
+    /// Construct this request with every required wire field.
+    pub fn new(model: String) -> Self {
+        Self {
+            model,
+            audio: None,
+            input_reference: None,
+            negative_prompt: None,
+            prompt: None,
+            prompt_extend: None,
+            reference_media: None,
+            resolution: None,
+            seconds: None,
+            seed: None,
+            size: None,
+            watermark: None,
+            additional_properties: ::std::collections::BTreeMap::new(),
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(model: String) -> VideoCreateRequestBuilder {
+        VideoCreateRequestBuilder::new(model)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct VideoCreateRequestBuilder {
+    value: VideoCreateRequest,
+}
+impl VideoCreateRequestBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(model: String) -> Self {
+        Self {
+            value: VideoCreateRequest::new(model),
+        }
+    }
+    #[doc = concat!("Set the optional `", "audio", "` request field.")]
+    #[must_use]
+    pub fn audio(mut self, audio: bool) -> Self {
+        self.value.audio = Some(audio);
+        self
+    }
+    #[doc = concat!("Set the optional `", "input_reference", "` request field.")]
+    #[must_use]
+    pub fn input_reference(mut self, input_reference: String) -> Self {
+        self.value.input_reference = Some(input_reference);
+        self
+    }
+    #[doc = concat!("Set the optional `", "negative_prompt", "` request field.")]
+    #[must_use]
+    pub fn negative_prompt(mut self, negative_prompt: String) -> Self {
+        self.value.negative_prompt = Some(negative_prompt);
+        self
+    }
+    #[doc = concat!("Set the optional `", "prompt", "` request field.")]
+    #[must_use]
+    pub fn prompt(mut self, prompt: String) -> Self {
+        self.value.prompt = Some(prompt);
+        self
+    }
+    #[doc = concat!("Set the optional `", "prompt_extend", "` request field.")]
+    #[must_use]
+    pub fn prompt_extend(mut self, prompt_extend: bool) -> Self {
+        self.value.prompt_extend = Some(prompt_extend);
+        self
+    }
+    #[doc = concat!("Set the optional `", "reference_media", "` request field.")]
+    #[must_use]
+    pub fn reference_media(mut self, reference_media: Vec<VideoReferenceMedia>) -> Self {
+        self.value.reference_media = Some(reference_media);
+        self
+    }
+    #[doc = concat!("Set the optional `", "resolution", "` request field.")]
+    #[must_use]
+    pub fn resolution(mut self, resolution: String) -> Self {
+        self.value.resolution = Some(resolution);
+        self
+    }
+    #[doc = concat!("Set the optional `", "seconds", "` request field.")]
+    #[must_use]
+    pub fn seconds(mut self, seconds: i64) -> Self {
+        self.value.seconds = Some(seconds);
+        self
+    }
+    #[doc = concat!("Set the optional `", "seed", "` request field.")]
+    #[must_use]
+    pub fn seed(mut self, seed: i64) -> Self {
+        self.value.seed = Some(seed);
+        self
+    }
+    #[doc = concat!("Set the optional `", "size", "` request field.")]
+    #[must_use]
+    pub fn size(mut self, size: String) -> Self {
+        self.value.size = Some(size);
+        self
+    }
+    #[doc = concat!("Set the optional `", "watermark", "` request field.")]
+    #[must_use]
+    pub fn watermark(mut self, watermark: bool) -> Self {
+        self.value.watermark = Some(watermark);
+        self
+    }
+    /// Replace the request's additional properties.
+    #[must_use]
+    pub fn additional_properties(
+        mut self,
+        additional_properties: ::std::collections::BTreeMap<String, serde_json::Value>,
+    ) -> Self {
+        self.value.additional_properties = additional_properties;
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> VideoCreateRequest {
+        self.value
+    }
+}
+/**A typed reference asset. Order is preserved, including order within each media type.
+Wan 3.0 accepts at most one first frame, one last frame, ten reference images,
+five reference videos and five reference audio clips. A last frame needs a first frame.
+First/last frames cannot be combined with reference_image, reference_video or reference_audio.
+Reference images, videos and audio may be combined. Other models can accept fewer roles.
+Images accept public HTTP(S) or base64 image data URLs. Video and audio accept public
+HTTP(S) URLs only. Wan 3.0 limits reference videos and audio to 1-15 seconds each and
+15 seconds total per media type; input video plus output duration must not exceed 30 seconds.
+The upstream validates remote asset size, format and duration. Canopy does not fetch them.*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VideoReferenceMedia {
+    pub r#type: VideoReferenceMediaType,
+    ///Constraint: minLength=1
+    pub url: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum VideoReferenceMediaType {
+    #[default]
+    #[serde(rename = "first_frame")]
+    FirstFrame,
+    #[serde(rename = "last_frame")]
+    LastFrame,
+    #[serde(rename = "reference_image")]
+    ReferenceImage,
+    #[serde(rename = "reference_video")]
+    ReferenceVideo,
+    #[serde(rename = "reference_audio")]
+    ReferenceAudio,
+}
+impl VideoReferenceMediaType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::FirstFrame => "first_frame",
+            Self::LastFrame => "last_frame",
+            Self::ReferenceImage => "reference_image",
+            Self::ReferenceVideo => "reference_video",
+            Self::ReferenceAudio => "reference_audio",
+        }
+    }
+}
+impl ::std::fmt::Display for VideoReferenceMediaType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for VideoReferenceMediaType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UsageTimelineResponseBody {
     pub items: Vec<UsageBucketResource>,
 }
@@ -951,6 +1247,8 @@ pub struct RequestResource {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub media: Option<Option<MediaUsage>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub media_details: Option<MediaUsageDetails>,
     ///The model named in the request
     pub model_id: String,
     ///The request operation, such as video_create or video_retrieve. Absent for historical requests where it was not recorded.
@@ -1049,6 +1347,45 @@ pub struct ReasoningDiagnosticsRequested {
     /// Additional properties not explicitly defined in the schema
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+/**Per-request media measurements. Omitted values are unknown, not zero.
+Reference counts are audit data, not an additional billable quantity.
+video_quantity is the exact decimal quantity for the existing video_seconds
+meter; video_seconds in the summary remains a rounded compatibility counter.
+No monetary price or refund is calculated by Canopy.*/
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct MediaUsageDetails {
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_audio_seconds: Option<f64>,
+    ///Recorded input quantity for the input_images meter, independent of its Billing price. Absent when unmeasured or not separately metered.
+    ///Constraint: pattern=`^[0-9]+$`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_image_quantity: Option<String>,
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_images: Option<i64>,
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_video_seconds: Option<f64>,
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_images: Option<i64>,
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_video_seconds: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reference_counts: Option<MediaUsageDetailsReferenceCounts>,
+    ///Constraint: pattern=`^[0-9]+([.][0-9]+)?$`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub video_quantity: Option<String>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct MediaUsageDetailsReferenceCounts {
+    /// Additional properties matching the spec's
+    /// `additionalProperties` value schema.
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, i64>,
 }
 ///The service, `pending` until its order is accepted, and its Checkout Session.
 #[derive(Debug, Clone, Deserialize, Serialize)]

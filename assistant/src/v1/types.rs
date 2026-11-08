@@ -22,74 +22,18 @@ mod tri_state_serde {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UploadedResource {
-    ///Size of what was stored. For an image that has been resized, this is the resized size, not what was uploaded.
-    #[serde(rename = "byteSize")]
-    pub byte_size: i64,
-    /**When this upload gets cleared if no message ever references it. Sending a message with this id makes it permanent and this stops applying — a file that belongs to a conversation is kept as long as the conversation is.
-
-    It is here so the editor can say so before it happens. An attachment chip that quietly stops working a week later reads as a bug, and the person who hits it has no way to tell that what they are seeing is a draft being collected.*/
-    #[serde(rename = "draftExpiresAt")]
-    pub draft_expires_at: chrono::DateTime<chrono::Utc>,
-    pub filename: String,
-    ///Null unless type is image.
-    pub height: Option<i64>,
-    pub id: String,
-    /**How the assistant will see this file.
-
-    - `image` — read directly, and only by models that accept image input
-    - `text` — placed inline in the message when small enough, otherwise read on demand
-    - `binary` — never read directly; the assistant downloads it onto a cloud instance to work with it*/
-    pub r#type: UploadedResourceType,
-    ///Null unless type is image.
-    pub width: Option<i64>,
-}
-/**How the assistant will see this file.
-
-- `image` — read directly, and only by models that accept image input
-- `text` — placed inline in the message when small enough, otherwise read on demand
-- `binary` — never read directly; the assistant downloads it onto a cloud instance to work with it*/
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum UploadedResourceType {
-    #[default]
-    #[serde(rename = "image")]
-    Image,
-    #[serde(rename = "text")]
-    Text,
-    #[serde(rename = "binary")]
-    Binary,
-}
-impl UploadedResourceType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Image => "image",
-            Self::Text => "text",
-            Self::Binary => "binary",
-        }
-    }
-}
-impl ::std::fmt::Display for UploadedResourceType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for UploadedResourceType {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UploadListResponseBody {
     pub uploads: Vec<UploadResource>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UploadResource {
-    #[serde(rename = "attachmentId")]
-    pub attachment_id: Option<String>,
     #[serde(rename = "byteSize")]
     pub byte_size: i64,
     #[serde(rename = "expiresAt")]
     pub expires_at: chrono::DateTime<chrono::Utc>,
+    ///The file the upload became. Null until the upload is complete.
+    #[serde(rename = "fileId")]
+    pub file_id: Option<String>,
     pub filename: String,
     pub id: String,
     #[serde(rename = "partSizeBytes")]
@@ -337,7 +281,6 @@ pub struct ThreadItemListResponseBody {
 ///One entry of the transcript. `type` determines which fields it carries.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ThreadItemResource {
-    pub attachments: Vec<AttachmentResource>,
     /**The `data-*` blocks the client attached to a user message. They are not part of what the
     person wrote; render the message from `parts` and leave these out of the bubble.*/
     #[serde(rename = "clientContext")]
@@ -360,8 +303,8 @@ pub struct ThreadItemResource {
     ///The position in the transcript. Never renumbered. Null for a message waiting in the queue.
     pub ordinal: Option<i64>,
     /**The content, in the order it was written. Text arrives as `append` frames on the realtime
-    stream. An attachment belongs where it was written, so render parts in order. Empty for
-    tool calls; their outcome is in `toolCall.detail` and `toolCall.presentation`.*/
+    stream. A file the person attached belongs where it was written, so render parts in order.
+    Empty for tool calls; their outcome is in `toolCall`.*/
     pub parts: Vec<PartResource>,
     ///Left out of model requests since a revert. Shown, but marked.
     pub reverted: bool,
@@ -396,9 +339,17 @@ pub struct ToolCallResource {
     pub approval_status: Option<ToolCallResourceApprovalStatus>,
     ///The arguments as JSON text. Cut in lists when long; then it is no longer valid JSON.
     pub arguments: String,
+    /**The artifact versions this call handed to the person, such as a QR code to scan or an
+    exported report. Show them where the call appears; the latest version of each artifact is
+    also what the turn handed over.*/
+    pub artifacts: Vec<ArtifactVersionResource>,
     ///How long an `ask` call waits before it continues with its default answers. Null when it waits indefinitely.
     #[serde(rename = "autoAnswerMs")]
     pub auto_answer_ms: Option<i64>,
+    /**Files the call returned to the assistant as part of its result, such as a screenshot it
+    looks at. They are working material rather than something handed to the person.*/
+    #[serde(rename = "contentFiles")]
+    pub content_files: Vec<FileResource>,
     ///When a person or the reviewer decided the call or answered its questions.
     #[serde(rename = "decidedAt")]
     pub decided_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -1249,21 +1200,21 @@ impl AsRef<str> for SearchTasksRequestBodyActionType {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct SearchAttachmentsRequestBody {
+pub struct SearchFilesRequestBody {
     ///Constraint: maxLength=1024
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
     ///True for uploads no message references, false for the rest.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub draft: Option<bool>,
-    ///Read these attachments. Cannot be combined with cursor.
+    ///Read these files. Cannot be combined with cursor.
     ///Constraint: minItems=1, maxItems=200, uniqueItems=true
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ids: Option<Vec<String>>,
     ///Optional parts of the response. `counts` adds `counts`.
     ///Constraint: uniqueItems=true
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub include: Option<Vec<SearchAttachmentsRequestBodyIncludeItem>>,
+    pub include: Option<Vec<SearchFilesRequestBodyIncludeItem>>,
     ///Constraint: minimum=1, maximum=200
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
@@ -1271,13 +1222,13 @@ pub struct SearchAttachmentsRequestBody {
     ///Constraint: maxLength=100
     #[serde(skip_serializing_if = "Option::is_none")]
     pub q: Option<String>,
-    ///How the assistant sees the file.
+    ///How the assistant reads the file.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<SearchAttachmentsRequestBodyType>,
+    pub r#type: Option<SearchFilesRequestBodyType>,
 }
-///How the assistant sees the file.
+///How the assistant reads the file.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum SearchAttachmentsRequestBodyType {
+pub enum SearchFilesRequestBodyType {
     #[default]
     #[serde(rename = "image")]
     Image,
@@ -1286,7 +1237,7 @@ pub enum SearchAttachmentsRequestBodyType {
     #[serde(rename = "binary")]
     Binary,
 }
-impl SearchAttachmentsRequestBodyType {
+impl SearchFilesRequestBodyType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Image => "image",
@@ -1295,35 +1246,35 @@ impl SearchAttachmentsRequestBodyType {
         }
     }
 }
-impl ::std::fmt::Display for SearchAttachmentsRequestBodyType {
+impl ::std::fmt::Display for SearchFilesRequestBodyType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for SearchAttachmentsRequestBodyType {
+impl AsRef<str> for SearchFilesRequestBodyType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum SearchAttachmentsRequestBodyIncludeItem {
+pub enum SearchFilesRequestBodyIncludeItem {
     #[default]
     #[serde(rename = "counts")]
     Counts,
 }
-impl SearchAttachmentsRequestBodyIncludeItem {
+impl SearchFilesRequestBodyIncludeItem {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Counts => "counts",
         }
     }
 }
-impl ::std::fmt::Display for SearchAttachmentsRequestBodyIncludeItem {
+impl ::std::fmt::Display for SearchFilesRequestBodyIncludeItem {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for SearchAttachmentsRequestBodyIncludeItem {
+impl AsRef<str> for SearchFilesRequestBodyIncludeItem {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -1509,9 +1460,8 @@ pub struct CredentialFieldResource {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PartResource {
-    ///For `file` parts. Points at one of the item's `attachments`.
-    #[serde(rename = "attachmentId")]
-    pub attachment_id: Option<String>,
+    ///For `file` parts. A file the person attached.
+    pub file: Option<FileResource>,
     /**Addresses this part in the realtime stream: text arrives as `append` frames pointing at
     `/items/{item}/parts/{id}/text`. Not an array index.*/
     pub id: String,
@@ -1735,6 +1685,22 @@ pub struct FolderCountsResource {
     pub running: i64,
     ///Constraint: minimum=0
     pub total: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FileListResponseBody {
+    ///Null unless `include` asked for it.
+    pub counts: Option<FileCountsResource>,
+    pub files: Vec<FileResource>,
+    ///Null on the last page.
+    #[serde(rename = "nextCursor")]
+    pub next_cursor: Option<String>,
+}
+///Counts over everything the criteria match, ignoring `ids` and the cursor.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FileCountsResource {
+    pub total: i64,
+    #[serde(rename = "totalBytes")]
+    pub total_bytes: i64,
 }
 /**The change a tool call applied to a single file. Present once the call has completed; while it
 awaits approval, derive a preview from its `old_string` and `new_string` arguments.*/
@@ -2276,25 +2242,25 @@ impl SendMessageRequestBodyBuilder {
 /**One piece of a message. `type` says which field carries it:
 
 - `text` — the words, in `text`
-- `file` — an attachment uploaded earlier, by id in `attachmentId`
+- `file` — a file uploaded earlier, by id in `fileId`
 - `data-<name>` — context from the client, in `data`. The name is shown to the assistant so it
   can tell one block from another.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MessagePart {
-    ///The attachment must have been uploaded and not yet sent with another message.
-    #[serde(
-        rename = "attachmentId",
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub attachment_id: Option<Option<String>>,
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub data: Option<Option<MessagePartData>>,
+    ///The file must have been uploaded and not yet sent with another message.
+    #[serde(
+        rename = "fileId",
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub file_id: Option<Option<String>>,
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
@@ -3209,90 +3175,97 @@ impl AsRef<str> for BindingResourceConnectionStatus {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AttachmentResource {
-    #[serde(rename = "byteSize")]
-    pub byte_size: i64,
-    pub filename: String,
-    ///Null unless type is image.
-    pub height: Option<i64>,
-    pub id: String,
-    ///A client renders an image in place and everything else as a file to download.
-    pub r#type: AttachmentResourceType,
-    ///Null unless type is image. Lets a client hold the space before the image loads.
-    pub width: Option<i64>,
-}
-///A client renders an image in place and everything else as a file to download.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum AttachmentResourceType {
-    #[default]
-    #[serde(rename = "image")]
-    Image,
-    #[serde(rename = "text")]
-    Text,
-    #[serde(rename = "binary")]
-    Binary,
-}
-impl AttachmentResourceType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Image => "image",
-            Self::Text => "text",
-            Self::Binary => "binary",
-        }
-    }
-}
-impl ::std::fmt::Display for AttachmentResourceType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for AttachmentResourceType {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
+pub struct ArtifactVersionListResponseBody {
+    ///Null on the last page.
+    #[serde(rename = "nextCursor")]
+    pub next_cursor: Option<String>,
+    pub versions: Vec<ArtifactVersionResource>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AttachmentListResponseBody {
-    pub attachments: Vec<AttachmentFileResource>,
-    ///Null unless `include` asked for it.
-    pub counts: Option<AttachmentCountsResource>,
+pub struct ArtifactListResponseBody {
+    pub artifacts: Vec<ArtifactResource>,
     ///Null on the last page.
     #[serde(rename = "nextCursor")]
     pub next_cursor: Option<String>,
 }
-///Counts over everything the criteria match, ignoring `ids` and the cursor.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AttachmentCountsResource {
-    pub total: i64,
-    #[serde(rename = "totalBytes")]
-    pub total_bytes: i64,
+pub struct ArtifactResource {
+    #[serde(rename = "createdAt")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub id: String,
+    #[serde(rename = "latestVersion")]
+    pub latest_version: ArtifactVersionResource,
+    pub title: String,
+    ///When the title last changed or the latest version was added.
+    #[serde(rename = "updatedAt")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    ///Constraint: minimum=1
+    #[serde(rename = "versionCount")]
+    pub version_count: i64,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AttachmentFileResource {
+pub struct ArtifactVersionResource {
+    #[serde(rename = "artifactId")]
+    pub artifact_id: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub file: FileResource,
+    pub id: String,
+    ///The tool call that created this version. Null for a version added through the API.
+    #[serde(rename = "itemId")]
+    pub item_id: Option<String>,
+    ///The conversation whose tool call created this version. Null for a version added through the API.
+    #[serde(rename = "threadId")]
+    pub thread_id: Option<String>,
+    ///The artifact's current title.
+    pub title: String,
+    ///The turn whose tool call created this version. Null for a version added through the API.
+    #[serde(rename = "turnId")]
+    pub turn_id: Option<String>,
+    ///The position among the artifact's versions, from 1.
+    ///Constraint: minimum=1
+    pub version: i64,
+}
+///A stored file, wherever it appears.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FileResource {
     #[serde(rename = "byteSize")]
     pub byte_size: i64,
     #[serde(rename = "createdAt")]
     pub created_at: chrono::DateTime<chrono::Utc>,
-    /**When this draft is cleared if no message ever references it. Null once a message uses it —
-    a file that belongs to a conversation is kept as long as the conversation is.*/
+    /**When this upload is cleared if no message ever references it. Null once a message, a tool
+    call or an artifact uses it; such a file is kept as long as what uses it is.*/
     #[serde(rename = "draftExpiresAt")]
     pub draft_expires_at: Option<chrono::DateTime<chrono::Utc>>,
     pub filename: String,
     ///Null unless type is image.
     pub height: Option<i64>,
     pub id: String,
-    ///Detected at intake, not the Content-Type the client sent.
-    pub mime: String,
-    ///How the assistant will see this file.
-    pub r#type: AttachmentFileResourceType,
+    ///The IANA media type detected at intake, not the Content-Type the client sent.
+    #[serde(rename = "mediaType")]
+    pub media_type: String,
+    /**How the assistant reads the file.
+
+    - `image` — read directly, and only by models that accept image input
+    - `text` — placed inline in the message when small enough, otherwise read on demand
+    - `binary` — never read directly; the assistant downloads it onto a host to work with it
+
+    Only an `image` can be shown in place; everything else is offered for download.*/
+    pub r#type: FileResourceType,
     #[serde(rename = "updatedAt")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    ///Null unless type is image.
+    ///Null unless type is image. Lets a client hold the space before the image loads.
     pub width: Option<i64>,
 }
-///How the assistant will see this file.
+/**How the assistant reads the file.
+
+- `image` — read directly, and only by models that accept image input
+- `text` — placed inline in the message when small enough, otherwise read on demand
+- `binary` — never read directly; the assistant downloads it onto a host to work with it
+
+Only an `image` can be shown in place; everything else is offered for download.*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum AttachmentFileResourceType {
+pub enum FileResourceType {
     #[default]
     #[serde(rename = "image")]
     Image,
@@ -3301,7 +3274,7 @@ pub enum AttachmentFileResourceType {
     #[serde(rename = "binary")]
     Binary,
 }
-impl AttachmentFileResourceType {
+impl FileResourceType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Image => "image",
@@ -3310,12 +3283,12 @@ impl AttachmentFileResourceType {
         }
     }
 }
-impl ::std::fmt::Display for AttachmentFileResourceType {
+impl ::std::fmt::Display for FileResourceType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for AttachmentFileResourceType {
+impl AsRef<str> for FileResourceType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -3343,6 +3316,20 @@ pub struct BindingCodeResponseBody {
 pub struct CompleteUploadRequestBody {
     #[serde(rename = "policyId")]
     pub policy_id: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateArtifactRequestBody {
+    ///Constraint: minLength=1, maxLength=64
+    #[serde(rename = "fileId")]
+    pub file_id: String,
+    ///Constraint: minLength=1, maxLength=120
+    pub title: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateArtifactVersionRequestBody {
+    ///Constraint: minLength=1, maxLength=64
+    #[serde(rename = "fileId")]
+    pub file_id: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateFolderRequestBody {
@@ -3638,7 +3625,12 @@ pub struct TurnStartedResponseBody {
     pub turn_id: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpdateAttachmentRequestBody {
+pub struct UpdateArtifactRequestBody {
+    ///Constraint: minLength=1, maxLength=120
+    pub title: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UpdateFileRequestBody {
     ///Constraint: minLength=1, maxLength=255
     pub filename: String,
 }
