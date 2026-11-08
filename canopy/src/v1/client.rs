@@ -561,11 +561,6 @@ pub enum CreateServiceApiError {
 pub enum CreateVideoApiError {
     Default(InferenceError),
 }
-///Typed error responses for `delete-response`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum DeleteResponseApiError {
-    Default(InferenceError),
-}
 ///Typed error responses for `disable-api-key`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DisableApiKeyApiError {
@@ -600,11 +595,6 @@ pub enum GetModelApiError {
 #[derive(Debug, Clone)]
 pub enum GetRequestApiError {
     Default(Error),
-}
-///Typed error responses for `get-response`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetResponseApiError {
-    Default(InferenceError),
 }
 ///Typed error responses for `get-service`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
@@ -761,7 +751,7 @@ impl HttpClient {
     }
     /// Create a chat completion
     ///
-    /// Authenticated project inference in the OpenAI Chat Completions protocol, forwarded unchanged to an upstream that speaks it. Billing ownership comes only from the verified project token.
+    /// Authenticated project inference in the OpenAI Chat Completions protocol. Accepted for every chat model, whichever protocol its providers speak. Billing ownership comes only from the verified project token.
     ///
     /// `POST /v1/chat/completions`
     pub async fn create_chat_completion(
@@ -841,7 +831,7 @@ impl HttpClient {
     }
     /// Create a chat completion
     ///
-    /// Authenticated project inference in the OpenAI Chat Completions protocol, forwarded unchanged to an upstream that speaks it. Billing ownership comes only from the verified project token.
+    /// Authenticated project inference in the OpenAI Chat Completions protocol. Accepted for every chat model, whichever protocol its providers speak. Billing ownership comes only from the verified project token.
     ///
     /// `POST /v1/chat/completions`
     ///Select `text/event-stream` as raw_event_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
@@ -1135,7 +1125,7 @@ impl HttpClient {
     }
     /// Create a message
     ///
-    /// Authenticated project inference in the Anthropic Messages protocol, forwarded unchanged to an upstream that speaks it. Accepts the `x-api-key` header as well as Authorization. Streams Anthropic SSE events when `stream` is true.
+    /// Authenticated project inference in the Anthropic Messages protocol. Accepted for every chat model, whichever protocol its providers speak. Accepts the `x-api-key` header as well as Authorization. Streams Anthropic SSE events when `stream` is true.
     ///
     /// `POST /v1/messages`
     pub async fn create_message(
@@ -1215,7 +1205,7 @@ impl HttpClient {
     }
     /// Create a message
     ///
-    /// Authenticated project inference in the Anthropic Messages protocol, forwarded unchanged to an upstream that speaks it. Accepts the `x-api-key` header as well as Authorization. Streams Anthropic SSE events when `stream` is true.
+    /// Authenticated project inference in the Anthropic Messages protocol. Accepted for every chat model, whichever protocol its providers speak. Accepts the `x-api-key` header as well as Authorization. Streams Anthropic SSE events when `stream` is true.
     ///
     /// `POST /v1/messages`
     ///Select `text/event-stream` as raw_event_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
@@ -1429,7 +1419,7 @@ impl HttpClient {
     }
     /// Create a model response
     ///
-    /// Supports JSON, SSE and native upstream response storage. Stored continuation is restricted to the current project and original provider credential. WebSocket clients connect with GET /v1/responses and send response.create events; one response may be active on a connection at a time. The connection stays on its initial model and provider credential.
+    /// Returns JSON, or Responses SSE events when `stream` is true. Accepted for every chat model, whichever protocol its providers speak. Responses are not stored, so `store` must be false; send the output items of a response back unchanged, in their order, as input to the next request. Reasoning items carry `encrypted_content`, which has to be returned as received. WebSocket clients connect with GET /v1/responses and send response.create events; one response may be active on a connection at a time, and `previous_response_id` continues a response created earlier on the same connection. The connection stays on its initial model and provider credential.
     ///
     /// `POST /v1/responses`
     pub async fn create_response(
@@ -1509,7 +1499,7 @@ impl HttpClient {
     }
     /// Create a model response
     ///
-    /// Supports JSON, SSE and native upstream response storage. Stored continuation is restricted to the current project and original provider credential. WebSocket clients connect with GET /v1/responses and send response.create events; one response may be active on a connection at a time. The connection stays on its initial model and provider credential.
+    /// Returns JSON, or Responses SSE events when `stream` is true. Accepted for every chat model, whichever protocol its providers speak. Responses are not stored, so `store` must be false; send the output items of a response back unchanged, in their order, as input to the next request. Reasoning items carry `encrypted_content`, which has to be returned as received. WebSocket clients connect with GET /v1/responses and send response.create events; one response may be active on a connection at a time, and `previous_response_id` continues a response created earlier on the same connection. The connection stays on its initial model and provider credential.
     ///
     /// `POST /v1/responses`
     ///Select `text/event-stream` as raw_event_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
@@ -1898,88 +1888,6 @@ impl HttpClient {
             }))
         }
     }
-    /// Delete a stored response
-    ///
-    /// `DELETE /v1/responses/{response}`
-    pub async fn delete_response(
-        &self,
-        response: impl AsRef<str>,
-    ) -> Result<ResponseDeleted, ApiOpError<DeleteResponseApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/v1/responses/{}",
-                __pct_encode_path_segment(response.as_ref())
-            )
-        );
-        let mut req = self.http_client.delete(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<DeleteResponseApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<InferenceError>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DeleteResponseApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Disable an API key
     ///
     /// A temporary measure; the key may be enabled again at any time. Use revocation to invalidate it permanently.
@@ -2152,7 +2060,7 @@ impl HttpClient {
     }
     /// Generate content
     ///
-    /// Authenticated project inference in the Gemini protocol, forwarded unchanged to an upstream that speaks it. Accepts the `x-goog-api-key` header as well as Authorization.
+    /// Authenticated project inference in the Gemini protocol. Accepted for every chat model, whichever protocol its providers speak. Accepts the `x-goog-api-key` header as well as Authorization.
     ///
     /// `POST /v1beta/models/{model}:generateContent`
     pub async fn generate_content(
@@ -2547,88 +2455,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetRequestApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Get a stored response
-    ///
-    /// `GET /v1/responses/{response}`
-    pub async fn get_response(
-        &self,
-        response: impl AsRef<str>,
-    ) -> Result<ResponseResource, ApiOpError<GetResponseApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/v1/responses/{}",
-                __pct_encode_path_segment(response.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetResponseApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<InferenceError>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetResponseApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
