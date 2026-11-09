@@ -15,16 +15,16 @@ pub struct VolumeTypeListResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeTypeResource {
-    pub availability_zone_id: AvailabilityZoneID,
+    pub availability_zone_id: AvailabilityZoneId,
     ///The line a volume of this type is, whether bought on its own or as the boot volume or a data volume of an instance. A volume bought on its own is licensed only.
     pub billing: BillingComponent,
-    pub id: VolumeTypeID,
+    pub id: VolumeTypeId,
     pub max_size_gib: i64,
     pub medium: VolumeTypeResourceMedium,
     pub min_size_gib: i64,
     pub name: String,
     pub performance: VolumeTypePerformance,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     ///`sold_out` takes no new orders for now while the type stays listed; the volumes already of it keep working.
     pub sale_status: VolumeTypeResourceSaleStatus,
     pub size_step_gib: i64,
@@ -111,6 +111,15 @@ pub struct VolumeListResponseBody {
     pub items: Option<Vec<VolumeResource>>,
     pub pagination: OffsetPagination,
 }
+///The volume and the Checkout Session for its resize or type change. The volume keeps its current size and type until the change is applied.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VolumeChangeResponseBody {
+    ///The Billing Checkout Session of the purchase. With deferred checkout, the customer completes it in Billing.
+    pub checkout_session_id: uuid::Uuid,
+    ///The order created when checkout completes, at once for automatic checkout; null until then.
+    pub order_id: Option<uuid::Uuid>,
+    pub volume: VolumeResource,
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeBackupListResponseBody {
     pub items: Option<Vec<VolumeBackupResource>>,
@@ -129,7 +138,7 @@ pub struct VirtualPrivateCloudSubnetListResponseBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VirtualPrivateCloudSubnet {
     pub created_at: chrono::DateTime<chrono::Utc>,
-    pub id: SubnetID,
+    pub id: SubnetId,
     ///The subnet's IPv4 range.
     pub ipv4_cidr: String,
     ///The IPv4 gateway address of the subnet.
@@ -140,7 +149,7 @@ pub struct VirtualPrivateCloudSubnet {
     pub ipv6_gateway_address: Option<String>,
     pub name: String,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub virtual_private_cloud_id: VirtualPrivateCloudId,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VirtualPrivateCloudRouteListResponseBody {
@@ -152,13 +161,13 @@ pub struct VirtualPrivateCloudRouteResource {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub description: String,
     pub destination_cidr: String,
-    pub id: VirtualPrivateCloudRouteID,
+    pub id: VirtualPrivateCloudRouteId,
     ///The private address traffic is sent to. Null for a peering route, whose next hop is the platform's side of the peering link.
     pub next_hop_address: Option<String>,
     pub r#type: VirtualPrivateCloudRouteType,
-    pub virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub virtual_private_cloud_id: VirtualPrivateCloudId,
     ///The peering that wrote the route, null for a tenant route.
-    pub virtual_private_cloud_peering_id: Option<VirtualPrivateCloudPeeringID>,
+    pub virtual_private_cloud_peering_id: Option<VirtualPrivateCloudPeeringId>,
 }
 ///Who put the route there. A `tenant` route is created and deleted by the project; a `peering` route is installed by an active peering and removed with it.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -188,7 +197,7 @@ impl AsRef<str> for VirtualPrivateCloudRouteType {
     }
 }
 ///Compute VirtualPrivateCloudRoute TypeID. UUID text is not accepted.
-pub type VirtualPrivateCloudRouteID = String;
+pub type VirtualPrivateCloudRouteId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VirtualPrivateCloudPeeringListResponseBody {
     pub items: Vec<VirtualPrivateCloudPeeringResource>,
@@ -199,17 +208,17 @@ pub struct VirtualPrivateCloudPeeringResource {
     ///The accepter project's decision. `pending` until it decides; `accept-virtual-private-cloud-peering` and `reject-virtual-private-cloud-peering` make it `accepted` or `rejected`. A rejected peering is `deleted`.
     pub acceptance: VirtualPrivateCloudPeeringResourceAcceptance,
     pub accepter_project_id: uuid::Uuid,
-    pub accepter_virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub accepter_virtual_private_cloud_id: VirtualPrivateCloudId,
     pub created_at: chrono::DateTime<chrono::Utc>,
     ///Why provisioning failed; null unless `status` is `failed`.
     pub failure_reason: Option<String>,
-    pub id: VirtualPrivateCloudPeeringID,
+    pub id: VirtualPrivateCloudPeeringId,
     ///The most recent operation started on the peering; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     pub requester_project_id: uuid::Uuid,
-    pub requester_virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub requester_virtual_private_cloud_id: VirtualPrivateCloudId,
     ///`pending` until the connectivity exists: while acceptance is pending, and after it is accepted while the link is built (`provisioning`). Then `active`. `failed` means the link could not be built; `failure_reason` states why. `deleted` once deleted or rejected. `deleting` runs until the link and its peer routes are gone.
     pub status: VirtualPrivateCloudPeeringResourceStatus,
 }
@@ -283,7 +292,7 @@ impl AsRef<str> for VirtualPrivateCloudPeeringResourceAcceptance {
     }
 }
 ///Compute VirtualPrivateCloudPeering TypeID. UUID text is not accepted.
-pub type VirtualPrivateCloudPeeringID = String;
+pub type VirtualPrivateCloudPeeringId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VirtualPrivateCloudListResponseBody {
     pub items: Vec<VirtualPrivateCloud>,
@@ -292,14 +301,14 @@ pub struct VirtualPrivateCloudListResponseBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VirtualPrivateCloud {
     pub created_at: chrono::DateTime<chrono::Utc>,
-    pub id: VirtualPrivateCloudID,
+    pub id: VirtualPrivateCloudId,
     pub ipv4_cidr: String,
     ///The /56 routed to the virtual private cloud, from which each of its subnets takes a /64; null while IPv6 is not enabled.
     pub ipv6_cidr: Option<String>,
     ///The most recent operation started on the virtual private cloud; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     ///`available` from creation: the network and router are created in the backend by the first member that needs them, so a virtual private cloud nothing uses holds no capacity there. `failed` means the cloud reports the network broken; instances cannot be created in it then and are refused with `VIRTUAL_PRIVATE_CLOUD_UNAVAILABLE`. `deleting` from the moment its deletion began until it is gone: subnets, security groups and routes in it can no longer be created, changed or deleted, and are refused with `VIRTUAL_PRIVATE_CLOUD_DELETING`. A deletion that stopped before the end leaves it `deleting`, and deleting it again resumes from where it stopped. `creating`, `enabling_ipv6` and `disabling_ipv6` name operations in progress; the network refuses another operation until they end.
     pub status: VirtualPrivateCloudStatus,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -343,77 +352,19 @@ impl AsRef<str> for VirtualPrivateCloudStatus {
         self.as_str()
     }
 }
-///The volume and, when the update placed a Billing order, the Checkout Session for it. After a resize the volume is still at its current size until the change is applied. Returned with 200 when only descriptive fields changed and with 202 when an operation started.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpdateVolumeResponseBody {
-    ///The Billing Checkout Session of the purchase; null when the update placed no order. With deferred checkout, the customer completes it in Billing.
-    pub checkout_session_id: Option<uuid::Uuid>,
-    ///The order created when checkout completes, at once for automatic checkout; null until then and when the update placed no order.
-    pub order_id: Option<uuid::Uuid>,
-    pub volume: VolumeResource,
-}
-///The mutable fields of a volume, all optional, at least one required. `size_gib` and `volume_type_id` are operational fields and cannot be combined with each other or with `name`; such a request is refused with 422 `UPDATE_FIELDS_COMBINED`.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct UpdateVolumeRequestBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub checkout: Option<CheckoutOptions>,
-    ///Constraint: minLength=1, maxLength=128
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only with `size_gib` or `volume_type_id`, and only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
-    ///The new capacity. Must be larger than the current capacity
-    ///Constraint: minimum=1
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_gib: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub volume_type_id: Option<VolumeTypeID>,
-}
-///The mutable fields of a network interface, all optional, at least one required.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct UpdateNetworkInterfaceRequestBody {
-    ///Constraint: maxLength=128
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    ///The complete new set of security groups, of the network interface's virtual private cloud.
-    ///Constraint: minItems=1, maxItems=5
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub security_group_ids: Option<Vec<SecurityGroupID>>,
-}
-/**The instance and, when the update placed a Billing order, the Checkout Session for it. After a resize the
-instance is still on its current type, keeps its ID, and its current subscription remains in force until
-the resize is applied. Returned with 200 when only descriptive fields changed and with 202 when an operation started.*/
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpdateInstanceResponseBody {
-    ///The Billing Checkout Session of the purchase; null when the update placed no order. With deferred checkout, the customer completes it in Billing.
-    pub checkout_session_id: Option<uuid::Uuid>,
-    pub instance: Instance,
-    ///The order created when checkout completes, at once for automatic checkout; null until then and when the update placed no order.
-    pub order_id: Option<uuid::Uuid>,
-}
-/**The mutable fields of an instance, all optional, at least one required. `instance_type_id` is an operational
-field: it starts a workflow and cannot be combined with any other field; such a request is refused with 422
-`UPDATE_FIELDS_COMBINED`.*/
+///The descriptive fields of an instance, all optional, at least one required.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct UpdateInstanceRequestBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub checkout: Option<CheckoutOptions>,
     ///The complete note. Send an empty string to clear it
     ///Constraint: maxLength=4096
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub instance_type_id: Option<InstanceTypeID>,
     ///The complete set of labels. Whatever is absent here is removed; send an empty object to clear them all. A key may not contain a colon, whitespace or control characters
     #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<UpdateInstanceRequestBodyLabels>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only with `instance_type_id`, and only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
 }
 ///The complete set of labels. Whatever is absent here is removed; send an empty object to clear them all. A key may not contain a colon, whitespace or control characters
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
@@ -422,36 +373,6 @@ pub struct UpdateInstanceRequestBodyLabels {
     /// `additionalProperties` value schema.
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, String>,
-}
-///The elastic IP and, when the update placed a Billing order, the Checkout Session for it. After a bandwidth change the elastic IP is still at its current bandwidth until the change is applied. Returned with 200 when only descriptive fields changed and with 202 when an operation started.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpdateElasticIPResponseBody {
-    ///The Billing Checkout Session of the purchase; null when the update placed no order. With deferred checkout, the customer completes it in Billing.
-    pub checkout_session_id: Option<uuid::Uuid>,
-    pub elastic_ip: ElasticIP,
-    ///The order created when checkout completes, at once for automatic checkout; null until then and when the update placed no order.
-    pub order_id: Option<uuid::Uuid>,
-}
-/**The mutable fields of the elastic IP identified by the path, all optional, at least one required. `bandwidth_mbps`
-and `internet_charge_type` are operational fields and cannot be combined with any other field; such a request is
-refused with 422 `UPDATE_FIELDS_COMBINED`. This is a configuration change of that resource, not an independent
-bandwidth resource. Checkout is handled by Billing.*/
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct UpdateElasticIPRequestBody {
-    ///Applied to both directions
-    ///Constraint: minimum=1
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bandwidth_mbps: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub checkout: Option<CheckoutOptions>,
-    /**Moves a pay-as-you-go elastic IP between charging for its bandwidth and charging for its traffic, within the same network subscription and without checkout. A prepaid network subscription has paid for its bandwidth and is refused with `ELASTIC_IP_CHARGE_TYPE_PREPAID`; `traffic` on a line whose `traffic_sale_status` is `off_sale` is refused with `ELASTIC_IP_TRAFFIC_UNAVAILABLE`, the type already in effect with `ELASTIC_IP_CHARGE_TYPE_UNCHANGED`, and a type the currency of the network subscription does not offer on the line with HTTP 403 `ELASTIC_IP_CHARGE_TYPE_NOT_OFFERED`: prices are set per currency, and a currency without one there does not sell that type.
-
-    The change takes effect at the instant it is applied: bandwidth stops being metered then and traffic starts being, or the other way round. Traffic is counted in windows, and a window is charged the way the elastic IP was charged for most of it, so a report that arrives late is still charged as it was at the time and a window the change falls in is never charged both ways. `bandwidth_mbps` stays the ceiling either way.*/
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub internet_charge_type: Option<InternetChargeType>,
-    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only with `bandwidth_mbps` on a prepaid network subscription, and only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TrafficUsageListResponseBody {
@@ -478,7 +399,7 @@ pub struct SecurityGroupRule {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub description: String,
     pub direction: SecurityGroupRuleDirection,
-    pub id: SecurityGroupRuleID,
+    pub id: SecurityGroupRuleId,
     pub ip_version: i64,
     ///The last port, or the ICMP code when the protocol is ICMP. Null for every port.
     pub port_range_max: Option<i64>,
@@ -488,10 +409,10 @@ pub struct SecurityGroupRule {
     pub protocol: Option<String>,
     ///Null for every address.
     pub remote_cidr: Option<String>,
-    pub security_group_id: SecurityGroupID,
+    pub security_group_id: SecurityGroupId,
 }
 ///Compute SecurityGroupRule TypeID. UUID text is not accepted.
-pub type SecurityGroupRuleID = String;
+pub type SecurityGroupRuleId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SecurityGroupListResponseBody {
     pub items: Vec<SecurityGroup>,
@@ -501,22 +422,199 @@ pub struct SecurityGroupListResponseBody {
 pub struct SecurityGroup {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub description: String,
-    pub id: SecurityGroupID,
+    pub id: SecurityGroupId,
     ///The default security group goes with its virtual private cloud and cannot be deleted on its own.
     pub is_default: bool,
     pub name: String,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub virtual_private_cloud_id: VirtualPrivateCloudId,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RevertVolumeRequestBody {
-    pub volume_snapshot_id: VolumeSnapshotID,
+    pub volume_snapshot_id: VolumeSnapshotId,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RetypeVolumeRequestBody {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub checkout: Option<CheckoutOptions>,
+    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub volume_type_id: VolumeTypeId,
+}
+impl RetypeVolumeRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(volume_type_id: VolumeTypeId) -> Self {
+        Self {
+            volume_type_id,
+            checkout: None,
+            proration_date: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(volume_type_id: VolumeTypeId) -> RetypeVolumeRequestBodyBuilder {
+        RetypeVolumeRequestBodyBuilder::new(volume_type_id)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct RetypeVolumeRequestBodyBuilder {
+    value: RetypeVolumeRequestBody,
+}
+impl RetypeVolumeRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(volume_type_id: VolumeTypeId) -> Self {
+        Self {
+            value: RetypeVolumeRequestBody::new(volume_type_id),
+        }
+    }
+    #[doc = concat!("Set the optional `", "checkout", "` request field.")]
+    #[must_use]
+    pub fn checkout(mut self, checkout: CheckoutOptions) -> Self {
+        self.value.checkout = Some(checkout);
+        self
+    }
+    #[doc = concat!("Set the optional `", "proration_date", "` request field.")]
+    #[must_use]
+    pub fn proration_date(mut self, proration_date: chrono::DateTime<chrono::Utc>) -> Self {
+        self.value.proration_date = Some(proration_date);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> RetypeVolumeRequestBody {
+        self.value
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ResizeVolumeRequestBody {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub checkout: Option<CheckoutOptions>,
+    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
+    ///The new capacity. Must be larger than the current capacity
+    ///Constraint: minimum=1
+    pub size_gib: i64,
+}
+impl ResizeVolumeRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(size_gib: i64) -> Self {
+        Self {
+            size_gib,
+            checkout: None,
+            proration_date: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(size_gib: i64) -> ResizeVolumeRequestBodyBuilder {
+        ResizeVolumeRequestBodyBuilder::new(size_gib)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct ResizeVolumeRequestBodyBuilder {
+    value: ResizeVolumeRequestBody,
+}
+impl ResizeVolumeRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(size_gib: i64) -> Self {
+        Self {
+            value: ResizeVolumeRequestBody::new(size_gib),
+        }
+    }
+    #[doc = concat!("Set the optional `", "checkout", "` request field.")]
+    #[must_use]
+    pub fn checkout(mut self, checkout: CheckoutOptions) -> Self {
+        self.value.checkout = Some(checkout);
+        self
+    }
+    #[doc = concat!("Set the optional `", "proration_date", "` request field.")]
+    #[must_use]
+    pub fn proration_date(mut self, proration_date: chrono::DateTime<chrono::Utc>) -> Self {
+        self.value.proration_date = Some(proration_date);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> ResizeVolumeRequestBody {
+        self.value
+    }
+}
+/**The instance and the Checkout Session for the resize. The instance is still on its current type, keeps its
+ID, and its subscription item keeps its current terms until the resize is applied.*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ResizeInstanceResponseBody {
+    ///The Billing Checkout Session of the purchase. With deferred checkout, the customer completes it in Billing.
+    pub checkout_session_id: uuid::Uuid,
+    pub instance: Instance,
+    ///The order created when checkout completes, at once for automatic checkout; null until then.
+    pub order_id: Option<uuid::Uuid>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ResizeInstanceRequestBody {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub checkout: Option<CheckoutOptions>,
+    pub instance_type_id: InstanceTypeId,
+    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
+}
+impl ResizeInstanceRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(instance_type_id: InstanceTypeId) -> Self {
+        Self {
+            instance_type_id,
+            checkout: None,
+            proration_date: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(instance_type_id: InstanceTypeId) -> ResizeInstanceRequestBodyBuilder {
+        ResizeInstanceRequestBodyBuilder::new(instance_type_id)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct ResizeInstanceRequestBodyBuilder {
+    value: ResizeInstanceRequestBody,
+}
+impl ResizeInstanceRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(instance_type_id: InstanceTypeId) -> Self {
+        Self {
+            value: ResizeInstanceRequestBody::new(instance_type_id),
+        }
+    }
+    #[doc = concat!("Set the optional `", "checkout", "` request field.")]
+    #[must_use]
+    pub fn checkout(mut self, checkout: CheckoutOptions) -> Self {
+        self.value.checkout = Some(checkout);
+        self
+    }
+    #[doc = concat!("Set the optional `", "proration_date", "` request field.")]
+    #[must_use]
+    pub fn proration_date(mut self, proration_date: chrono::DateTime<chrono::Utc>) -> Self {
+        self.value.proration_date = Some(proration_date);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> ResizeInstanceRequestBody {
+        self.value
+    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RescueInstanceResponseBody {
     pub instance: Instance,
     ///Login account in the temporary rescue environment.
     pub login_username: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ReplaceNetworkInterfaceSecurityGroupsRequestBody {
+    ///The complete new set of security groups, of the network interface's virtual private cloud.
+    ///Constraint: minItems=1, maxItems=5
+    pub security_group_ids: Vec<SecurityGroupId>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RegionListResponseBody {
@@ -529,7 +627,7 @@ pub struct RegionResource {
     pub code: String,
     ///ISO 3166-1 alpha-2 country this region sits in. Two letters, uppercase.
     pub country_code: String,
-    pub id: RegionID,
+    pub id: RegionId,
     ///Display name for this place, shown to tenants (Hong Kong). The stable handle is code.
     pub name: String,
     ///The line every private image in this region is, metered each second it is stored under its `billing_position`.
@@ -547,7 +645,7 @@ pub struct RebuildInstanceResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RebuildInstanceRequestBody {
-    pub image_id: ImageID,
+    pub image_id: ImageId,
     ///Whether the rebuilt instance joins Leaflow Fleet. If omitted, the instance's current value is retained. Because a rebuild replaces the operating system, the instance enrolls as a new Fleet machine and the previous machine is removed from Fleet. Setting the value to `true` for an image that does not support Fleet is rejected with 422 `INSTANCE_FLEET_UNSUPPORTED`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub join_fleet: Option<bool>,
@@ -556,7 +654,7 @@ pub struct RebuildInstanceRequestBody {
 }
 impl RebuildInstanceRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(image_id: ImageID) -> Self {
+    pub fn new(image_id: ImageId) -> Self {
         Self {
             image_id,
             join_fleet: None,
@@ -564,7 +662,7 @@ impl RebuildInstanceRequestBody {
         }
     }
     /// Start a dependency-free builder with every required wire field.
-    pub fn builder(image_id: ImageID) -> RebuildInstanceRequestBodyBuilder {
+    pub fn builder(image_id: ImageId) -> RebuildInstanceRequestBodyBuilder {
         RebuildInstanceRequestBodyBuilder::new(image_id)
     }
 }
@@ -576,7 +674,7 @@ pub struct RebuildInstanceRequestBodyBuilder {
 }
 impl RebuildInstanceRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(image_id: ImageID) -> Self {
+    pub fn new(image_id: ImageId) -> Self {
         Self {
             value: RebuildInstanceRequestBody::new(image_id),
         }
@@ -608,7 +706,7 @@ pub struct PublicImageListResponseBody {
 pub struct PublicImageResource {
     pub architecture: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
-    pub id: ImageID,
+    pub id: ImageId,
     ///The account this image lets you log in as. The password set at creation belongs to this account
     ///Constraint: maxLength=32
     pub login_username: String,
@@ -619,7 +717,7 @@ pub struct PublicImageResource {
     pub name: String,
     pub os_family: String,
     pub os_version: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     ///`on_sale` images can install new instances. `off_sale` means the platform withdrew the image: it stops new purchases only, and instances already running it keep running and can still be rebuilt onto it.
     pub sale_status: PublicImageResourceSaleStatus,
     ///Whether instances created from this image can join Leaflow Fleet (`join_fleet`). The value applies to this specific image build; other builds of the same operating system may differ
@@ -665,7 +763,7 @@ pub struct ProjectQuota {
     ///Constraint: minimum=0
     pub limit: i64,
     pub project_id: uuid::Uuid,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     pub resource: QuotaResourceType,
     pub source: QuotaSource,
 }
@@ -778,12 +876,12 @@ pub struct OperationLogResource {
     pub created_at: chrono::DateTime<chrono::Utc>,
     ///Brief reason for the failure; null when `outcome` is `succeeded`
     pub failure: Option<String>,
-    pub id: OperationLogID,
+    pub id: OperationLogId,
     ///`succeeded` means the operation took effect. `rejected` means it was refused with a 4xx the caller can act on, such as a validation failure, a conflict or an exhausted quota. `failed` means the platform failed to carry it out (5xx).
     pub outcome: OperationLogResourceOutcome,
     ///Path and query parameters of the request. Fields such as passwords are redacted
     pub payload: OperationLogResourcePayload,
-    pub region_id: Option<RegionID>,
+    pub region_id: Option<RegionId>,
     ///Empty for create operations: the id of the new resource is in the response, not in the request path
     pub subject_id: String,
     pub subject_type: String,
@@ -860,7 +958,7 @@ impl AsRef<str> for OperationLogResourceActorType {
     }
 }
 ///Compute OperationLog TypeID. UUID text is not accepted.
-pub type OperationLogID = String;
+pub type OperationLogId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NetworkInterfaceListResponseBody {
     pub items: Option<Vec<NetworkInterface>>,
@@ -878,16 +976,16 @@ pub struct NetworkInterface {
     pub attachment: Option<NetworkInterfaceAttachment>,
     ///Elastic IPv4 addresses associated with this network interface; an empty array when none are associated
     pub elastic_ip_addresses: Option<Vec<String>>,
-    pub id: NetworkInterfaceID,
+    pub id: NetworkInterfaceId,
     ///The most recent operation started on the network interface; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
     pub mac_address: Option<String>,
     pub name: String,
     ///The security groups the network interface holds.
-    pub security_group_ids: Vec<SecurityGroupID>,
+    pub security_group_ids: Vec<SecurityGroupId>,
     ///`pending` until the interface is created, then `available`. `error` means its creation failed or the cloud reports it broken; delete it and create another. A value naming an operation in progress (`attaching`, `detaching`, `associating_elastic_ip`, `updating_security_groups`, `adding_address`, `removing_address`, `deleting`) is shown while that operation runs; the interface refuses another operation until it ends.
     pub status: NetworkInterfaceStatus,
-    pub virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub virtual_private_cloud_id: VirtualPrivateCloudId,
 }
 ///`pending` until the interface is created, then `available`. `error` means its creation failed or the cloud reports it broken; delete it and create another. A value naming an operation in progress (`attaching`, `detaching`, `associating_elastic_ip`, `updating_security_groups`, `adding_address`, `removing_address`, `deleting`) is shown while that operation runs; the interface refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -944,9 +1042,9 @@ impl AsRef<str> for NetworkInterfaceStatus {
 pub struct NetworkInterfaceAttachment {
     pub attached_at: Option<chrono::DateTime<chrono::Utc>>,
     pub detached_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub id: InstanceNetworkInterfaceID,
-    pub instance_id: InstanceID,
-    pub network_interface_id: NetworkInterfaceID,
+    pub id: InstanceNetworkInterfaceId,
+    pub instance_id: InstanceId,
+    pub network_interface_id: NetworkInterfaceId,
     ///What releasing the instance does to this interface. `delete` deletes it together with the instance; `detach` detaches it and leaves it to you. The primary interface created with the instance is `delete`; an interface you created yourself is `detach`.
     pub on_instance_release: NetworkInterfaceAttachmentOnInstanceRelease,
     pub released_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -1036,18 +1134,18 @@ impl AsRef<str> for NetworkInterfaceAttachmentOnInstanceRelease {
     }
 }
 ///Compute InstanceNetworkInterface TypeID. UUID text is not accepted.
-pub type InstanceNetworkInterfaceID = String;
+pub type InstanceNetworkInterfaceId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NetworkInterfaceAddress {
     ///Constraint: minLength=1, maxLength=64
     pub address: String,
     pub assigned_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub id: NetworkInterfaceAddressID,
+    pub id: NetworkInterfaceAddressId,
     pub released_at: Option<chrono::DateTime<chrono::Utc>>,
     ///`primary` is the interface's primary private address, which is the instance's network location; every other address of the interface is `secondary`.
     pub role: NetworkInterfaceAddressRole,
     pub state: NetworkInterfaceAddressState,
-    pub subnet_id: SubnetID,
+    pub subnet_id: SubnetId,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum NetworkInterfaceAddressState {
@@ -1122,11 +1220,11 @@ pub struct InstanceTypeListResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InstanceType {
-    pub availability_zone_id: AvailabilityZoneID,
+    pub availability_zone_id: AvailabilityZoneId,
     ///The line an instance of this type is. The boot volume and data volumes bought with it are lines of their volume types, and a new elastic IP the two lines of its elastic IP line.
     pub billing: BillingComponent,
-    pub id: InstanceTypeID,
-    pub instance_family_id: InstanceFamilyID,
+    pub id: InstanceTypeId,
+    pub instance_family_id: InstanceFamilyId,
     /**The machine's network rate, in Mbps. **Each** network interface of the machine is limited to it in both directions — per interface rather than shared, so a machine with two interfaces has this rate on each of them; `max_network_interfaces` says how many it may have. Zero is no limit.
 
     An elastic IP associated with the machine cannot be bought faster than this rate; asking for more is refused with `INSTANCE_BANDWIDTH_CEILING`.*/
@@ -1135,7 +1233,7 @@ pub struct InstanceType {
     pub max_network_interfaces: i64,
     pub memory_mib: i64,
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     ///`sold_out` takes no new orders for now while the type stays listed; the instances already of it keep working.
     pub sale_status: InstanceTypeSaleStatus,
     pub vcpus: i64,
@@ -1188,13 +1286,13 @@ pub struct InstanceFamily {
     pub cpu_vendor: InstanceFamilyCpuVendor,
     ///The hardware generation of the family; a higher one is newer hardware.
     pub generation: i64,
-    pub id: InstanceFamilyID,
+    pub id: InstanceFamilyId,
     ///The family's name, such as `g7`.
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
 }
 ///Compute InstanceFamily TypeID. UUID text is not accepted.
-pub type InstanceFamilyID = String;
+pub type InstanceFamilyId = String;
 ///Who makes the CPU the family runs on.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum InstanceFamilyCpuVendor {
@@ -1336,24 +1434,24 @@ pub struct FieldViolation {
     pub reason: Option<String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ElasticIPListResponseBody {
-    pub items: Option<Vec<ElasticIP>>,
+pub struct ElasticIpListResponseBody {
+    pub items: Option<Vec<ElasticIp>>,
     pub pagination: OffsetPagination,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ElasticIPLineListResponseBody {
-    pub items: Vec<ElasticIPLine>,
+pub struct ElasticIpLineListResponseBody {
+    pub items: Vec<ElasticIpLine>,
     pub pagination: OffsetPagination,
 }
-///The network an elastic IP is bought on: the bandwidth that can be chosen, and the two Billing Plans every elastic IP of the line is paid under in one order. The address subscription is always used and meters the address while it is held idle, associated with nothing; the network subscription pays the bandwidth, prepaid or used while associated, or the traffic sent. Contains no supply ranges, gateways or backend execution state.
+///The network an elastic IP is bought on: the bandwidth that can be chosen, and the two Billing Plans every elastic IP of the line is paid under in one order. The address item is always used and meters the address while it is held idle, associated with nothing; the network item pays the bandwidth, prepaid or used while associated, or the traffic sent. Contains no supply ranges, gateways or backend execution state.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ElasticIPLine {
+pub struct ElasticIpLine {
     ///The address line every elastic IP of this line has. It is always metered, and meters the address while no network interface holds it.
     pub address_billing: BillingComponent,
     pub created_at: chrono::DateTime<chrono::Utc>,
     ///Constraint: minLength=0, maxLength=255
     pub description: String,
-    pub id: ElasticIPLineID,
+    pub id: ElasticIpLineId,
     ///The network line every elastic IP of this line has, which pays its bandwidth, prepaid or used while associated, or its traffic. Metered, the line's quantity is 1 and the bandwidth or the traffic is what its meters read, by the elastic IP's `internet_charge_type`.
     pub internet_billing: BillingComponent,
     ///The most bandwidth an elastic IP of this line can be bought with, in Mbps, at most 1000. An elastic IP associated with an instance is also held to the instance type's `max_bandwidth_mbps`.
@@ -1362,23 +1460,23 @@ pub struct ElasticIPLine {
     pub min_bandwidth_mbps: i64,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     ///`on_sale` is offered for new elastic IPs; `off_sale` takes none, while the elastic IPs already on it keep working.
-    pub sale_status: ElasticIPLineSaleStatus,
+    pub sale_status: ElasticIpLineSaleStatus,
     ///Whether an elastic IP of this line can be bought with `internet_charge_type` `traffic`, billed by the bytes it sends. `off_sale` refuses that with `ELASTIC_IP_TRAFFIC_UNAVAILABLE`.
-    pub traffic_sale_status: ElasticIPLineTrafficSaleStatus,
+    pub traffic_sale_status: ElasticIpLineTrafficSaleStatus,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 ///Whether an elastic IP of this line can be bought with `internet_charge_type` `traffic`, billed by the bytes it sends. `off_sale` refuses that with `ELASTIC_IP_TRAFFIC_UNAVAILABLE`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIPLineTrafficSaleStatus {
+pub enum ElasticIpLineTrafficSaleStatus {
     #[default]
     #[serde(rename = "on_sale")]
     OnSale,
     #[serde(rename = "off_sale")]
     OffSale,
 }
-impl ElasticIPLineTrafficSaleStatus {
+impl ElasticIpLineTrafficSaleStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::OnSale => "on_sale",
@@ -1386,26 +1484,26 @@ impl ElasticIPLineTrafficSaleStatus {
         }
     }
 }
-impl ::std::fmt::Display for ElasticIPLineTrafficSaleStatus {
+impl ::std::fmt::Display for ElasticIpLineTrafficSaleStatus {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ElasticIPLineTrafficSaleStatus {
+impl AsRef<str> for ElasticIpLineTrafficSaleStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 ///`on_sale` is offered for new elastic IPs; `off_sale` takes none, while the elastic IPs already on it keep working.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIPLineSaleStatus {
+pub enum ElasticIpLineSaleStatus {
     #[default]
     #[serde(rename = "on_sale")]
     OnSale,
     #[serde(rename = "off_sale")]
     OffSale,
 }
-impl ElasticIPLineSaleStatus {
+impl ElasticIpLineSaleStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::OnSale => "on_sale",
@@ -1413,57 +1511,66 @@ impl ElasticIPLineSaleStatus {
         }
     }
 }
-impl ::std::fmt::Display for ElasticIPLineSaleStatus {
+impl ::std::fmt::Display for ElasticIpLineSaleStatus {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ElasticIPLineSaleStatus {
+impl AsRef<str> for ElasticIpLineSaleStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
-///The snapshot as it is when the deletion is accepted, and the Billing cancellation that releases it when subscriptions pay for it.
+///The elastic IP and, for a prepaid network item, the Checkout Session for its bandwidth change. The elastic IP is still at its current bandwidth until the change is applied.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ElasticIpChangeResponseBody {
+    ///The Billing Checkout Session of the purchase; null for a pay-as-you-go network item, which changes without checkout. With deferred checkout, the customer completes it in Billing.
+    pub checkout_session_id: Option<uuid::Uuid>,
+    pub elastic_ip: ElasticIp,
+    ///The order created when checkout completes, at once for automatic checkout; null until then and without checkout.
+    pub order_id: Option<uuid::Uuid>,
+}
+///The snapshot as it is when the deletion is accepted, and the Billing cancellation that releases it when subscription items pay for it.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DeleteVolumeSnapshotResponseBody {
-    ///The cancellation Compute created for the snapshot's subscriptions; null when none pays for it.
+    ///The cancellation Compute created for the snapshot's subscription items; null when none pays for it.
     pub cancellation: Option<BillingCancellation>,
     pub volume_snapshot: VolumeSnapshotResource,
 }
-///The volume as it is when the deletion is accepted, and the Billing cancellation that releases it when subscriptions pay for it.
+///The volume as it is when the deletion is accepted, and the Billing cancellation that releases it when subscription items pay for it.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DeleteVolumeResponseBody {
-    ///The cancellation Compute created for the volume's subscriptions; null when none pays for it.
+    ///The cancellation Compute created for the volume's subscription items; null when none pays for it.
     pub cancellation: Option<BillingCancellation>,
     pub volume: VolumeResource,
 }
-///The volume backup as it is when the deletion is accepted, and the Billing cancellation that releases it when subscriptions pay for it.
+///The volume backup as it is when the deletion is accepted, and the Billing cancellation that releases it when subscription items pay for it.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DeleteVolumeBackupResponseBody {
-    ///The cancellation Compute created for the volume backup's subscriptions; null when none pays for it.
+    ///The cancellation Compute created for the volume backup's subscription items; null when none pays for it.
     pub cancellation: Option<BillingCancellation>,
     pub volume_backup: VolumeBackupResource,
 }
-///The private image as it is when the deletion is accepted, and the Billing cancellation that releases it when subscriptions pay for it.
+///The private image as it is when the deletion is accepted, and the Billing cancellation that releases it when subscription items pay for it.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DeletePrivateImageResponseBody {
-    ///The cancellation Compute created for the private image's subscriptions; null when none pays for it.
+    ///The cancellation Compute created for the private image's subscription items; null when none pays for it.
     pub cancellation: Option<BillingCancellation>,
     pub private_image: PrivateImageResource,
 }
-///The instance as it is when the deletion is accepted, and the Billing cancellation that releases it when subscriptions pay for it.
+///The instance as it is when the deletion is accepted, and the Billing cancellation that releases it when subscription items pay for it.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DeleteInstanceResponseBody {
-    ///The cancellation Compute created for the instance's subscriptions; null when none pays for it.
+    ///The cancellation Compute created for the instance's subscription items; null when none pays for it.
     pub cancellation: Option<BillingCancellation>,
     pub instance: Instance,
 }
-///The elastic IP as it is when the deletion is accepted, and the Billing cancellation that releases it when subscriptions pay for it.
+///The elastic IP as it is when the deletion is accepted, and the Billing cancellation that releases it when subscription items pay for it.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct DeleteElasticIPResponseBody {
-    ///The cancellation Compute created for the elastic IP's subscriptions; null when none pays for it.
+pub struct DeleteElasticIpResponseBody {
+    ///The cancellation Compute created for the elastic IP's subscription items; null when none pays for it.
     pub cancellation: Option<BillingCancellation>,
-    pub elastic_ip: ElasticIP,
+    pub elastic_ip: ElasticIp,
 }
 ///The new snapshot, `pending` until its order is accepted, and its Checkout Session.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -1477,13 +1584,13 @@ pub struct CreateVolumeSnapshotResponseBody {
 ///A snapshot of a volume. Compute project quotas constrain its count; retained storage is metered independently of that quota.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeSnapshotResource {
-    pub availability_zone_id: AvailabilityZoneID,
+    pub availability_zone_id: AvailabilityZoneId,
     ///The Billing Checkout Session that bought this resource; `order_id` and `order_item_id` stay null until its checkout completes. Null when the resource was not bought through one.
     pub checkout_session_id: Option<uuid::Uuid>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this snapshot is refunded.
     pub failure_reason: Option<VolumeSnapshotResourceFailureReason>,
-    pub id: VolumeSnapshotID,
+    pub id: VolumeSnapshotId,
     ///The most recent operation started on the snapshot; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
     pub name: String,
@@ -1491,16 +1598,18 @@ pub struct VolumeSnapshotResource {
     pub order_id: Option<uuid::Uuid>,
     ///The Billing order item for this resource.
     pub order_item_id: Option<uuid::Uuid>,
-    pub region_id: RegionID,
-    ///The subscription that pays for this snapshot, with the resource it pays for, so that a cancellation through Billing can name what it releases. Empty when no subscription pays for it, and once it is released.
+    pub region_id: RegionId,
+    ///The subscription item that pays for this snapshot, with the resource it pays for, so that a cancellation through Billing can name what it releases. Empty when no subscription item pays for it, and once it is released.
     pub release_set: Vec<ReleaseSetItem>,
     ///Capacity of the source volume when the snapshot was created. A volume restored from it cannot be smaller
     pub size_gib: i64,
     ///`pending` once a quota slot is reserved and until the snapshot is taken; then `available`. `failed` means the snapshot was not created; its slot is released once no snapshot data remains. `error` means the cloud reports the snapshot broken. A value naming an operation in progress (`restoring`, `deleting`) is shown while that operation runs; the snapshot refuses another operation until it ends.
     pub status: VolumeSnapshotResourceStatus,
-    ///The subscription for this resource; its presence alone does not imply delivery.
+    ///The Billing subscription of this resource; its presence alone does not imply delivery.
     pub subscription_id: Option<uuid::Uuid>,
-    pub volume_id: VolumeID,
+    ///The resource's item of that subscription.
+    pub subscription_item_id: Option<uuid::Uuid>,
+    pub volume_id: VolumeId,
 }
 ///`pending` once a quota slot is reserved and until the snapshot is taken; then `available`. `failed` means the snapshot was not created; its slot is released once no snapshot data remains. `error` means the cloud reports the snapshot broken. A value naming an operation in progress (`restoring`, `deleting`) is shown while that operation runs; the snapshot refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -1590,11 +1699,11 @@ pub struct CreateVolumeSnapshotRequestBody {
     pub checkout: Option<CheckoutOptions>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
-    pub volume_id: VolumeID,
+    pub volume_id: VolumeId,
 }
 impl CreateVolumeSnapshotRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(name: String, volume_id: VolumeID) -> Self {
+    pub fn new(name: String, volume_id: VolumeId) -> Self {
         Self {
             name,
             volume_id,
@@ -1602,7 +1711,7 @@ impl CreateVolumeSnapshotRequestBody {
         }
     }
     /// Start a dependency-free builder with every required wire field.
-    pub fn builder(name: String, volume_id: VolumeID) -> CreateVolumeSnapshotRequestBodyBuilder {
+    pub fn builder(name: String, volume_id: VolumeId) -> CreateVolumeSnapshotRequestBodyBuilder {
         CreateVolumeSnapshotRequestBodyBuilder::new(name, volume_id)
     }
 }
@@ -1614,7 +1723,7 @@ pub struct CreateVolumeSnapshotRequestBodyBuilder {
 }
 impl CreateVolumeSnapshotRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(name: String, volume_id: VolumeID) -> Self {
+    pub fn new(name: String, volume_id: VolumeId) -> Self {
         Self {
             value: CreateVolumeSnapshotRequestBody::new(name, volume_id),
         }
@@ -1644,13 +1753,13 @@ pub struct CreateVolumeResponseBody {
 pub struct VolumeResource {
     pub access_state: Option<VolumeResourceAccessState>,
     pub attachment: Option<VolumeAttachment>,
-    pub availability_zone_id: AvailabilityZoneID,
+    pub availability_zone_id: AvailabilityZoneId,
     ///The Billing Checkout Session that bought this resource; `order_id` and `order_item_id` stay null until its checkout completes. Null when the resource was not bought through one.
     pub checkout_session_id: Option<uuid::Uuid>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this volume is refunded.
     pub failure_reason: Option<VolumeResourceFailureReason>,
-    pub id: VolumeID,
+    pub id: VolumeId,
     ///The most recent operation started on the volume; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
     pub name: String,
@@ -1658,16 +1767,19 @@ pub struct VolumeResource {
     ///The Billing order item for this resource.
     pub order_item_id: Option<uuid::Uuid>,
     pub performance: VolumePerformance,
-    pub region_id: RegionID,
-    ///The subscriptions a cancellation through Billing has to cover to release this volume: its own, each with the resource it pays for, so that each line of a cancellation can name what it releases. Snapshots have no individual subscriptions. A boot volume is released only with its instance, so for a boot volume the set is that of the instance. Subscriptions that have ended are not listed, and the set is empty when no subscription pays for any of them.
+    pub region_id: RegionId,
+    ///The subscription items a cancellation through Billing has to cover to release this volume: its own, each with the resource it pays for, so that each line of a cancellation can name what it releases. Snapshots have no individual items. A boot volume is released only with its instance, so for a boot volume the set is that of the instance. Items that have ended are not listed, and the set is empty when no item pays for any of them.
     pub release_set: Vec<ReleaseSetItem>,
     pub size_gib: i64,
     ///`pending` until the volume is created, with no storage allocated before the order is accepted; then `available`, or `in_use` once attached. `failed` means the volume was not created; `failure_reason` states why. `error` means the cloud reports the volume broken. A value naming an operation in progress (`resizing`, `retyping`, `reverting`, `attaching`, `detaching`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the volume refuses another operation until it ends.
     pub status: VolumeResourceStatus,
-    /**The Billing subscription associated with this resource. It may still be pending; its
+    /**The Billing subscription the resource renews under: its own, or the instance's when it was bought with or
+    for one. Read it in Billing for the term end, automatic renewal and renewal. It may still be pending; its
     presence does not imply delivery or metering. Null when no subscription is associated.*/
     pub subscription_id: Option<uuid::Uuid>,
-    pub volume_type_id: VolumeTypeID,
+    ///The resource's item of that subscription. Null when no subscription is associated.
+    pub subscription_item_id: Option<uuid::Uuid>,
+    pub volume_type_id: VolumeTypeId,
 }
 ///`pending` until the volume is created, with no storage allocated before the order is accepted; then `available`, or `in_use` once attached. `failed` means the volume was not created; `failure_reason` states why. `error` means the cloud reports the volume broken. A value naming an operation in progress (`resizing`, `retyping`, `reverting`, `attaching`, `detaching`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the volume refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -1811,8 +1923,8 @@ pub struct VolumeAttachment {
     pub attached_at: Option<chrono::DateTime<chrono::Utc>>,
     pub detached_at: Option<chrono::DateTime<chrono::Utc>>,
     pub device: Option<String>,
-    pub id: InstanceVolumeID,
-    pub instance_id: InstanceID,
+    pub id: InstanceVolumeId,
+    pub instance_id: InstanceId,
     ///What releasing the instance does to this volume. `delete` deletes it together with the instance; `detach` detaches it and leaves it to you. A volume you attached, or booted the instance from, is `detach`; a volume bought with the instance follows the choice made when it was bought.
     pub on_instance_release: VolumeAttachmentOnInstanceRelease,
     ///The volume's performance in effect on this attachment, as it was when the attachment was made. Null until the attachment is made.
@@ -1820,7 +1932,7 @@ pub struct VolumeAttachment {
     pub released_at: Option<chrono::DateTime<chrono::Utc>>,
     pub role: VolumeAttachmentRole,
     pub state: VolumeAttachmentState,
-    pub volume_id: VolumeID,
+    pub volume_id: VolumeId,
 }
 ///A volume's limits.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -1911,12 +2023,15 @@ impl AsRef<str> for VolumeAttachmentOnInstanceRelease {
     }
 }
 ///Compute InstanceVolume TypeID. UUID text is not accepted.
-pub type InstanceVolumeID = String;
+pub type InstanceVolumeId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateVolumeRequestBody {
-    pub billing: BillingChoice,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub billing: Option<BillingChoice>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instance_id: Option<InstanceId>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     ///Required unless `volume_backup_id` is given. With `volume_snapshot_id` it need only be no smaller than the snapshot; with `volume_backup_id` it defaults to the size of the backup and must not be smaller than it
@@ -1924,31 +2039,28 @@ pub struct CreateVolumeRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub size_gib: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub volume_backup_id: Option<VolumeBackupID>,
+    pub volume_backup_id: Option<VolumeBackupId>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub volume_snapshot_id: Option<VolumeSnapshotID>,
-    pub volume_type_id: VolumeTypeID,
+    pub volume_snapshot_id: Option<VolumeSnapshotId>,
+    pub volume_type_id: VolumeTypeId,
 }
 impl CreateVolumeRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(billing: BillingChoice, name: String, volume_type_id: VolumeTypeID) -> Self {
+    pub fn new(name: String, volume_type_id: VolumeTypeId) -> Self {
         Self {
-            billing,
             name,
             volume_type_id,
+            billing: None,
             checkout: None,
+            instance_id: None,
             size_gib: None,
             volume_backup_id: None,
             volume_snapshot_id: None,
         }
     }
     /// Start a dependency-free builder with every required wire field.
-    pub fn builder(
-        billing: BillingChoice,
-        name: String,
-        volume_type_id: VolumeTypeID,
-    ) -> CreateVolumeRequestBodyBuilder {
-        CreateVolumeRequestBodyBuilder::new(billing, name, volume_type_id)
+    pub fn builder(name: String, volume_type_id: VolumeTypeId) -> CreateVolumeRequestBodyBuilder {
+        CreateVolumeRequestBodyBuilder::new(name, volume_type_id)
     }
 }
 /// Dependency-free builder for [`#struct_name`].
@@ -1959,15 +2071,27 @@ pub struct CreateVolumeRequestBodyBuilder {
 }
 impl CreateVolumeRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(billing: BillingChoice, name: String, volume_type_id: VolumeTypeID) -> Self {
+    pub fn new(name: String, volume_type_id: VolumeTypeId) -> Self {
         Self {
-            value: CreateVolumeRequestBody::new(billing, name, volume_type_id),
+            value: CreateVolumeRequestBody::new(name, volume_type_id),
         }
+    }
+    #[doc = concat!("Set the optional `", "billing", "` request field.")]
+    #[must_use]
+    pub fn billing(mut self, billing: BillingChoice) -> Self {
+        self.value.billing = Some(billing);
+        self
     }
     #[doc = concat!("Set the optional `", "checkout", "` request field.")]
     #[must_use]
     pub fn checkout(mut self, checkout: CheckoutOptions) -> Self {
         self.value.checkout = Some(checkout);
+        self
+    }
+    #[doc = concat!("Set the optional `", "instance_id", "` request field.")]
+    #[must_use]
+    pub fn instance_id(mut self, instance_id: InstanceId) -> Self {
+        self.value.instance_id = Some(instance_id);
         self
     }
     #[doc = concat!("Set the optional `", "size_gib", "` request field.")]
@@ -1978,13 +2102,13 @@ impl CreateVolumeRequestBodyBuilder {
     }
     #[doc = concat!("Set the optional `", "volume_backup_id", "` request field.")]
     #[must_use]
-    pub fn volume_backup_id(mut self, volume_backup_id: VolumeBackupID) -> Self {
+    pub fn volume_backup_id(mut self, volume_backup_id: VolumeBackupId) -> Self {
         self.value.volume_backup_id = Some(volume_backup_id);
         self
     }
     #[doc = concat!("Set the optional `", "volume_snapshot_id", "` request field.")]
     #[must_use]
-    pub fn volume_snapshot_id(mut self, volume_snapshot_id: VolumeSnapshotID) -> Self {
+    pub fn volume_snapshot_id(mut self, volume_snapshot_id: VolumeSnapshotId) -> Self {
         self.value.volume_snapshot_id = Some(volume_snapshot_id);
         self
     }
@@ -2012,7 +2136,7 @@ pub struct VolumeBackupResource {
     pub created_at: chrono::DateTime<chrono::Utc>,
     ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this backup is refunded.
     pub failure_reason: Option<VolumeBackupResourceFailureReason>,
-    pub id: VolumeBackupID,
+    pub id: VolumeBackupId,
     ///The most recent operation started on the backup; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
     pub name: String,
@@ -2020,17 +2144,19 @@ pub struct VolumeBackupResource {
     pub order_id: Option<uuid::Uuid>,
     ///The Billing order item for this resource.
     pub order_item_id: Option<uuid::Uuid>,
-    pub region_id: RegionID,
-    ///The subscription that pays for this volume backup, with the resource it pays for, so that a cancellation through Billing can name what it releases. Empty when no subscription pays for it, and once it is released.
+    pub region_id: RegionId,
+    ///The subscription item that pays for this volume backup, with the resource it pays for, so that a cancellation through Billing can name what it releases. Empty when no subscription item pays for it, and once it is released.
     pub release_set: Vec<ReleaseSetItem>,
     ///Capacity of the source volume when the backup was created. A restored volume cannot be smaller than this
     pub size_gib: i64,
-    pub source_availability_zone_id: AvailabilityZoneID,
-    pub source_volume_id: VolumeID,
+    pub source_availability_zone_id: AvailabilityZoneId,
+    pub source_volume_id: VolumeId,
     ///`pending` from the purchase until the backup is taken, then `available`. `failed` means the backup was not created. A value naming an operation in progress (`restoring`, `deleting`) is shown while that operation runs; the backup refuses another operation until it ends.
     pub status: VolumeBackupResourceStatus,
-    ///The subscription for this resource; its presence alone does not imply delivery.
+    ///The Billing subscription of this resource; its presence alone does not imply delivery.
     pub subscription_id: Option<uuid::Uuid>,
+    ///The resource's item of that subscription.
+    pub subscription_item_id: Option<uuid::Uuid>,
 }
 ///`pending` from the purchase until the backup is taken, then `available`. `failed` means the backup was not created. A value naming an operation in progress (`restoring`, `deleting`) is shown while that operation runs; the backup refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -2119,11 +2245,11 @@ pub struct CreateVolumeBackupRequestBody {
     pub checkout: Option<CheckoutOptions>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
-    pub volume_id: VolumeID,
+    pub volume_id: VolumeId,
 }
 impl CreateVolumeBackupRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(name: String, volume_id: VolumeID) -> Self {
+    pub fn new(name: String, volume_id: VolumeId) -> Self {
         Self {
             name,
             volume_id,
@@ -2131,7 +2257,7 @@ impl CreateVolumeBackupRequestBody {
         }
     }
     /// Start a dependency-free builder with every required wire field.
-    pub fn builder(name: String, volume_id: VolumeID) -> CreateVolumeBackupRequestBodyBuilder {
+    pub fn builder(name: String, volume_id: VolumeId) -> CreateVolumeBackupRequestBodyBuilder {
         CreateVolumeBackupRequestBodyBuilder::new(name, volume_id)
     }
 }
@@ -2143,7 +2269,7 @@ pub struct CreateVolumeBackupRequestBodyBuilder {
 }
 impl CreateVolumeBackupRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(name: String, volume_id: VolumeID) -> Self {
+    pub fn new(name: String, volume_id: VolumeId) -> Self {
         Self {
             value: CreateVolumeBackupRequestBody::new(name, volume_id),
         }
@@ -2166,15 +2292,15 @@ pub struct CreateVirtualPrivateCloudRequestBody {
     pub ipv4_cidr: String,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateVirtualPrivateCloudPeeringRequestBody {
     pub accepter_project_id: uuid::Uuid,
-    pub accepter_virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub accepter_virtual_private_cloud_id: VirtualPrivateCloudId,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
-    pub requester_virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub requester_virtual_private_cloud_id: VirtualPrivateCloudId,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateSecurityGroupRuleRequestBody {
@@ -2300,11 +2426,11 @@ pub struct CreateSecurityGroupRequestBody {
     pub description: Option<String>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
-    pub virtual_private_cloud_id: VirtualPrivateCloudID,
+    pub virtual_private_cloud_id: VirtualPrivateCloudId,
 }
 impl CreateSecurityGroupRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(name: String, virtual_private_cloud_id: VirtualPrivateCloudID) -> Self {
+    pub fn new(name: String, virtual_private_cloud_id: VirtualPrivateCloudId) -> Self {
         Self {
             name,
             virtual_private_cloud_id,
@@ -2314,7 +2440,7 @@ impl CreateSecurityGroupRequestBody {
     /// Start a dependency-free builder with every required wire field.
     pub fn builder(
         name: String,
-        virtual_private_cloud_id: VirtualPrivateCloudID,
+        virtual_private_cloud_id: VirtualPrivateCloudId,
     ) -> CreateSecurityGroupRequestBodyBuilder {
         CreateSecurityGroupRequestBodyBuilder::new(name, virtual_private_cloud_id)
     }
@@ -2327,7 +2453,7 @@ pub struct CreateSecurityGroupRequestBodyBuilder {
 }
 impl CreateSecurityGroupRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(name: String, virtual_private_cloud_id: VirtualPrivateCloudID) -> Self {
+    pub fn new(name: String, virtual_private_cloud_id: VirtualPrivateCloudId) -> Self {
         Self {
             value: CreateSecurityGroupRequestBody::new(name, virtual_private_cloud_id),
         }
@@ -2365,7 +2491,7 @@ pub struct PrivateImageResource {
     pub failure: Option<String>,
     ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this image is refunded.
     pub failure_reason: Option<PrivateImageResourceFailureReason>,
-    pub id: ImageID,
+    pub id: ImageId,
     ///The most recent operation started on the image; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
     ///The account this image lets you log in as. The password set at creation belongs to this account
@@ -2382,16 +2508,18 @@ pub struct PrivateImageResource {
     pub order_item_id: Option<uuid::Uuid>,
     pub os_family: String,
     pub os_version: String,
-    pub region_id: RegionID,
-    ///The subscription that pays for this private image, with the resource it pays for, so that a cancellation through Billing can name what it releases. Empty when no subscription pays for it, and once it is released.
+    pub region_id: RegionId,
+    ///The subscription item that pays for this private image, with the resource it pays for, so that a cancellation through Billing can name what it releases. Empty when no subscription item pays for it, and once it is released.
     pub release_set: Vec<ReleaseSetItem>,
     ///Storage occupied by the project image, in bytes. Zero until the capture reports its size. It does not change what the image costs.
     pub size_bytes: i64,
-    pub source_instance_id: InstanceID,
+    pub source_instance_id: InstanceId,
     ///Only available images can install instances. A capture is pending until it finishes, then becomes available. Failed means no usable image was produced; failure describes the outcome. Error means the image service broke the image or no longer holds it, and nothing can be installed from it. A value naming an operation in progress (`suspending`, `resuming`, `deleting`) is shown while that operation runs.
     pub status: PrivateImageResourceStatus,
-    ///The subscription for this resource; its presence alone does not imply delivery.
+    ///The Billing subscription of this resource; its presence alone does not imply delivery.
     pub subscription_id: Option<uuid::Uuid>,
+    ///The resource's item of that subscription.
+    pub subscription_item_id: Option<uuid::Uuid>,
     ///Whether instances created from this image can join Leaflow Fleet (`join_fleet`). The value is true when the operating system captured from the source instance supports Fleet
     pub supports_fleet: bool,
     ///False means a new password can only be set by rebuilding an instance created from this image
@@ -2486,13 +2614,13 @@ impl AsRef<str> for PrivateImageResourceFailureReason {
 pub struct CreatePrivateImageRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
-    pub instance_id: InstanceID,
+    pub instance_id: InstanceId,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
 }
 impl CreatePrivateImageRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(instance_id: InstanceID, name: String) -> Self {
+    pub fn new(instance_id: InstanceId, name: String) -> Self {
         Self {
             instance_id,
             name,
@@ -2500,7 +2628,7 @@ impl CreatePrivateImageRequestBody {
         }
     }
     /// Start a dependency-free builder with every required wire field.
-    pub fn builder(instance_id: InstanceID, name: String) -> CreatePrivateImageRequestBodyBuilder {
+    pub fn builder(instance_id: InstanceId, name: String) -> CreatePrivateImageRequestBodyBuilder {
         CreatePrivateImageRequestBodyBuilder::new(instance_id, name)
     }
 }
@@ -2512,7 +2640,7 @@ pub struct CreatePrivateImageRequestBodyBuilder {
 }
 impl CreatePrivateImageRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(instance_id: InstanceID, name: String) -> Self {
+    pub fn new(instance_id: InstanceId, name: String) -> Self {
         Self {
             value: CreatePrivateImageRequestBody::new(instance_id, name),
         }
@@ -2539,12 +2667,12 @@ pub struct CreateNetworkInterfaceRequestBody {
     pub name: Option<String>,
     ///At least one, and all must belong to the same virtual private cloud
     ///Constraint: minItems=1
-    pub security_group_ids: Option<Vec<SecurityGroupID>>,
-    pub subnet_id: SubnetID,
+    pub security_group_ids: Option<Vec<SecurityGroupId>>,
+    pub subnet_id: SubnetId,
 }
 impl CreateNetworkInterfaceRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(security_group_ids: Option<Vec<SecurityGroupID>>, subnet_id: SubnetID) -> Self {
+    pub fn new(security_group_ids: Option<Vec<SecurityGroupId>>, subnet_id: SubnetId) -> Self {
         Self {
             security_group_ids,
             subnet_id,
@@ -2554,8 +2682,8 @@ impl CreateNetworkInterfaceRequestBody {
     }
     /// Start a dependency-free builder with every required wire field.
     pub fn builder(
-        security_group_ids: Option<Vec<SecurityGroupID>>,
-        subnet_id: SubnetID,
+        security_group_ids: Option<Vec<SecurityGroupId>>,
+        subnet_id: SubnetId,
     ) -> CreateNetworkInterfaceRequestBodyBuilder {
         CreateNetworkInterfaceRequestBodyBuilder::new(security_group_ids, subnet_id)
     }
@@ -2568,7 +2696,7 @@ pub struct CreateNetworkInterfaceRequestBodyBuilder {
 }
 impl CreateNetworkInterfaceRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(security_group_ids: Option<Vec<SecurityGroupID>>, subnet_id: SubnetID) -> Self {
+    pub fn new(security_group_ids: Option<Vec<SecurityGroupId>>, subnet_id: SubnetId) -> Self {
         Self {
             value: CreateNetworkInterfaceRequestBody::new(security_group_ids, subnet_id),
         }
@@ -2602,13 +2730,13 @@ pub struct LaunchTemplateVersion {
     pub data_volumes: Vec<LaunchTemplateDataVolume>,
     ///Null when the version describes no note.
     pub description: Option<String>,
-    pub elastic_ip: Option<LaunchTemplateElasticIP>,
-    pub instance_type_id: Option<InstanceTypeID>,
+    pub elastic_ip: Option<LaunchTemplateElasticIp>,
+    pub instance_type_id: Option<InstanceTypeId>,
     ///Null if the version does not specify a value, in which case the image determines it.
     pub join_fleet: Option<bool>,
     ///Null when the version describes no labels.
     pub labels: Option<LaunchTemplateVersionLabels>,
-    pub launch_template_id: LaunchTemplateID,
+    pub launch_template_id: LaunchTemplateId,
     pub network_interface: Option<LaunchTemplateNetworkInterface>,
     pub version_description: String,
     pub version_number: i64,
@@ -2627,11 +2755,11 @@ pub struct LaunchTemplate {
     ///The version a creation naming no version uses.
     pub default_version_number: i64,
     pub description: String,
-    pub id: LaunchTemplateID,
+    pub id: LaunchTemplateId,
     ///The highest version number the template ever had.
     pub latest_version_number: i64,
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -2641,12 +2769,12 @@ pub struct CreateLaunchTemplateRequestBody {
     pub description: Option<String>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
     pub version: NewLaunchTemplateVersion,
 }
 impl CreateLaunchTemplateRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(name: String, region_id: RegionID, version: NewLaunchTemplateVersion) -> Self {
+    pub fn new(name: String, region_id: RegionId, version: NewLaunchTemplateVersion) -> Self {
         Self {
             name,
             region_id,
@@ -2657,7 +2785,7 @@ impl CreateLaunchTemplateRequestBody {
     /// Start a dependency-free builder with every required wire field.
     pub fn builder(
         name: String,
-        region_id: RegionID,
+        region_id: RegionId,
         version: NewLaunchTemplateVersion,
     ) -> CreateLaunchTemplateRequestBodyBuilder {
         CreateLaunchTemplateRequestBodyBuilder::new(name, region_id, version)
@@ -2671,7 +2799,7 @@ pub struct CreateLaunchTemplateRequestBodyBuilder {
 }
 impl CreateLaunchTemplateRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(name: String, region_id: RegionID, version: NewLaunchTemplateVersion) -> Self {
+    pub fn new(name: String, region_id: RegionId, version: NewLaunchTemplateVersion) -> Self {
         Self {
             value: CreateLaunchTemplateRequestBody::new(name, region_id, version),
         }
@@ -2699,9 +2827,9 @@ pub struct NewLaunchTemplateVersion {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub elastic_ip: Option<LaunchTemplateElasticIP>,
+    pub elastic_ip: Option<LaunchTemplateElasticIp>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub instance_type_id: Option<InstanceTypeID>,
+    pub instance_type_id: Option<InstanceTypeId>,
     ///Whether instances created from this version join Leaflow Fleet, as described for `join_fleet` on instance creation. If omitted, instances join when their image supports Fleet.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub join_fleet: Option<bool>,
@@ -2726,17 +2854,17 @@ pub struct NewLaunchTemplateVersionLabels {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LaunchTemplateNetworkInterface {
     ///Constraint: minItems=1, maxItems=5
-    pub security_group_ids: Vec<SecurityGroupID>,
-    pub subnet_id: SubnetID,
+    pub security_group_ids: Vec<SecurityGroupId>,
+    pub subnet_id: SubnetId,
 }
 ///A new elastic IP bought with each instance. An address you already hold serves one instance, so a template cannot name one.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct LaunchTemplateElasticIP {
+pub struct LaunchTemplateElasticIp {
     ///Constraint: minimum=1, maximum=1000
     pub bandwidth_mbps: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub internet_charge_type: Option<InternetChargeType>,
-    pub line_id: ElasticIPLineID,
+    pub line_id: ElasticIpLineId,
 }
 ///An empty data volume created with each instance.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -2745,7 +2873,7 @@ pub struct LaunchTemplateDataVolume {
     pub on_instance_release: Option<LaunchTemplateDataVolumeOnInstanceRelease>,
     ///Constraint: minimum=1
     pub size_gib: i64,
-    pub volume_type_id: VolumeTypeID,
+    pub volume_type_id: VolumeTypeId,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum LaunchTemplateDataVolumeOnInstanceRelease {
@@ -2776,12 +2904,12 @@ impl AsRef<str> for LaunchTemplateDataVolumeOnInstanceRelease {
 ///A boot volume created from an image for each instance.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LaunchTemplateBootVolume {
-    pub image_id: ImageID,
+    pub image_id: ImageId,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub on_instance_release: Option<LaunchTemplateBootVolumeOnInstanceRelease>,
     ///Constraint: minimum=1
     pub size_gib: i64,
-    pub volume_type_id: VolumeTypeID,
+    pub volume_type_id: VolumeTypeId,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum LaunchTemplateBootVolumeOnInstanceRelease {
@@ -2826,7 +2954,7 @@ pub struct CreateInstanceResponseBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Instance {
     pub access_state: Option<InstanceAccessState>,
-    pub availability_zone_id: AvailabilityZoneID,
+    pub availability_zone_id: AvailabilityZoneId,
     ///The Billing Checkout Session that bought this resource; `order_id` and `order_item_id` stay null until its checkout completes. Null when the resource was not bought through one.
     pub checkout_session_id: Option<uuid::Uuid>,
     pub created_at: chrono::DateTime<chrono::Utc>,
@@ -2841,12 +2969,12 @@ pub struct Instance {
     pub fleet_machine_id: Option<uuid::Uuid>,
     ///Hostname inside the instance; equals the instance id
     pub hostname: String,
-    pub id: InstanceID,
+    pub id: InstanceId,
     ///Non-empty when the instance was created from an image, public or private. `image_type` says which collection holds it
-    pub image_id: Option<ImageID>,
+    pub image_id: Option<ImageId>,
     ///Which collection `image_id` belongs to. `public` means `/public-images`, `private` means `/private-images`. Null when the instance boots from a volume and therefore has no image
     pub image_type: Option<InstanceImageType>,
-    pub instance_type_id: InstanceTypeID,
+    pub instance_type_id: InstanceTypeId,
     ///IPv6 address of the primary network interface. Assigned automatically once IPv6 is enabled on the virtual private cloud
     pub ipv6_address: Option<String>,
     ///Whether the instance is configured to join Leaflow Fleet. The value is set at creation and retained across rebuilds unless a rebuild specifies a new value.
@@ -2856,7 +2984,7 @@ pub struct Instance {
     ///The most recent operation started on the instance; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
     ///The launch template the instance was created from; null when none was named. Changing or deleting the template afterwards changes nothing about the instance.
-    pub launch_template_id: Option<LaunchTemplateID>,
+    pub launch_template_id: Option<LaunchTemplateId>,
     ///The version of that launch template it was created from; null when none was named.
     pub launch_template_version_number: Option<i64>,
     ///The account to log in as over SSH. The password set at creation belongs to this account
@@ -2868,25 +2996,28 @@ pub struct Instance {
     pub order_item_id: Option<uuid::Uuid>,
     ///Private address of the instance
     pub private_ip: Option<String>,
-    pub region_id: RegionID,
-    ///Subscriptions required to release this instance and volumes deleted with it, each with the resource it pays for, so that each line of a cancellation can name what it releases. Billing determines cancellation terms. An empty set does not establish refund eligibility.
+    pub region_id: RegionId,
+    ///Subscription items required to release this instance and volumes deleted with it, each with the resource it pays for, so that each line of a cancellation can name what it releases. Billing determines cancellation terms. An empty set does not establish refund eligibility.
     pub release_set: Vec<ReleaseSetItem>,
     pub restrictions: Vec<InstanceRestriction>,
     ///Non-empty when the instance was created from a volume you already had, instead of from an image
-    pub source_volume_id: Option<VolumeID>,
+    pub source_volume_id: Option<VolumeId>,
     ///`pending` until the instance is created: before the order is accepted no instance exists and addresses are null. Then `running`. `failed` means the instance was not created; `failure_reason` states why. The other values are the state of the instance in the cloud. A value naming an operation in progress (`starting`, `stopping`, `rebooting`, `rebuilding`, `rescuing`, `unrescuing`, `resizing`, `resetting_password`, `attaching_volume`, `detaching_volume`, `attaching_network_interface`, `detaching_network_interface`, `associating_elastic_ip`, `disassociating_elastic_ip`, `capturing_image`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the instance refuses another operation until it ends.
     pub status: InstanceStatus,
-    pub subnet_id: Option<SubnetID>,
-    /**The Billing subscription associated with this resource. It may still be pending; its
-    presence does not imply delivery or metering. Null when no subscription is associated.*/
+    pub subnet_id: Option<SubnetId>,
+    /**The Billing subscription the instance renews under, with the volumes and elastic IP bought with it or for it.
+    Read it in Billing for the term end, automatic renewal and renewal. It may still be pending; its presence
+    does not imply delivery or metering. Null when no subscription is associated.*/
     pub subscription_id: Option<uuid::Uuid>,
+    ///The instance's own item of that subscription. Null when no subscription is associated.
+    pub subscription_item_id: Option<uuid::Uuid>,
     ///Whether the operating system with which the instance was created or last rebuilt supports Leaflow Fleet. The value reflects that specific image build; other builds of the same operating system may differ.
     pub supports_fleet: bool,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub virtual_private_cloud_id: Option<VirtualPrivateCloudID>,
+    pub virtual_private_cloud_id: Option<VirtualPrivateCloudId>,
 }
 ///The public vpc resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
-pub type VirtualPrivateCloudID = String;
+pub type VirtualPrivateCloudId = String;
 ///`pending` until the instance is created: before the order is accepted no instance exists and addresses are null. Then `running`. `failed` means the instance was not created; `failure_reason` states why. The other values are the state of the instance in the cloud. A value naming an operation in progress (`starting`, `stopping`, `rebooting`, `rebuilding`, `rescuing`, `unrescuing`, `resizing`, `resetting_password`, `attaching_volume`, `detaching_volume`, `attaching_network_interface`, `detaching_network_interface`, `associating_elastic_ip`, `disassociating_elastic_ip`, `capturing_image`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the instance refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum InstanceStatus {
@@ -2996,25 +3127,25 @@ the instance is started again only if a hold stopped it, never one its user stop
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InstanceRestriction {
     /**Why it is held. `operator_suspended` is a suspension by the platform. `billing_suspended` is the instance's
-    own subscription suspended for non-payment, and `billing_reclaimed` that subscription ending,
-    after which the instance is released. `boot_volume_suspended` and `boot_volume_reclaimed` are the same
-    for the subscription of the volume the instance boots from: that volume is billed apart, and the
-    instance cannot run without it, so renewing the volume's subscription lifts the hold, and a reclaimed
-    boot volume is released together with its instance.*/
+    subscription suspended because its term ended without renewal or the account is in arrears, and
+    `billing_reclaimed` that subscription ending, after which the instance is released. `boot_volume_suspended`
+    and `boot_volume_reclaimed` are the same for the subscription of a volume the instance boots from that was
+    bought on its own: the instance cannot run without it, so renewing that subscription lifts the hold, and a
+    reclaimed boot volume is released together with its instance.*/
     pub reason: InstanceRestrictionReason,
     ///When the hold began; null when that instant was not recorded.
     pub started_at: Option<chrono::DateTime<chrono::Utc>>,
     ///The Billing subscription whose state holds the instance; null for `operator_suspended`.
     pub subscription_id: Option<uuid::Uuid>,
     ///The volume the instance boots from, for `boot_volume_suspended` and `boot_volume_reclaimed`; null otherwise.
-    pub volume_id: Option<VolumeID>,
+    pub volume_id: Option<VolumeId>,
 }
 /**Why it is held. `operator_suspended` is a suspension by the platform. `billing_suspended` is the instance's
-own subscription suspended for non-payment, and `billing_reclaimed` that subscription ending,
-after which the instance is released. `boot_volume_suspended` and `boot_volume_reclaimed` are the same
-for the subscription of the volume the instance boots from: that volume is billed apart, and the
-instance cannot run without it, so renewing the volume's subscription lifts the hold, and a reclaimed
-boot volume is released together with its instance.*/
+subscription suspended because its term ended without renewal or the account is in arrears, and
+`billing_reclaimed` that subscription ending, after which the instance is released. `boot_volume_suspended`
+and `boot_volume_reclaimed` are the same for the subscription of a volume the instance boots from that was
+bought on its own: the instance cannot run without it, so renewing that subscription lifts the hold, and a
+reclaimed boot volume is released together with its instance.*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum InstanceRestrictionReason {
     #[default]
@@ -3185,7 +3316,7 @@ pub struct CreateInstanceRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub elastic_ip: Option<InstanceElasticIP>,
+    pub elastic_ip: Option<InstanceElasticIp>,
     /**Whether each instance joins Leaflow Fleet. An instance that joins enrolls automatically on its first boot, without a pairing code, and project members can then access it through Fleet using their own accounts. If omitted, the value from the launch template is used; if the template does not specify one, each instance joins when its image supports Fleet (`supports_fleet`).
 
     Setting the value to `true` for an image that does not support Fleet, or when booting from an existing volume, is rejected with 422 `INSTANCE_FLEET_UNSUPPORTED` before an order is placed. If Fleet is unavailable when an instance is created, the instance is still created and its `fleet_machine_id` is null.*/
@@ -3272,7 +3403,7 @@ impl CreateInstanceRequestBodyBuilder {
     }
     #[doc = concat!("Set the optional `", "elastic_ip", "` request field.")]
     #[must_use]
-    pub fn elastic_ip(mut self, elastic_ip: InstanceElasticIP) -> Self {
+    pub fn elastic_ip(mut self, elastic_ip: InstanceElasticIp) -> Self {
         self.value.elastic_ip = Some(elastic_ip);
         self
     }
@@ -3494,14 +3625,14 @@ impl<'de> serde::Deserialize<'de> for PrimaryNetworkInterface {
 pub struct NewPrimaryNetworkInterface {
     ///The security groups of the interface, of the subnet's virtual private cloud. The default security group is not applied automatically.
     ///Constraint: minItems=1, maxItems=5
-    pub security_group_ids: Vec<SecurityGroupID>,
-    pub subnet_id: SubnetID,
+    pub security_group_ids: Vec<SecurityGroupId>,
+    pub subnet_id: SubnetId,
     pub r#type: NewPrimaryNetworkInterfaceType,
 }
 ///Compute Subnet TypeID. UUID text is not accepted.
-pub type SubnetID = String;
+pub type SubnetId = String;
 ///Compute SecurityGroup TypeID. UUID text is not accepted.
-pub type SecurityGroupID = String;
+pub type SecurityGroupId = String;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum NewPrimaryNetworkInterfaceType {
     #[default]
@@ -3527,7 +3658,7 @@ impl AsRef<str> for NewPrimaryNetworkInterfaceType {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ExistingPrimaryNetworkInterface {
-    pub network_interface_id: NetworkInterfaceID,
+    pub network_interface_id: NetworkInterfaceId,
     pub r#type: ExistingPrimaryNetworkInterfaceType,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -3787,14 +3918,14 @@ impl AsRef<str> for GeneratedPasswordType {
 ///The launch template a creation starts from.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LaunchTemplateReference {
-    pub launch_template_id: LaunchTemplateID,
+    pub launch_template_id: LaunchTemplateId,
     ///A live version of it; the template's `default_version` when omitted.
     ///Constraint: minimum=1
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version_number: Option<i64>,
 }
 ///The public lt resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
-pub type LaunchTemplateID = String;
+pub type LaunchTemplateId = String;
 ///Your own classification of each instance, as key-value pairs. A key may not contain a colon, whitespace or control characters
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct CreateInstanceRequestBodyLabels {
@@ -3814,7 +3945,7 @@ pub struct NewDataVolume {
     ///Within the volume type's `min_size_gib` and `max_size_gib` and a multiple of its `size_step_gib`.
     ///Constraint: minimum=1
     pub size_gib: i64,
-    pub volume_type_id: VolumeTypeID,
+    pub volume_type_id: VolumeTypeId,
 }
 ///What releasing the instance does to this volume. `delete` deletes it with the instance; `detach` keeps it, still billed on its own terms, for you to attach elsewhere or delete.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -3848,28 +3979,28 @@ impl AsRef<str> for NewDataVolumeOnInstanceRelease {
 pub struct NewCompute {
     pub billing: BillingChoice,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub instance_type_id: Option<InstanceTypeID>,
+    pub instance_type_id: Option<InstanceTypeId>,
 }
 ///Compute InstanceType TypeID. UUID text is not accepted.
-pub type InstanceTypeID = String;
+pub type InstanceTypeId = String;
 ///`new` buys an elastic IP in the instance's order; `existing` associates one you already hold. One address is associated with one interface, so either creates only one instance.
 #[derive(Debug, Clone)]
-pub enum InstanceElasticIP {
-    NewElasticIP(NewElasticIP),
-    ExistingElasticIP(ExistingElasticIP),
+pub enum InstanceElasticIp {
+    NewElasticIp(NewElasticIp),
+    ExistingElasticIp(ExistingElasticIp),
 }
-impl serde::Serialize for InstanceElasticIP {
+impl serde::Serialize for InstanceElasticIp {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
         match self {
-            Self::NewElasticIP(payload) => {
+            Self::NewElasticIp(payload) => {
                 let mut value = serde_json::to_value(payload).map_err(serde::ser::Error::custom)?;
                 let object = value.as_object_mut().ok_or_else(|| {
                     serde::ser::Error::custom(concat!(
                         "discriminated union variant `",
-                        stringify!(NewElasticIP),
+                        stringify!(NewElasticIp),
                         "` did not serialize as an object",
                     ))
                 })?;
@@ -3879,7 +4010,7 @@ impl serde::Serialize for InstanceElasticIP {
                         return Err(serde::ser::Error::custom(format!(
                             "discriminator `{}` value `{tag}` is not valid for variant `{}`",
                             "type",
-                            stringify!(NewElasticIP),
+                            stringify!(NewElasticIp),
                         )));
                     }
                     Some(_) => {
@@ -3898,12 +4029,12 @@ impl serde::Serialize for InstanceElasticIP {
                 }
                 value.serialize(serializer)
             }
-            Self::ExistingElasticIP(payload) => {
+            Self::ExistingElasticIp(payload) => {
                 let mut value = serde_json::to_value(payload).map_err(serde::ser::Error::custom)?;
                 let object = value.as_object_mut().ok_or_else(|| {
                     serde::ser::Error::custom(concat!(
                         "discriminated union variant `",
-                        stringify!(ExistingElasticIP),
+                        stringify!(ExistingElasticIp),
                         "` did not serialize as an object",
                     ))
                 })?;
@@ -3913,7 +4044,7 @@ impl serde::Serialize for InstanceElasticIP {
                         return Err(serde::ser::Error::custom(format!(
                             "discriminator `{}` value `{tag}` is not valid for variant `{}`",
                             "type",
-                            stringify!(ExistingElasticIP),
+                            stringify!(ExistingElasticIp),
                         )));
                     }
                     Some(_) => {
@@ -3935,7 +4066,7 @@ impl serde::Serialize for InstanceElasticIP {
         }
     }
 }
-impl<'de> serde::Deserialize<'de> for InstanceElasticIP {
+impl<'de> serde::Deserialize<'de> for InstanceElasticIp {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -3955,13 +4086,13 @@ impl<'de> serde::Deserialize<'de> for InstanceElasticIP {
         match discriminator {
             Some(discriminator) => match discriminator {
                 "new" => {
-                    let primary_error = match serde_json::from_value::<NewElasticIP>(value.clone())
+                    let primary_error = match serde_json::from_value::<NewElasticIp>(value.clone())
                     {
-                        Ok(payload) => return Ok(Self::NewElasticIP(payload)),
+                        Ok(payload) => return Ok(Self::NewElasticIp(payload)),
                         Err(error) => error,
                     };
                     let mut structural_match: Option<(Self, &'static str)> = None;
-                    if let Ok(payload) = serde_json::from_value::<ExistingElasticIP>(value.clone())
+                    if let Ok(payload) = serde_json::from_value::<ExistingElasticIp>(value.clone())
                     {
                         if let Some((_, first_name)) = &structural_match {
                             return Err(serde::de::Error::custom(format!(
@@ -3969,12 +4100,12 @@ impl<'de> serde::Deserialize<'de> for InstanceElasticIP {
                                 "type",
                                 "new",
                                 first_name,
-                                stringify!(ExistingElasticIP),
+                                stringify!(ExistingElasticIp),
                             )));
                         }
                         structural_match = Some((
-                            Self::ExistingElasticIP(payload),
-                            stringify!(ExistingElasticIP),
+                            Self::ExistingElasticIp(payload),
+                            stringify!(ExistingElasticIp),
                         ));
                     }
                     match structural_match {
@@ -3984,23 +4115,23 @@ impl<'de> serde::Deserialize<'de> for InstanceElasticIP {
                 }
                 "existing" => {
                     let primary_error =
-                        match serde_json::from_value::<ExistingElasticIP>(value.clone()) {
-                            Ok(payload) => return Ok(Self::ExistingElasticIP(payload)),
+                        match serde_json::from_value::<ExistingElasticIp>(value.clone()) {
+                            Ok(payload) => return Ok(Self::ExistingElasticIp(payload)),
                             Err(error) => error,
                         };
                     let mut structural_match: Option<(Self, &'static str)> = None;
-                    if let Ok(payload) = serde_json::from_value::<NewElasticIP>(value.clone()) {
+                    if let Ok(payload) = serde_json::from_value::<NewElasticIp>(value.clone()) {
                         if let Some((_, first_name)) = &structural_match {
                             return Err(serde::de::Error::custom(format!(
                                 "discriminator `{}` value `{}` did not fit its mapped branch and structurally matched both `{}` and `{}`",
                                 "type",
                                 "existing",
                                 first_name,
-                                stringify!(NewElasticIP),
+                                stringify!(NewElasticIp),
                             )));
                         }
                         structural_match =
-                            Some((Self::NewElasticIP(payload), stringify!(NewElasticIP)));
+                            Some((Self::NewElasticIp(payload), stringify!(NewElasticIp)));
                     }
                     match structural_match {
                         Some((payload, _)) => Ok(payload),
@@ -4022,7 +4153,7 @@ impl<'de> serde::Deserialize<'de> for InstanceElasticIP {
 }
 ///One IPv4 elastic IP created with this bandwidth configuration in the instance's order.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct NewElasticIP {
+pub struct NewElasticIp {
     ///Any whole number of Mbps within the line's `min_bandwidth_mbps` and `max_bandwidth_mbps`, otherwise refused with `ELASTIC_IP_BANDWIDTH_RANGE`.
     ///Constraint: minimum=1, maximum=1000
     pub bandwidth_mbps: i64,
@@ -4030,56 +4161,56 @@ pub struct NewElasticIP {
     pub billing: Option<BillingChoice>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub internet_charge_type: Option<InternetChargeType>,
-    pub line_id: ElasticIPLineID,
-    pub r#type: NewElasticIPType,
+    pub line_id: ElasticIpLineId,
+    pub r#type: NewElasticIpType,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum NewElasticIPType {
+pub enum NewElasticIpType {
     #[default]
     #[serde(rename = "new")]
     New,
 }
-impl NewElasticIPType {
+impl NewElasticIpType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::New => "new",
         }
     }
 }
-impl ::std::fmt::Display for NewElasticIPType {
+impl ::std::fmt::Display for NewElasticIpType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for NewElasticIPType {
+impl AsRef<str> for NewElasticIpType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ExistingElasticIP {
-    pub elastic_ip_id: ElasticIPID,
-    pub r#type: ExistingElasticIPType,
+pub struct ExistingElasticIp {
+    pub elastic_ip_id: ElasticIpId,
+    pub r#type: ExistingElasticIpType,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ExistingElasticIPType {
+pub enum ExistingElasticIpType {
     #[default]
     #[serde(rename = "existing")]
     Existing,
 }
-impl ExistingElasticIPType {
+impl ExistingElasticIpType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Existing => "existing",
         }
     }
 }
-impl ::std::fmt::Display for ExistingElasticIPType {
+impl ::std::fmt::Display for ExistingElasticIpType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ExistingElasticIPType {
+impl AsRef<str> for ExistingElasticIpType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -4087,66 +4218,70 @@ impl AsRef<str> for ExistingElasticIPType {
 /**The new elastic IP, `pending` until its order is accepted, and its Checkout Session. `address` is null until
 the address is allocated.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CreateElasticIPResponseBody {
+pub struct CreateElasticIpResponseBody {
     ///The Billing Checkout Session of this purchase. With deferred checkout, the customer completes it in Billing.
     pub checkout_session_id: uuid::Uuid,
-    pub elastic_ip: ElasticIP,
+    pub elastic_ip: ElasticIp,
     ///The order created when checkout completes, at once for automatic checkout; null until then.
     pub order_id: Option<uuid::Uuid>,
 }
 /**One public IP resource, including its bandwidth configuration. Bandwidth has no separate Compute resource ID.
-Two subscriptions of one order pay for it: the address subscription, always pay-as-you-go, charges for the
-address while it is not associated with anything, and the network subscription, on the terms chosen at
-purchase, charges for the bandwidth or the traffic. Changing bandwidth updates this same resource, not another
-allocation.*/
+Two items of one Billing subscription pay for it: the address item, always pay-as-you-go, charges for the
+address while it is not associated with anything, and the network item, on the terms chosen at purchase,
+charges for the bandwidth or the traffic. The subscription is the elastic IP's own, or the instance's when it
+was bought with or for one. Changing bandwidth updates this same resource, not another allocation.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ElasticIP {
-    pub access_state: Option<ElasticIPAccessState>,
+pub struct ElasticIp {
+    pub access_state: Option<ElasticIpAccessState>,
     ///The held IPv4 address; null before actual claim. Holding identity is not exposed.
-    pub address: Option<IPv4HostAddress>,
+    pub address: Option<Ipv4HostAddress>,
     ///The Billing order item of the address, always pay-as-you-go.
     pub address_order_item_id: Option<uuid::Uuid>,
-    ///The Billing subscription of the address. It may still be pending; its presence does not imply delivery or metering.
-    pub address_subscription_id: Option<uuid::Uuid>,
+    ///The subscription item of the address, always pay-as-you-go.
+    pub address_subscription_item_id: Option<uuid::Uuid>,
     ///The actual address holding start time; null before actual claim.
     pub allocated_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub association: Option<ElasticIPAssociation>,
+    pub association: Option<ElasticIpAssociation>,
     pub bandwidth_mbps: Option<i64>,
     ///The Billing Checkout Session that bought this resource; `order_id` and the order items stay null until its checkout completes. Null when the resource was not bought through one.
     pub checkout_session_id: Option<uuid::Uuid>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this elastic IP is refunded.
-    pub failure_reason: Option<ElasticIPFailureReason>,
-    pub id: ElasticIPID,
+    pub failure_reason: Option<ElasticIpFailureReason>,
+    pub id: ElasticIpId,
     pub internet_charge_type: InternetChargeType,
     ///The Billing order item of the bandwidth or traffic.
     pub internet_order_item_id: Option<uuid::Uuid>,
-    ///The Billing subscription of the bandwidth or traffic. It may still be pending; its presence does not imply delivery or metering.
-    pub internet_subscription_id: Option<uuid::Uuid>,
+    ///The subscription item of the bandwidth or traffic.
+    pub internet_subscription_item_id: Option<uuid::Uuid>,
     ///The most recent operation started on the elastic IP; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
-    pub line_id: ElasticIPLineID,
+    pub line_id: ElasticIpLineId,
     pub order_id: Option<uuid::Uuid>,
-    pub region_id: RegionID,
-    ///The subscriptions a cancellation through Billing has to cover to release this elastic IP, both the address's and the network's, each with the resource it pays for, so that each line of a cancellation can name what it releases. A subscription that has ended is not listed, and the set is empty when no subscription pays for the elastic IP.
+    pub region_id: RegionId,
+    ///The subscription items a cancellation through Billing has to cover to release this elastic IP, both the address's and the network's, each with the resource it pays for, so that each line of a cancellation can name what it releases. An item that has ended is not listed, and the set is empty when no item pays for the elastic IP.
     pub release_set: Vec<ReleaseSetItem>,
     ///The confirmed holding release time; null while held or before actual claim.
     pub released_at: Option<chrono::DateTime<chrono::Utc>>,
     ///`pending` until the address is created, with no address allocated before the order is accepted; then `available`. `failed` means no address was allocated; `failure_reason` states why. A value naming an operation in progress (`associating`, `disassociating`, `updating_bandwidth`, `updating_internet_charge_type`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the elastic IP refuses another operation until it ends.
-    pub status: ElasticIPStatus,
+    pub status: ElasticIpStatus,
+    ///The Billing subscription the elastic IP renews under. Read it in Billing for the term end, automatic renewal and renewal. It may still be pending; its presence does not imply delivery or metering.
+    pub subscription_id: Option<uuid::Uuid>,
 }
-///One subscription of a release set and the resource it pays for.
+///One subscription item of a release set and the resource it pays for.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ReleaseSetItem {
     pub resource: ReleaseResource,
+    ///The subscription the item belongs to.
     pub subscription_id: uuid::Uuid,
+    pub subscription_item_id: uuid::Uuid,
 }
 ///A resource a release set releases.
 #[derive(Debug, Clone)]
 pub enum ReleaseResource {
     InstanceReleaseResource(InstanceReleaseResource),
     VolumeReleaseResource(VolumeReleaseResource),
-    ElasticIPReleaseResource(ElasticIPReleaseResource),
+    ElasticIpReleaseResource(ElasticIpReleaseResource),
     VolumeSnapshotReleaseResource(VolumeSnapshotReleaseResource),
     VolumeBackupReleaseResource(VolumeBackupReleaseResource),
     PrivateImageReleaseResource(PrivateImageReleaseResource),
@@ -4225,12 +4360,12 @@ impl serde::Serialize for ReleaseResource {
                 }
                 value.serialize(serializer)
             }
-            Self::ElasticIPReleaseResource(payload) => {
+            Self::ElasticIpReleaseResource(payload) => {
                 let mut value = serde_json::to_value(payload).map_err(serde::ser::Error::custom)?;
                 let object = value.as_object_mut().ok_or_else(|| {
                     serde::ser::Error::custom(concat!(
                         "discriminated union variant `",
-                        stringify!(ElasticIPReleaseResource),
+                        stringify!(ElasticIpReleaseResource),
                         "` did not serialize as an object",
                     ))
                 })?;
@@ -4241,7 +4376,7 @@ impl serde::Serialize for ReleaseResource {
                         return Err(serde::ser::Error::custom(format!(
                             "discriminator `{}` value `{tag}` is not valid for variant `{}`",
                             "type",
-                            stringify!(ElasticIPReleaseResource),
+                            stringify!(ElasticIpReleaseResource),
                         )));
                     }
                     Some(_) => {
@@ -4414,7 +4549,7 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                         ));
                     }
                     if let Ok(payload) =
-                        serde_json::from_value::<ElasticIPReleaseResource>(value.clone())
+                        serde_json::from_value::<ElasticIpReleaseResource>(value.clone())
                     {
                         if let Some((_, first_name)) = &structural_match {
                             return Err(serde::de::Error::custom(format!(
@@ -4422,12 +4557,12 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                                 "type",
                                 "instance",
                                 first_name,
-                                stringify!(ElasticIPReleaseResource),
+                                stringify!(ElasticIpReleaseResource),
                             )));
                         }
                         structural_match = Some((
-                            Self::ElasticIPReleaseResource(payload),
-                            stringify!(ElasticIPReleaseResource),
+                            Self::ElasticIpReleaseResource(payload),
+                            stringify!(ElasticIpReleaseResource),
                         ));
                     }
                     if let Ok(payload) =
@@ -4513,7 +4648,7 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                         ));
                     }
                     if let Ok(payload) =
-                        serde_json::from_value::<ElasticIPReleaseResource>(value.clone())
+                        serde_json::from_value::<ElasticIpReleaseResource>(value.clone())
                     {
                         if let Some((_, first_name)) = &structural_match {
                             return Err(serde::de::Error::custom(format!(
@@ -4521,12 +4656,12 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                                 "type",
                                 "volume",
                                 first_name,
-                                stringify!(ElasticIPReleaseResource),
+                                stringify!(ElasticIpReleaseResource),
                             )));
                         }
                         structural_match = Some((
-                            Self::ElasticIPReleaseResource(payload),
-                            stringify!(ElasticIPReleaseResource),
+                            Self::ElasticIpReleaseResource(payload),
+                            stringify!(ElasticIpReleaseResource),
                         ));
                     }
                     if let Ok(payload) =
@@ -4587,9 +4722,9 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                 }
                 "elastic_ip" => {
                     let primary_error =
-                        match serde_json::from_value::<ElasticIPReleaseResource>(value.clone()) {
+                        match serde_json::from_value::<ElasticIpReleaseResource>(value.clone()) {
                             Ok(payload) => {
-                                return Ok(Self::ElasticIPReleaseResource(payload));
+                                return Ok(Self::ElasticIpReleaseResource(payload));
                             }
                             Err(error) => error,
                         };
@@ -4729,7 +4864,7 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                         ));
                     }
                     if let Ok(payload) =
-                        serde_json::from_value::<ElasticIPReleaseResource>(value.clone())
+                        serde_json::from_value::<ElasticIpReleaseResource>(value.clone())
                     {
                         if let Some((_, first_name)) = &structural_match {
                             return Err(serde::de::Error::custom(format!(
@@ -4737,12 +4872,12 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                                 "type",
                                 "volume_snapshot",
                                 first_name,
-                                stringify!(ElasticIPReleaseResource),
+                                stringify!(ElasticIpReleaseResource),
                             )));
                         }
                         structural_match = Some((
-                            Self::ElasticIPReleaseResource(payload),
-                            stringify!(ElasticIPReleaseResource),
+                            Self::ElasticIpReleaseResource(payload),
+                            stringify!(ElasticIpReleaseResource),
                         ));
                     }
                     if let Ok(payload) =
@@ -4829,7 +4964,7 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                         ));
                     }
                     if let Ok(payload) =
-                        serde_json::from_value::<ElasticIPReleaseResource>(value.clone())
+                        serde_json::from_value::<ElasticIpReleaseResource>(value.clone())
                     {
                         if let Some((_, first_name)) = &structural_match {
                             return Err(serde::de::Error::custom(format!(
@@ -4837,12 +4972,12 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                                 "type",
                                 "volume_backup",
                                 first_name,
-                                stringify!(ElasticIPReleaseResource),
+                                stringify!(ElasticIpReleaseResource),
                             )));
                         }
                         structural_match = Some((
-                            Self::ElasticIPReleaseResource(payload),
-                            stringify!(ElasticIPReleaseResource),
+                            Self::ElasticIpReleaseResource(payload),
+                            stringify!(ElasticIpReleaseResource),
                         ));
                     }
                     if let Ok(payload) =
@@ -4929,7 +5064,7 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                         ));
                     }
                     if let Ok(payload) =
-                        serde_json::from_value::<ElasticIPReleaseResource>(value.clone())
+                        serde_json::from_value::<ElasticIpReleaseResource>(value.clone())
                     {
                         if let Some((_, first_name)) = &structural_match {
                             return Err(serde::de::Error::custom(format!(
@@ -4937,12 +5072,12 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
                                 "type",
                                 "private_image",
                                 first_name,
-                                stringify!(ElasticIPReleaseResource),
+                                stringify!(ElasticIpReleaseResource),
                             )));
                         }
                         structural_match = Some((
-                            Self::ElasticIPReleaseResource(payload),
-                            stringify!(ElasticIPReleaseResource),
+                            Self::ElasticIpReleaseResource(payload),
+                            stringify!(ElasticIpReleaseResource),
                         ));
                     }
                     if let Ok(payload) =
@@ -5000,7 +5135,7 @@ impl<'de> serde::Deserialize<'de> for ReleaseResource {
 ///A resource a release set releases.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeSnapshotReleaseResource {
-    pub id: VolumeSnapshotID,
+    pub id: VolumeSnapshotId,
     ///The current display name of the selected resource.
     pub name: String,
     pub r#type: VolumeSnapshotReleaseResourceType,
@@ -5029,11 +5164,11 @@ impl AsRef<str> for VolumeSnapshotReleaseResourceType {
     }
 }
 ///Compute VolumeSnapshot TypeID. UUID text is not accepted.
-pub type VolumeSnapshotID = String;
+pub type VolumeSnapshotId = String;
 ///A resource a release set releases.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeReleaseResource {
-    pub id: VolumeID,
+    pub id: VolumeId,
     ///The current display name of the selected resource.
     pub name: String,
     pub r#type: VolumeReleaseResourceType,
@@ -5064,7 +5199,7 @@ impl AsRef<str> for VolumeReleaseResourceType {
 ///A resource a release set releases.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeBackupReleaseResource {
-    pub id: VolumeBackupID,
+    pub id: VolumeBackupId,
     ///The current display name of the selected resource.
     pub name: String,
     pub r#type: VolumeBackupReleaseResourceType,
@@ -5093,11 +5228,11 @@ impl AsRef<str> for VolumeBackupReleaseResourceType {
     }
 }
 ///Compute VolumeBackup TypeID. UUID text is not accepted.
-pub type VolumeBackupID = String;
+pub type VolumeBackupId = String;
 ///A resource a release set releases.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PrivateImageReleaseResource {
-    pub id: ImageID,
+    pub id: ImageId,
     ///The current display name of the selected resource.
     pub name: String,
     pub r#type: PrivateImageReleaseResourceType,
@@ -5128,7 +5263,7 @@ impl AsRef<str> for PrivateImageReleaseResourceType {
 ///A resource a release set releases.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InstanceReleaseResource {
-    pub id: InstanceID,
+    pub id: InstanceId,
     ///The current display name of the selected resource.
     pub name: String,
     pub r#type: InstanceReleaseResourceType,
@@ -5158,31 +5293,31 @@ impl AsRef<str> for InstanceReleaseResourceType {
 }
 ///A resource a release set releases.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ElasticIPReleaseResource {
-    pub id: ElasticIPID,
+pub struct ElasticIpReleaseResource {
+    pub id: ElasticIpId,
     ///The current display name of the selected resource.
     pub name: String,
-    pub r#type: ElasticIPReleaseResourceType,
+    pub r#type: ElasticIpReleaseResourceType,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIPReleaseResourceType {
+pub enum ElasticIpReleaseResourceType {
     #[default]
     #[serde(rename = "elastic_ip")]
     ElasticIp,
 }
-impl ElasticIPReleaseResourceType {
+impl ElasticIpReleaseResourceType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::ElasticIp => "elastic_ip",
         }
     }
 }
-impl ::std::fmt::Display for ElasticIPReleaseResourceType {
+impl ::std::fmt::Display for ElasticIpReleaseResourceType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ElasticIPReleaseResourceType {
+impl AsRef<str> for ElasticIpReleaseResourceType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -5228,7 +5363,7 @@ impl AsRef<str> for LatestOperationState {
 }
 ///`pending` until the address is created, with no address allocated before the order is accepted; then `available`. `failed` means no address was allocated; `failure_reason` states why. A value naming an operation in progress (`associating`, `disassociating`, `updating_bandwidth`, `updating_internet_charge_type`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the elastic IP refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIPStatus {
+pub enum ElasticIpStatus {
     #[default]
     #[serde(rename = "pending")]
     Pending,
@@ -5255,7 +5390,7 @@ pub enum ElasticIPStatus {
     #[serde(rename = "deleting")]
     Deleting,
 }
-impl ElasticIPStatus {
+impl ElasticIpStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Pending => "pending",
@@ -5273,19 +5408,19 @@ impl ElasticIPStatus {
         }
     }
 }
-impl ::std::fmt::Display for ElasticIPStatus {
+impl ::std::fmt::Display for ElasticIpStatus {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ElasticIPStatus {
+impl AsRef<str> for ElasticIpStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this elastic IP is refunded.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIPFailureReason {
+pub enum ElasticIpFailureReason {
     #[default]
     #[serde(rename = "order_declined")]
     OrderDeclined,
@@ -5300,7 +5435,7 @@ pub enum ElasticIPFailureReason {
     #[serde(rename = "null")]
     NullValue,
 }
-impl ElasticIPFailureReason {
+impl ElasticIpFailureReason {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::OrderDeclined => "order_declined",
@@ -5312,39 +5447,39 @@ impl ElasticIPFailureReason {
         }
     }
 }
-impl ::std::fmt::Display for ElasticIPFailureReason {
+impl ::std::fmt::Display for ElasticIpFailureReason {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ElasticIPFailureReason {
+impl AsRef<str> for ElasticIpFailureReason {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ElasticIPAssociation {
+pub struct ElasticIpAssociation {
     pub associated_at: Option<chrono::DateTime<chrono::Utc>>,
     pub disassociated_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub elastic_ip_id: ElasticIPID,
-    pub id: ElasticIPAssociationID,
-    pub network_interface_address_id: NetworkInterfaceAddressID,
-    pub private_address: IPv4HostAddress,
-    pub public_address: IPv4HostAddress,
+    pub elastic_ip_id: ElasticIpId,
+    pub id: ElasticIpAssociationId,
+    pub network_interface_address_id: NetworkInterfaceAddressId,
+    pub private_address: Ipv4HostAddress,
+    pub public_address: Ipv4HostAddress,
     pub released_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub state: ElasticIPAssociationState,
+    pub state: ElasticIpAssociationState,
 }
 ///The public eip resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
-pub type ElasticIPID = String;
+pub type ElasticIpId = String;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIPAssociationState {
+pub enum ElasticIpAssociationState {
     #[default]
     #[serde(rename = "associated")]
     Associated,
     #[serde(rename = "released")]
     Released,
 }
-impl ElasticIPAssociationState {
+impl ElasticIpAssociationState {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Associated => "associated",
@@ -5352,20 +5487,20 @@ impl ElasticIPAssociationState {
         }
     }
 }
-impl ::std::fmt::Display for ElasticIPAssociationState {
+impl ::std::fmt::Display for ElasticIpAssociationState {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ElasticIPAssociationState {
+impl AsRef<str> for ElasticIpAssociationState {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
-///Compute ElasticIPAssociation TypeID. UUID text is not accepted.
-pub type ElasticIPAssociationID = String;
+///Compute ElasticIpAssociation TypeID. UUID text is not accepted.
+pub type ElasticIpAssociationId = String;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIPAccessState {
+pub enum ElasticIpAccessState {
     #[default]
     #[serde(rename = "pending")]
     Pending,
@@ -5378,7 +5513,7 @@ pub enum ElasticIPAccessState {
     #[serde(rename = "null")]
     NullValue,
 }
-impl ElasticIPAccessState {
+impl ElasticIpAccessState {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Pending => "pending",
@@ -5389,20 +5524,20 @@ impl ElasticIPAccessState {
         }
     }
 }
-impl ::std::fmt::Display for ElasticIPAccessState {
+impl ::std::fmt::Display for ElasticIpAccessState {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ElasticIPAccessState {
+impl AsRef<str> for ElasticIpAccessState {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CreateElasticIPRequestBody {
+pub struct CreateElasticIpRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub address: Option<IPv4HostAddress>,
+    pub address: Option<Ipv4HostAddress>,
     /**The bandwidth ceiling of this address, in Mbit/s, applied to both directions.
 
     Required, and there is no "unlimited": an address with no ceiling runs at line rate and is
@@ -5411,60 +5546,75 @@ pub struct CreateElasticIPRequestBody {
 
     Any whole number of Mbps within the line's `min_bandwidth_mbps` and `max_bandwidth_mbps`, otherwise the
     request is refused with `ELASTIC_IP_BANDWIDTH_RANGE`. Changing it
-    later updates the same elastic IP through `update-elastic-ip`, not an independent bandwidth resource.*/
+    later updates the same elastic IP through `change-elastic-ip-bandwidth`, not an independent bandwidth resource.*/
     ///Constraint: minimum=1, maximum=1000
     pub bandwidth_mbps: i64,
-    pub billing: BillingChoice,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub billing: Option<BillingChoice>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub instance_id: Option<InstanceId>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub internet_charge_type: Option<InternetChargeType>,
-    pub line_id: ElasticIPLineID,
+    pub line_id: ElasticIpLineId,
 }
-impl CreateElasticIPRequestBody {
+impl CreateElasticIpRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(bandwidth_mbps: i64, billing: BillingChoice, line_id: ElasticIPLineID) -> Self {
+    pub fn new(bandwidth_mbps: i64, line_id: ElasticIpLineId) -> Self {
         Self {
             bandwidth_mbps,
-            billing,
             line_id,
             address: None,
+            billing: None,
             checkout: None,
+            instance_id: None,
             internet_charge_type: None,
         }
     }
     /// Start a dependency-free builder with every required wire field.
     pub fn builder(
         bandwidth_mbps: i64,
-        billing: BillingChoice,
-        line_id: ElasticIPLineID,
-    ) -> CreateElasticIPRequestBodyBuilder {
-        CreateElasticIPRequestBodyBuilder::new(bandwidth_mbps, billing, line_id)
+        line_id: ElasticIpLineId,
+    ) -> CreateElasticIpRequestBodyBuilder {
+        CreateElasticIpRequestBodyBuilder::new(bandwidth_mbps, line_id)
     }
 }
 /// Dependency-free builder for [`#struct_name`].
 #[derive(Debug, Clone)]
 #[must_use]
-pub struct CreateElasticIPRequestBodyBuilder {
-    value: CreateElasticIPRequestBody,
+pub struct CreateElasticIpRequestBodyBuilder {
+    value: CreateElasticIpRequestBody,
 }
-impl CreateElasticIPRequestBodyBuilder {
+impl CreateElasticIpRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(bandwidth_mbps: i64, billing: BillingChoice, line_id: ElasticIPLineID) -> Self {
+    pub fn new(bandwidth_mbps: i64, line_id: ElasticIpLineId) -> Self {
         Self {
-            value: CreateElasticIPRequestBody::new(bandwidth_mbps, billing, line_id),
+            value: CreateElasticIpRequestBody::new(bandwidth_mbps, line_id),
         }
     }
     #[doc = concat!("Set the optional `", "address", "` request field.")]
     #[must_use]
-    pub fn address(mut self, address: IPv4HostAddress) -> Self {
+    pub fn address(mut self, address: Ipv4HostAddress) -> Self {
         self.value.address = Some(address);
+        self
+    }
+    #[doc = concat!("Set the optional `", "billing", "` request field.")]
+    #[must_use]
+    pub fn billing(mut self, billing: BillingChoice) -> Self {
+        self.value.billing = Some(billing);
         self
     }
     #[doc = concat!("Set the optional `", "checkout", "` request field.")]
     #[must_use]
     pub fn checkout(mut self, checkout: CheckoutOptions) -> Self {
         self.value.checkout = Some(checkout);
+        self
+    }
+    #[doc = concat!("Set the optional `", "instance_id", "` request field.")]
+    #[must_use]
+    pub fn instance_id(mut self, instance_id: InstanceId) -> Self {
+        self.value.instance_id = Some(instance_id);
         self
     }
     #[doc = concat!("Set the optional `", "internet_charge_type", "` request field.")]
@@ -5474,11 +5624,18 @@ impl CreateElasticIPRequestBodyBuilder {
         self
     }
     /// Finish building the request model.
-    pub fn build(self) -> CreateElasticIPRequestBody {
+    pub fn build(self) -> CreateElasticIpRequestBody {
         self.value
     }
 }
-///What the network subscription of an elastic IP charges for. `bandwidth` charges for the bandwidth ceiling, prepaid for a period or by the Mbit/s-second while the address is associated. `traffic` charges for the bytes the address sends upstream, pay-as-you-go only, while the bandwidth is only a ceiling; it is refused with `ELASTIC_IP_TRAFFIC_UNAVAILABLE` on a line whose `traffic_sale_status` is `off_sale`. Inbound traffic is never charged. Prices are set per currency, so a pay-as-you-go purchase whose account currency has no rate on the line for the chosen type is refused before any order with HTTP 403 `ELASTIC_IP_CHARGE_TYPE_NOT_OFFERED`, whether the elastic IP is bought alone or with an instance. A pay-as-you-go elastic IP can move between the two with `update-elastic-ip`.
+pub type Ipv4HostAddress = String;
+///Compute ElasticIpLine TypeID. UUID text is not accepted.
+pub type ElasticIpLineId = String;
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ChangeElasticIpChargeTypeRequestBody {
+    pub internet_charge_type: InternetChargeType,
+}
+///What the network item of an elastic IP charges for. `bandwidth` charges for the bandwidth ceiling, prepaid for a period or by the Mbit/s-second while the address is associated. `traffic` charges for the bytes the address sends upstream, pay-as-you-go only, while the bandwidth is only a ceiling; it is refused with `ELASTIC_IP_TRAFFIC_UNAVAILABLE` on a line whose `traffic_sale_status` is `off_sale`. Inbound traffic is never charged. Prices are set per currency, so a pay-as-you-go purchase whose account currency has no rate on the line for the chosen type is refused before any order with HTTP 403 `ELASTIC_IP_CHARGE_TYPE_NOT_OFFERED`, whether the elastic IP is bought alone or with an instance. A pay-as-you-go elastic IP can move between the two with `update-elastic-ip`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum InternetChargeType {
     #[default]
@@ -5505,9 +5662,61 @@ impl AsRef<str> for InternetChargeType {
         self.as_str()
     }
 }
-pub type IPv4HostAddress = String;
-///Compute ElasticIPLine TypeID. UUID text is not accepted.
-pub type ElasticIPLineID = String;
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ChangeElasticIpBandwidthRequestBody {
+    ///The new ceiling in Mbit/s, applied to both directions.
+    ///Constraint: minimum=1
+    pub bandwidth_mbps: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub checkout: Option<CheckoutOptions>,
+    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only on a prepaid network item, and only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
+}
+impl ChangeElasticIpBandwidthRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(bandwidth_mbps: i64) -> Self {
+        Self {
+            bandwidth_mbps,
+            checkout: None,
+            proration_date: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(bandwidth_mbps: i64) -> ChangeElasticIpBandwidthRequestBodyBuilder {
+        ChangeElasticIpBandwidthRequestBodyBuilder::new(bandwidth_mbps)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct ChangeElasticIpBandwidthRequestBodyBuilder {
+    value: ChangeElasticIpBandwidthRequestBody,
+}
+impl ChangeElasticIpBandwidthRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(bandwidth_mbps: i64) -> Self {
+        Self {
+            value: ChangeElasticIpBandwidthRequestBody::new(bandwidth_mbps),
+        }
+    }
+    #[doc = concat!("Set the optional `", "checkout", "` request field.")]
+    #[must_use]
+    pub fn checkout(mut self, checkout: CheckoutOptions) -> Self {
+        self.value.checkout = Some(checkout);
+        self
+    }
+    #[doc = concat!("Set the optional `", "proration_date", "` request field.")]
+    #[must_use]
+    pub fn proration_date(mut self, proration_date: chrono::DateTime<chrono::Utc>) -> Self {
+        self.value.proration_date = Some(proration_date);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> ChangeElasticIpBandwidthRequestBody {
+        self.value
+    }
+}
 /**Shared checkout choices for a product purchase. The service may set them or forward its client's
 choices unchanged; it does not need to read them, and Billing validates them. Omitting this object or
 mode selects automatic checkout. Each purchase creates its own Checkout Session. Promotion codes are supplied
@@ -5515,6 +5724,10 @@ only to Billing. A service may retain a failed creation record when Billing refu
 infrastructure is created for that refusal.*/
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct CheckoutOptions {
+    /**Turns on automatic renewal of every subscription with licensed items that the purchase opens. Off
+    when omitted. It must be the customer's own choice.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_renew: Option<bool>,
     /**Expected invoice total after discounts and tax, before applying credit grants or balance.
     A different total fails with BILLING_AMOUNT_CHANGED without charging or reserving a discount.
     Accepted only in automatic mode; with deferred it is refused with HTTP 400. For deferred
@@ -5746,17 +5959,17 @@ impl<'de> serde::Deserialize<'de> for BootVolume {
 pub struct NewBootVolume {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub billing: Option<BillingChoice>,
-    pub image_id: ImageID,
+    pub image_id: ImageId,
     ///What releasing the instance does to this volume. `delete` deletes it with the instance; `detach` keeps it, still billed on its own terms, for you to attach elsewhere or delete.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub on_instance_release: Option<NewBootVolumeOnInstanceRelease>,
     ///Constraint: minimum=1
     pub size_gib: i64,
     pub r#type: NewBootVolumeType,
-    pub volume_type_id: VolumeTypeID,
+    pub volume_type_id: VolumeTypeId,
 }
 ///Compute VolumeType TypeID. UUID text is not accepted.
-pub type VolumeTypeID = String;
+pub type VolumeTypeId = String;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum NewBootVolumeType {
     #[default]
@@ -5808,14 +6021,14 @@ impl AsRef<str> for NewBootVolumeOnInstanceRelease {
     }
 }
 ///Compute Image TypeID. UUID text is not accepted.
-pub type ImageID = String;
+pub type ImageId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ExistingBootVolume {
     ///The existing account used to log in to this volume's operating system.
     ///Constraint: minLength=1, maxLength=32
     pub login_username: String,
     pub r#type: ExistingBootVolumeType,
-    pub volume_id: VolumeID,
+    pub volume_id: VolumeId,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ExistingBootVolumeType {
@@ -6038,12 +6251,12 @@ impl AsRef<str> for BillingChoiceUsageType {
         self.as_str()
     }
 }
-///A Billing cancellation that Compute created to release a resource and the subscriptions in its release set. Billing owns it; read its progress and any refund there by `id`.
+///A Billing cancellation that Compute created to release a resource and the subscription items in its release set. Billing owns it; read its progress and any refund there by `id`.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BillingCancellation {
     pub id: uuid::Uuid,
     pub mode: CancellationMode,
-    ///When the subscriptions end and the resources are released; null while Billing has not fixed it.
+    ///When the items end and the resources are released; null while Billing has not fixed it.
     pub scheduled_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 /**When subscriptions end. immediate ends them now and refunds the unused value under their refund terms; period_end
@@ -6097,34 +6310,34 @@ pub struct OffsetPagination {
 pub struct AvailabilityZoneResource {
     ///The zone's code within its region (hk-1-a). Stable and human-written; addressing is by id.
     pub code: String,
-    pub id: AvailabilityZoneID,
+    pub id: AvailabilityZoneId,
     ///Display name for this zone, shown to tenants (Hong Kong A). The stable handle is code.
     pub name: String,
-    pub region_id: RegionID,
+    pub region_id: RegionId,
 }
 ///Compute Region TypeID. UUID text is not accepted.
-pub type RegionID = String;
+pub type RegionId = String;
 ///Compute AvailabilityZone TypeID. UUID text is not accepted.
-pub type AvailabilityZoneID = String;
+pub type AvailabilityZoneId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AttachVolumeRequestBody {
-    pub volume_id: VolumeID,
+    pub volume_id: VolumeId,
 }
 ///Compute Volume TypeID. UUID text is not accepted.
-pub type VolumeID = String;
+pub type VolumeId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AttachNetworkInterfaceRequestBody {
-    pub network_interface_id: NetworkInterfaceID,
+    pub network_interface_id: NetworkInterfaceId,
 }
 ///The public eni resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
-pub type NetworkInterfaceID = String;
+pub type NetworkInterfaceId = String;
 ///The target an elastic IP points at. Exactly one of the two forms.
 #[derive(Debug, Clone)]
-pub enum AssociateElasticIPRequestBody {
+pub enum AssociateElasticIpRequestBody {
     InstanceAssociationTarget(InstanceAssociationTarget),
     NetworkInterfaceAddressAssociationTarget(NetworkInterfaceAddressAssociationTarget),
 }
-impl Serialize for AssociateElasticIPRequestBody {
+impl Serialize for AssociateElasticIpRequestBody {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -6139,7 +6352,7 @@ impl Serialize for AssociateElasticIPRequestBody {
         }
     }
 }
-impl<'de> Deserialize<'de> for AssociateElasticIPRequestBody {
+impl<'de> Deserialize<'de> for AssociateElasticIpRequestBody {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -6217,7 +6430,7 @@ impl<'de> Deserialize<'de> for AssociateElasticIPRequestBody {
                         if matched.is_some() {
                             return Err(serde::de::Error::custom(concat!(
                                 "ambiguous oneOf value for ",
-                                stringify!(AssociateElasticIPRequestBody),
+                                stringify!(AssociateElasticIpRequestBody),
                                 ": more than one branch preserved the complete input",
                             )));
                         }
@@ -6240,7 +6453,7 @@ impl<'de> Deserialize<'de> for AssociateElasticIPRequestBody {
                         if matched.is_some() {
                             return Err(serde::de::Error::custom(concat!(
                                 "ambiguous oneOf value for ",
-                                stringify!(AssociateElasticIPRequestBody),
+                                stringify!(AssociateElasticIpRequestBody),
                                 ": more than one branch preserved the complete input",
                             )));
                         }
@@ -6262,14 +6475,14 @@ impl<'de> Deserialize<'de> for AssociateElasticIPRequestBody {
         if equivalent_matches > 1 {
             return Err(serde::de::Error::custom(concat!(
                 "ambiguous oneOf value for ",
-                stringify!(AssociateElasticIPRequestBody),
+                stringify!(AssociateElasticIpRequestBody),
                 ": more than one branch preserved an equivalent input",
             )));
         }
         equivalent.ok_or_else(|| {
             serde::de::Error::custom(concat!(
                 "no oneOf branch for ",
-                stringify!(AssociateElasticIPRequestBody),
+                stringify!(AssociateElasticIpRequestBody),
                 " preserved the complete input",
             ))
         })
@@ -6279,18 +6492,18 @@ impl<'de> Deserialize<'de> for AssociateElasticIPRequestBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct NetworkInterfaceAddressAssociationTarget {
-    pub network_interface_address_id: NetworkInterfaceAddressID,
+    pub network_interface_address_id: NetworkInterfaceAddressId,
 }
 ///Compute NetworkInterfaceAddress TypeID. UUID text is not accepted.
-pub type NetworkInterfaceAddressID = String;
+pub type NetworkInterfaceAddressId = String;
 ///An instance; the elastic IP points at the primary private IPv4 address of its primary network interface.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct InstanceAssociationTarget {
-    pub instance_id: InstanceID,
+    pub instance_id: InstanceId,
 }
 ///The public ins resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
-pub type InstanceID = String;
+pub type InstanceId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConsoleResponseBody {
     ///The WebSocket address a noVNC client connects to; single-use and expires within minutes
@@ -6443,7 +6656,7 @@ pub struct RunInstanceCommandResponseBody {
     pub truncated: bool,
 }
 ///A security group identifier, or `-` to read across every security group of the project (AIP-159).
-pub type SecurityGroupIDOrWildcard = String;
+pub type SecurityGroupIdOrWildcard = String;
 ///The fields to change, at least one.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct UpdateLaunchTemplateRequestBody {
@@ -6455,6 +6668,13 @@ pub struct UpdateLaunchTemplateRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     ///Constraint: minLength=1, maxLength=128
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+///The descriptive fields of a network interface, all optional, at least one required.
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct UpdateNetworkInterfaceRequestBody {
+    ///Constraint: maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -6491,6 +6711,13 @@ pub struct UpdateVolumeBackupRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+///The descriptive fields of a volume, all optional, at least one required.
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct UpdateVolumeRequestBody {
+    ///Constraint: minLength=1, maxLength=128
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
 ///The mutable fields of a snapshot. At least one must be given.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct UpdateVolumeSnapshotRequestBody {
@@ -6499,4 +6726,4 @@ pub struct UpdateVolumeSnapshotRequestBody {
     pub name: Option<String>,
 }
 ///A virtual private cloud identifier, or `-` to read across every virtual private cloud of the project (AIP-159).
-pub type VirtualPrivateCloudIDOrWildcard = String;
+pub type VirtualPrivateCloudIdOrWildcard = String;
