@@ -448,6 +448,10 @@ only to Billing. A service may retain a failed creation record when Billing refu
 infrastructure is created for that refusal.*/
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct CheckoutOptions {
+    /**Turns on automatic renewal of every subscription with licensed items that the purchase opens. Off
+    when omitted. It must be the customer's own choice.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_renew: Option<bool>,
     /**Expected invoice total after discounts and tax, before applying credit grants or balance.
     A different total fails with BILLING_AMOUNT_CHANGED without charging or reserving a discount.
     Accepted only in automatic mode; with deferred it is refused with HTTP 400. For deferred

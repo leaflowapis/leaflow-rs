@@ -348,6 +348,18 @@ pub enum AttachInstanceVolumeApiError {
     Status409(Error),
     Default(Error),
 }
+///Typed error responses for `change-elastic-ip-bandwidth`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ChangeElasticIpBandwidthApiError {
+    Status409(Error),
+    Default(Error),
+}
+///Typed error responses for `change-elastic-ip-charge-type`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ChangeElasticIpChargeTypeApiError {
+    Status409(Error),
+    Default(Error),
+}
 ///Typed error responses for `create-elastic-ip`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CreateElasticIpApiError {
@@ -358,6 +370,11 @@ pub enum CreateElasticIpApiError {
 #[derive(Debug, Clone)]
 pub enum CreateInstanceApiError {
     Status409(Error),
+    Default(Error),
+}
+///Typed error responses for `create-instance-console-url`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateInstanceConsoleUrlApiError {
     Default(Error),
 }
 ///Typed error responses for `create-launch-template`. One variant per declared non-2xx response.
@@ -576,11 +593,6 @@ pub enum GetElasticIpLineApiError {
 ///Typed error responses for `get-instance`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetInstanceApiError {
-    Default(Error),
-}
-///Typed error responses for `get-instance-console`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetInstanceConsoleApiError {
     Default(Error),
 }
 ///Typed error responses for `get-instance-family`. One variant per declared non-2xx response.
@@ -841,6 +853,12 @@ pub enum RejectVirtualPrivateCloudPeeringApiError {
     Status409(Error),
     Default(Error),
 }
+///Typed error responses for `replace-network-interface-security-groups`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ReplaceNetworkInterfaceSecurityGroupsApiError {
+    Status409(Error),
+    Default(Error),
+}
 ///Typed error responses for `rescue-instance`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum RescueInstanceApiError {
@@ -850,6 +868,24 @@ pub enum RescueInstanceApiError {
 ///Typed error responses for `reset-instance-password`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ResetInstancePasswordApiError {
+    Status409(Error),
+    Default(Error),
+}
+///Typed error responses for `resize-instance`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ResizeInstanceApiError {
+    Status409(Error),
+    Default(Error),
+}
+///Typed error responses for `resize-volume`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ResizeVolumeApiError {
+    Status409(Error),
+    Default(Error),
+}
+///Typed error responses for `retype-volume`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum RetypeVolumeApiError {
     Status409(Error),
     Default(Error),
 }
@@ -882,16 +918,9 @@ pub enum UnrescueInstanceApiError {
     Status409(Error),
     Default(Error),
 }
-///Typed error responses for `update-elastic-ip`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum UpdateElasticIpApiError {
-    Status409(Error),
-    Default(Error),
-}
 ///Typed error responses for `update-instance`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum UpdateInstanceApiError {
-    Status409(Error),
     Default(Error),
 }
 ///Typed error responses for `update-launch-template`. One variant per declared non-2xx response.
@@ -927,7 +956,6 @@ pub enum UpdateVirtualPrivateCloudSubnetApiError {
 ///Typed error responses for `update-volume`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum UpdateVolumeApiError {
-    Status409(Error),
     Default(Error),
 }
 ///Typed error responses for `update-volume-backup`. One variant per declared non-2xx response.
@@ -1051,8 +1079,8 @@ impl HttpClient {
     pub async fn associate_elastic_ip(
         &self,
         elastic_ip_id: impl AsRef<str>,
-        request: AssociateElasticIPRequestBody,
-    ) -> Result<ElasticIP, ApiOpError<AssociateElasticIpApiError>> {
+        request: AssociateElasticIpRequestBody,
+    ) -> Result<ElasticIp, ApiOpError<AssociateElasticIpApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
@@ -1337,6 +1365,211 @@ impl HttpClient {
             }))
         }
     }
+    /// Change the bandwidth of an elastic IP
+    ///
+    /// Changes the bandwidth ceiling of this elastic IP. No separate bandwidth resource is created, and the limit applies to inbound and outbound traffic alike. The new value may be any whole number of Mbps within the line's bandwidth range, otherwise the request is refused with `ELASTIC_IP_BANDWIDTH_RANGE`. How the change is paid follows the elastic IP's network item:
+    ///
+    /// - **Prepaid**: the change goes through a Checkout Session that changes the network item, priced for the rest of its period. It starts once Billing accepts the order; if checkout is not completed, the order is not accepted or the change fails, `bandwidth_mbps` keeps its value and Billing shows the outcome.
+    /// - **Pay-as-you-go**: there is no checkout. The change starts at once, `checkout_session_id` and `order_id` are null, and the new limit is metered from the instant it is applied; if it fails, the old limit stays in effect and metered. `checkout` and `proration_date` are refused with `ELASTIC_IP_CHECKOUT_UNUSED`.
+    ///
+    /// The elastic IP is `updating_bandwidth` until the change is applied or ends, so other operations and a second change are refused with `COMPUTE_RESOURCE_BUSY` meanwhile. The current limit stays in effect until the change is applied.
+    ///
+    /// While the address is associated with an instance, the limit must not exceed the `max_bandwidth_mbps` of that instance's type; a higher limit is refused with `INSTANCE_BANDWIDTH_CEILING`. The limit of an address that is not associated is checked when the address is associated with an instance.
+    ///
+    /// `POST /api/v2/elastic-ips/{elasticIpId}:changeBandwidth`
+    pub async fn change_elastic_ip_bandwidth(
+        &self,
+        elastic_ip_id: impl AsRef<str>,
+        request: ChangeElasticIpBandwidthRequestBody,
+    ) -> Result<ElasticIpChangeResponseBody, ApiOpError<ChangeElasticIpBandwidthApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/elastic-ips/{}:changeBandwidth",
+                __pct_encode_path_segment(elastic_ip_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 202u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "202",
+                )),
+            }))
+        } else {
+            let typed: Option<ChangeElasticIpBandwidthApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ChangeElasticIpBandwidthApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ChangeElasticIpBandwidthApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Change what an elastic IP is charged for
+    ///
+    /// Moves a pay-as-you-go elastic IP between charging for its bandwidth and charging for its traffic, within the same network item and without checkout. A prepaid network item has paid for its bandwidth and is refused with `ELASTIC_IP_CHARGE_TYPE_PREPAID`; `traffic` on a line whose `traffic_sale_status` is `off_sale` is refused with `ELASTIC_IP_TRAFFIC_UNAVAILABLE`, the type already in effect with `ELASTIC_IP_CHARGE_TYPE_UNCHANGED`, and a type the currency of the network item does not offer on the line with HTTP 403 `ELASTIC_IP_CHARGE_TYPE_NOT_OFFERED`: prices are set per currency, and a currency without one there does not sell that type.
+    ///
+    /// The change takes effect at the instant it is applied: bandwidth stops being metered then and traffic starts being, or the other way round. Traffic is counted in windows, and a window is charged the way the elastic IP was charged for most of it, so a report that arrives late is still charged as it was at the time and a window the change falls in is never charged both ways. `bandwidth_mbps` stays the ceiling either way. The elastic IP is `updating_internet_charge_type` until the change is applied.
+    ///
+    /// `POST /api/v2/elastic-ips/{elasticIpId}:changeChargeType`
+    pub async fn change_elastic_ip_charge_type(
+        &self,
+        elastic_ip_id: impl AsRef<str>,
+        request: ChangeElasticIpChargeTypeRequestBody,
+    ) -> Result<ElasticIp, ApiOpError<ChangeElasticIpChargeTypeApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/elastic-ips/{}:changeChargeType",
+                __pct_encode_path_segment(elastic_ip_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 202u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "202",
+                )),
+            }))
+        } else {
+            let typed: Option<ChangeElasticIpChargeTypeApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ChangeElasticIpChargeTypeApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ChangeElasticIpChargeTypeApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Allocate an elastic IP
     ///
     /// Select an elastic IP line. The elastic IP is bought through a Billing Checkout Session, and no address is allocated before its order is accepted.
@@ -1349,13 +1582,17 @@ impl HttpClient {
     ///
     /// Allocation does not select or create a virtual private cloud. A later association selects an assigned network-interface address; Compute then establishes the required network connectivity.
     ///
+    /// An elastic IP bought on its own has a Billing subscription of its own, with two items: the address, always pay-as-you-go and charged while the address is not associated with anything, and the network, on the chosen terms.
+    ///
+    /// **Buying for an instance.** With `instance_id`, the elastic IP is associated with the primary network interface of that instance of the project once created, and its two items join the instance's Billing subscription: a prepaid network item is charged up to the instance's term end, the rest of the current period in proportion to the time left, and from then on renews, renews automatically and expires with the instance. `billing` may be omitted to take the instance's terms; given, its usage type and period must be the instance's (422 `ELASTIC_IP_BILLING_TERMS_MISMATCH`). An instance that cannot take another elastic IP, or whose type allows less bandwidth than `bandwidth_mbps`, is refused before anything is ordered, as associating would be.
+    ///
     /// The elastic IP is `pending` from the moment its Checkout Session is created until it is delivered or its checkout or order ends. Every other operation on it is refused with `COMPUTE_RESOURCE_BUSY` meanwhile, and its deletion with `COMPUTE_PURCHASE_PENDING` while its purchase awaits checkout or payment.
     ///
     /// `POST /api/v2/elastic-ips`
     pub async fn create_elastic_ip(
         &self,
-        request: CreateElasticIPRequestBody,
-    ) -> Result<CreateElasticIPResponseBody, ApiOpError<CreateElasticIpApiError>> {
+        request: CreateElasticIpRequestBody,
+    ) -> Result<CreateElasticIpResponseBody, ApiOpError<CreateElasticIpApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v2/elastic-ips");
         let mut req = self.http_client.post(request_url);
         req = req
@@ -1445,7 +1682,7 @@ impl HttpClient {
     ///
     /// The instances are created in the availability zone of their instance type, and the volumes bought with them have to be of volume types of that zone (422 `VOLUME_TYPE_OTHER_AVAILABILITY_ZONE`). The types have to have room for all of them, checked before anything is ordered: refused with 409 `INSTANCE_TYPE_SOLD_OUT` or `VOLUME_TYPE_SOLD_OUT` when a type takes no new orders for now, `INSTANCE_TYPE_CAPACITY_REACHED` or `VOLUME_TYPE_CAPACITY_REACHED` when what is sold of it is used up, `INSTANCE_TYPE_NO_HOST_ROOM` when no host of the zone can take the machine, `VOLUME_TYPE_NO_POOL_ROOM` when the storage of the zone cannot take the boot volume, and `ELASTIC_IP_LINE_EXHAUSTED` when the line of the new elastic IPs has fewer addresses left than instances. Two orders placed at the same moment can both pass; an instance that finds a type full when its order is accepted is not created and is refunded, ending `failed` with `provisioning_failed`.
     ///
-    /// Choose an image or existing volume through boot_volume, and exactly one of network_interface_id or subnet_id. Existing network interfaces, boot volumes or elastic IPs require count=1. They are not held while the instance is pending; if one is no longer usable when the order is accepted, the instance ends `failed` with `provisioning_failed`. Image boots require boot_volume; existing volumes retain their own subscription. Instances, volumes and public IPs keep their own subscription items on the same order.
+    /// Choose an image or existing volume through boot_volume, and exactly one of network_interface_id or subnet_id. Existing network interfaces, boot volumes or elastic IPs require count=1. They are not held while the instance is pending; if one is no longer usable when the order is accepted, the instance ends `failed` with `provisioning_failed`. Image boots require boot_volume; existing volumes retain their own subscription. Each instance gets its own Billing subscription, with the boot volume, data volumes and elastic IP bought with it as items of it: they renew, renew automatically and expire with the machine as a whole, while each can still be changed or released alone. `checkout.auto_renew` turns automatic renewal on for each machine.
     ///
     /// Instances of one request succeed or fail individually. Each instance, with its boot volume, network interface and elastic IP, is created or fails as a whole. Instances that were created are kept; each failed instance ends `failed` with `provisioning_failed`, its part of the order is refunded, and the order then ends `partially_completed`. An instance is delivered whole or not at all: when the customer cancels any of its order items before the order is accepted, it is not created, its remaining items are canceled and refunded, and it ends `failed` with `order_canceled`. Each instance is named after this request with a number appended.
     ///
@@ -1521,6 +1758,93 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(CreateInstanceApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Create a VNC console address
+    ///
+    /// Issues an address for the instance's VNC console, operated from a browser through a noVNC client. It does not require the instance to be reachable over the network, which makes it usable when a network misconfiguration prevents login.
+    ///
+    /// The address is single-use and expires within minutes. Every request issues a new address, so request one before each use and do not cache the response.
+    ///
+    /// `POST /api/v2/instances/{instanceId}:createConsoleUrl`
+    pub async fn create_instance_console_url(
+        &self,
+        instance_id: impl AsRef<str>,
+    ) -> Result<ConsoleResponseBody, ApiOpError<CreateInstanceConsoleUrlApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/instances/{}:createConsoleUrl",
+                __pct_encode_path_segment(instance_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateInstanceConsoleUrlApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateInstanceConsoleUrlApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -2502,7 +2826,9 @@ impl HttpClient {
     ///
     /// A volume type that is off sale is rejected with `VOLUME_TYPE_OFF_SALE`, even though its identifier still resolves. Types that are off sale do not appear in the volume type listing; volumes already bought on one keep working and can still be resized.
     ///
-    /// A volume bought on its own is licensed: `billing.usage_type` `metered` is refused with `VOLUME_USAGE_TYPE_UNAVAILABLE`. A volume created with an instance follows the machine's terms instead and may be metered.
+    /// A volume bought on its own is licensed, with a Billing subscription of its own: `billing.usage_type` `metered` is refused with `VOLUME_USAGE_TYPE_UNAVAILABLE`. A volume created with an instance follows the machine's terms instead and may be metered.
+    ///
+    /// **Buying for an instance.** With `instance_id`, the volume is attached to that instance of the project once created, and becomes an item of the instance's Billing subscription: it is charged up to the instance's term end, the rest of the current period in proportion to the time left, and from then on renews, renews automatically and expires with the instance. Its volume type has to be of the instance's availability zone (422 `VOLUME_TYPE_OTHER_AVAILABILITY_ZONE`). `billing` may be omitted to take the instance's terms; given, its usage type and period must be the instance's (422 `VOLUME_BILLING_TERMS_MISMATCH`), while its termination policy may differ. An instance with no room for another volume is refused before anything is ordered, as attaching would be.
     ///
     /// The volume is `pending` from the moment its Checkout Session is created until it is delivered or its checkout or order ends. Every other operation on it is refused with `COMPUTE_RESOURCE_BUSY` meanwhile, and its deletion with `COMPUTE_PURCHASE_PENDING` while its purchase awaits checkout or payment.
     ///
@@ -2786,14 +3112,14 @@ impl HttpClient {
     ///
     /// Refused with `COMPUTE_PURCHASE_PENDING` while the purchase that created it still awaits checkout or payment; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead.
     ///
-    /// While subscriptions pay for the elastic IP (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed subscription being refunded under its terms, and `period_end` keeps the elastic IP working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
+    /// While subscription items pay for the elastic IP (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the elastic IP working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
     /// `DELETE /api/v2/elastic-ips/{elasticIpId}`
     pub async fn delete_elastic_ip(
         &self,
         elastic_ip_id: impl AsRef<str>,
         cancellation_mode: Option<CancellationMode>,
-    ) -> Result<DeleteElasticIPResponseBody, ApiOpError<DeleteElasticIpApiError>> {
+    ) -> Result<DeleteElasticIpResponseBody, ApiOpError<DeleteElasticIpApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
@@ -2896,7 +3222,7 @@ impl HttpClient {
     ///
     /// Refused with `COMPUTE_PURCHASE_PENDING` while the purchase that created it still awaits checkout or payment; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead.
     ///
-    /// While subscriptions pay for the instance (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed subscription being refunded under its terms, and `period_end` keeps the instance working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
+    /// While subscription items pay for the instance (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the instance working until `scheduled_at` and releases it then. Volumes and elastic IPs kept after the release keep their items, and the subscription continues with them. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
     /// `DELETE /api/v2/instances/{instanceId}`
     pub async fn delete_instance(
@@ -3340,7 +3666,7 @@ impl HttpClient {
     ///
     /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation. Cleanup must be confirmed before metering is stopped; unknown cleanup is not proof of release.
     ///
-    /// While subscriptions pay for the private image (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed subscription being refunded under its terms, and `period_end` keeps the private image working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
+    /// While subscription items pay for the private image (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the private image working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
     /// `DELETE /api/v2/private-images/{privateImageId}`
     pub async fn delete_private_image(
@@ -3937,7 +4263,7 @@ impl HttpClient {
     ///
     /// Refused with `COMPUTE_PURCHASE_PENDING` while the purchase that created it still awaits checkout or payment; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead.
     ///
-    /// While subscriptions pay for the volume (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed subscription being refunded under its terms, and `period_end` keeps the volume working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
+    /// While subscription items pay for the volume (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the volume working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
     /// `DELETE /api/v2/volumes/{volumeId}`
     pub async fn delete_volume(
@@ -4047,7 +4373,7 @@ impl HttpClient {
     ///
     /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation. Cleanup must be confirmed before metering is stopped; unknown cleanup is not proof of release.
     ///
-    /// While subscriptions pay for the volume backup (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed subscription being refunded under its terms, and `period_end` keeps the volume backup working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
+    /// While subscription items pay for the volume backup (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the volume backup working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
     /// `DELETE /api/v2/volume-backups/{volumeBackupId}`
     pub async fn delete_volume_backup(
@@ -4155,7 +4481,7 @@ impl HttpClient {
     ///
     /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation. Cleanup must be confirmed before metering is stopped; unknown cleanup is not proof of release.
     ///
-    /// While subscriptions pay for the snapshot (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed subscription being refunded under its terms, and `period_end` keeps the snapshot working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
+    /// While subscription items pay for the snapshot (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the snapshot working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
     /// `DELETE /api/v2/volume-snapshots/{volumeSnapshotId}`
     pub async fn delete_volume_snapshot(
@@ -4558,7 +4884,7 @@ impl HttpClient {
     pub async fn disassociate_elastic_ip(
         &self,
         elastic_ip_id: impl AsRef<str>,
-    ) -> Result<ElasticIP, ApiOpError<DisassociateElasticIpApiError>> {
+    ) -> Result<ElasticIp, ApiOpError<DisassociateElasticIpApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
@@ -4832,7 +5158,7 @@ impl HttpClient {
     pub async fn get_elastic_ip(
         &self,
         elastic_ip_id: impl AsRef<str>,
-    ) -> Result<ElasticIP, ApiOpError<GetElasticIpApiError>> {
+    ) -> Result<ElasticIp, ApiOpError<GetElasticIpApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
@@ -4918,7 +5244,7 @@ impl HttpClient {
     pub async fn get_elastic_ip_association(
         &self,
         elastic_ip_id: impl AsRef<str>,
-    ) -> Result<ElasticIPAssociation, ApiOpError<GetElasticIpAssociationApiError>> {
+    ) -> Result<ElasticIpAssociation, ApiOpError<GetElasticIpAssociationApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
@@ -5002,7 +5328,7 @@ impl HttpClient {
     pub async fn get_elastic_ip_line(
         &self,
         elastic_ip_line_id: impl AsRef<str>,
-    ) -> Result<ElasticIPLine, ApiOpError<GetElasticIpLineApiError>> {
+    ) -> Result<ElasticIpLine, ApiOpError<GetElasticIpLineApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
@@ -5144,92 +5470,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetInstanceApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Retrieve a VNC console
-    ///
-    /// The instance's VNC console, operated from a browser through a noVNC client. It does not require the instance to be reachable over the network, which makes it usable when a network misconfiguration prevents login.
-    ///
-    /// The returned address is single-use and expires within minutes. Every request issues a new address, so request one before each use and do not cache the response.
-    ///
-    /// `GET /api/v2/instances/{instanceId}/console`
-    pub async fn get_instance_console(
-        &self,
-        instance_id: impl AsRef<str>,
-    ) -> Result<ConsoleResponseBody, ApiOpError<GetInstanceConsoleApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v2/instances/{}/console",
-                __pct_encode_path_segment(instance_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetInstanceConsoleApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetInstanceConsoleApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -7121,7 +7361,7 @@ impl HttpClient {
         q: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
-    ) -> Result<ElasticIPLineListResponseBody, ApiOpError<ListElasticIpLinesApiError>> {
+    ) -> Result<ElasticIpLineListResponseBody, ApiOpError<ListElasticIpLinesApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v2/elastic-ip-lines");
         let mut req = self.http_client.get(request_url);
         {
@@ -7323,7 +7563,7 @@ impl HttpClient {
         &self,
         page: Option<i64>,
         page_size: Option<i64>,
-    ) -> Result<ElasticIPListResponseBody, ApiOpError<ListElasticIpsApiError>> {
+    ) -> Result<ElasticIpListResponseBody, ApiOpError<ListElasticIpsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v2/elastic-ips");
         let mut req = self.http_client.get(request_url);
         {
@@ -9920,6 +10160,104 @@ impl HttpClient {
             }))
         }
     }
+    /// Replace the security groups of a network interface
+    ///
+    /// `security_group_ids` is the complete new set, one to five groups of the network interface's virtual private cloud; groups left out are removed. It applies to traffic of the running instance as soon as it is in place, and the network interface is `updating_security_groups` until then.
+    ///
+    /// `POST /api/v2/network-interfaces/{networkInterfaceId}:replaceSecurityGroups`
+    pub async fn replace_network_interface_security_groups(
+        &self,
+        network_interface_id: impl AsRef<str>,
+        request: ReplaceNetworkInterfaceSecurityGroupsRequestBody,
+    ) -> Result<NetworkInterface, ApiOpError<ReplaceNetworkInterfaceSecurityGroupsApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/network-interfaces/{}:replaceSecurityGroups",
+                __pct_encode_path_segment(network_interface_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 202u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "202",
+                )),
+            }))
+        } else {
+            let typed: Option<ReplaceNetworkInterfaceSecurityGroupsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ReplaceNetworkInterfaceSecurityGroupsApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ReplaceNetworkInterfaceSecurityGroupsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Put an instance into rescue mode
     ///
     /// Boots a temporary rescue environment in place of the instance's own system, with the original boot volume attached to it as a further disk to repair. A running instance can be rescued, and so can one in `error`. A stopped instance is refused with 409 `INSTANCE_NOT_RUNNING`; start it first, which works even when its operating system no longer boots.
@@ -10107,6 +10445,304 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ResetInstancePasswordApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Resize an instance
+    ///
+    /// Changes the instance's type **cold**, through a change of its subscription item purchased in Billing: the instance has to be stopped, and is refused with 409 `INSTANCE_RESIZE_REQUIRES_STOP` otherwise. Its operating system is not booted for the change, and it is still stopped once the change is applied; start it when you are ready. An instance stopped by the legacy stop, which released its host, is refused with 409 `INSTANCE_SHELVED`; start it once and stop it again. A target type that cannot hold what the instance already uses is refused before anything is ordered: fewer network interfaces than are attached with 409 `INSTANCE_RESIZE_NETWORK_INTERFACES_EXCEED`, fewer elastic IPs than are associated with 409 `INSTANCE_RESIZE_ELASTIC_IPS_EXCEED`, and less purchasable bandwidth than an associated elastic IP has with 409 `INSTANCE_BANDWIDTH_CEILING` naming it in `meta.elastic_ip_id`. The request returns 202 with the instance and the Checkout Session for the change, including for metered terms. The instance keeps its usage type and period, priced with the target type's matching option; a target type without that option is refused with 409 `BILLING_OPTION_UNAVAILABLE`. The resize starts once Billing accepts the order. Do not submit the change again after paying. After an uncertain response, look the Checkout Session up in Billing before submitting again.
+    ///
+    /// The instance is `resizing` until the resize is applied, its Checkout Session expires or its order is canceled, so other operations and a second resize are refused with `COMPUTE_RESOURCE_BUSY` meanwhile. It keeps its current type until the resize is applied; the new type takes effect, and is billed from then on, when `instance_type_id` shows it. If checkout is not completed, the order is not accepted or the resize fails, the instance keeps its current type and Billing shows the outcome. A completed resize is final and cannot be reverted; to return to the previous type, submit another resize.
+    ///
+    /// `POST /api/v2/instances/{instanceId}:resize`
+    pub async fn resize_instance(
+        &self,
+        instance_id: impl AsRef<str>,
+        request: ResizeInstanceRequestBody,
+    ) -> Result<ResizeInstanceResponseBody, ApiOpError<ResizeInstanceApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/instances/{}:resize",
+                __pct_encode_path_segment(instance_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 202u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "202",
+                )),
+            }))
+        } else {
+            let typed: Option<ResizeInstanceApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ResizeInstanceApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ResizeInstanceApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Resize a volume
+    ///
+    /// Grows the volume through a change of its subscription item purchased in Billing. Only an increase is accepted; a smaller `size_gib` is refused with `VOLUME_CANNOT_SHRINK` (422), since a file system cannot be shrunk from outside the instance. It returns 202 with the volume and the Checkout Session for the resize, which keeps the volume's usage type and period. The volume is `resizing` until the resize is applied, its Checkout Session expires or its order is canceled, so other operations and a second resize are refused with `COMPUTE_RESOURCE_BUSY` meanwhile. The volume keeps its current size until the resize is applied; once `size_gib` shows the new size, extend the file system inside the instance. If checkout is not completed, the order is not accepted or the resize fails, the volume keeps its size and Billing shows the outcome.
+    ///
+    /// An attached volume, including a boot volume, can be resized. The capacity is usable at once, and the volume's `performance` shows what its type gives the new size. **That performance applies from the volume's next attachment, or the next start of its stopped instance**: the storage reads a volume's limits only while connecting it. Until then the attachment's `performance` shows what is in effect.
+    ///
+    /// `POST /api/v2/volumes/{volumeId}:resize`
+    pub async fn resize_volume(
+        &self,
+        volume_id: impl AsRef<str>,
+        request: ResizeVolumeRequestBody,
+    ) -> Result<VolumeChangeResponseBody, ApiOpError<ResizeVolumeApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/volumes/{}:resize",
+                __pct_encode_path_segment(volume_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 202u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "202",
+                )),
+            }))
+        } else {
+            let typed: Option<ResizeVolumeApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ResizeVolumeApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ResizeVolumeApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Change the type of a volume
+    ///
+    /// Moves the volume to another volume type at the same capacity, priced as that type, through a change of its subscription item purchased in Billing, and returns 202 with the volume and the Checkout Session for the change, which keeps the volume's usage type and period. The volume has to be detached (409 `VOLUME_RETYPE_ATTACHED`), so a boot volume cannot change its type. The target has to be on sale (`VOLUME_TYPE_OFF_SALE`), in the volume's region (422 `VOLUME_RETYPE_OTHER_REGION`), of the volume's availability zone (422 `VOLUME_TYPE_OTHER_AVAILABILITY_ZONE`) with room for the volume (409 `VOLUME_TYPE_SOLD_OUT`, `VOLUME_TYPE_CAPACITY_REACHED`, `VOLUME_TYPE_NO_POOL_ROOM`), admit the volume's capacity (422 `VOLUME_SIZE_OUT_OF_RANGE`, `VOLUME_SIZE_NOT_ON_STEP`) and differ from the current one (422 `VOLUME_RETYPE_SAME_TYPE`). The volume is `retyping` until the change is applied, its Checkout Session expires or its order is canceled. A target on the same storage backend takes effect at once; one on another backend copies the volume's data there first, which takes longer the larger the volume is. The volume keeps its type until `volume_type_id` shows the new one, and its `performance` follows from then on; a change that did not take effect leaves the volume as it was and is refunded.
+    ///
+    /// `POST /api/v2/volumes/{volumeId}:retype`
+    pub async fn retype_volume(
+        &self,
+        volume_id: impl AsRef<str>,
+        request: RetypeVolumeRequestBody,
+    ) -> Result<VolumeChangeResponseBody, ApiOpError<RetypeVolumeApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/volumes/{}:retype",
+                __pct_encode_path_segment(volume_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 202u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "202",
+                )),
+            }))
+        } else {
+            let typed: Option<RetypeVolumeApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(RetypeVolumeApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(RetypeVolumeApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -10432,7 +11068,7 @@ impl HttpClient {
     ///
     /// Shuts the instance down **on its host**, as Alibaba Cloud's ordinary stop does: it keeps its volumes, network interfaces, addresses and quota, and the vCPU and memory of its host stay reserved for it, so it starts again without asking for room. **A metered instance keeps being charged for compute while stopped**; its volumes and elastic IPs are charged as always. An instance stopped by a suspension, for non-payment or by the platform, is not charged for compute while the suspension lasts. It is `stopping` until it is stopped. Stopping a stopped instance changes nothing.
     ///
-    /// Changing `instance_type_id` is done on a stopped instance and only then. A stopped instance can also be rebuilt and have network interfaces and volumes attached and detached; rescuing it needs it running.
+    /// Resizing is done on a stopped instance and only then. A stopped instance can also be rebuilt and have network interfaces and volumes attached and detached; rescuing it needs it running.
     ///
     /// `POST /api/v2/instances/{instanceId}:stop`
     pub async fn stop_instance(
@@ -10620,137 +11256,20 @@ impl HttpClient {
             }))
         }
     }
-    /// Update an elastic IP
-    ///
-    /// Changes the bandwidth of this elastic IP, or what its pay-as-you-go network subscription charges for. `bandwidth_mbps` and `internet_charge_type` are operational fields: each starts a change and cannot be combined with any other field in the same request. Such a request is refused with 422 `UPDATE_FIELDS_COMBINED`, because a change that committed beside another that was then refused would leave the request half applied. An elastic IP has no descriptive field today, so 200 is reserved for the fields that may be added to it and every accepted update answers 202. `checkout` and `proration_date` belong to the purchase of the `bandwidth_mbps` change and are accepted only together with it.
-    ///
-    /// No separate bandwidth resource is created, and the limit applies to inbound and outbound traffic alike. The new value may be any whole number of Mbps within the line's bandwidth range, otherwise the request is refused with `ELASTIC_IP_BANDWIDTH_RANGE`. How the change is paid follows the elastic IP's network subscription:
-    ///
-    /// - **Prepaid**: the change goes through a Checkout Session that changes the network subscription, priced for the rest of its period. It starts once Billing accepts the order; if checkout is not completed, the order is not accepted or the change fails, `bandwidth_mbps` keeps its value and Billing shows the outcome.
-    /// - **Pay-as-you-go**: there is no checkout. The change starts at once, `checkout_session_id` and `order_id` are null, and the new limit is metered from the instant it is applied; if it fails, the old limit stays in effect and metered. `checkout` and `proration_date` are refused with `ELASTIC_IP_CHECKOUT_UNUSED`.
-    ///
-    /// A change of `internet_charge_type` needs no checkout and is `updating_internet_charge_type` until it is applied; see the field.
-    ///
-    /// The elastic IP is `updating_bandwidth` until the change is applied or ends, so other operations and a second change are refused with `COMPUTE_RESOURCE_BUSY` meanwhile. The current limit stays in effect until the change is applied.
-    ///
-    /// While the address is associated with an instance, the limit must not exceed the `max_bandwidth_mbps` of that instance's type; a higher limit is refused with `INSTANCE_BANDWIDTH_CEILING`. The limit of an address that is not associated is checked when the address is associated with an instance.
-    ///
-    /// `PATCH /api/v2/elastic-ips/{elasticIpId}`
-    pub async fn update_elastic_ip(
-        &self,
-        elastic_ip_id: impl AsRef<str>,
-        request: UpdateElasticIPRequestBody,
-    ) -> Result<UpdateElasticIPResponseBody, ApiOpError<UpdateElasticIpApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v2/elastic-ips/{}",
-                __pct_encode_path_segment(elastic_ip_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.patch(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 || status_code == 202u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200, 202",
-                )),
-            }))
-        } else {
-            let typed: Option<UpdateElasticIpApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                409u16 => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(UpdateElasticIpApiError::Status409(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(UpdateElasticIpApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Update an instance
     ///
-    /// Changes the descriptive fields (`name`, `labels`, `notes`) or the operational field `instance_type_id`. All fields are optional and at least one is required. Starting and stopping are the `:start` and `:stop` methods.
-    ///
-    /// `instance_type_id` starts a workflow and cannot be combined with any other field in the same request. Such a request is refused with 422 `UPDATE_FIELDS_COMBINED`, because a rename that committed beside a change that was then refused would leave the request half applied. `checkout` and `proration_date` belong to the purchase of the `instance_type_id` change and are accepted only together with it.
-    ///
-    /// **Descriptive fields** are not operations and are accepted at any time, whatever the instance is doing. The request returns 200 with `checkout_session_id` and `order_id` null.
+    /// Changes the descriptive fields `name`, `labels` and `description`; all are optional and at least one is required. They are not operations and are accepted at any time, whatever the instance is doing. Changing the instance type is the `:resize` method; starting and stopping are `:start` and `:stop`.
     ///
     /// - `name` changes the display name only. The hostname inside the instance is unchanged; it equals the instance id.
     /// - `labels` records what this instance is for, as key-value pairs. Nothing on the platform reads them. **The whole set is replaced**: whatever is absent from the request is removed, and an empty object clears them all. Do not put credentials here. Labels are visible to platform operators.
-    /// - `notes` is a free-text note about this instance: what it runs, and what to be careful about before touching it. **The whole note is replaced**; send an empty string to clear it. Do not put credentials here. The note is visible to platform operators.
-    ///
-    /// **`instance_type_id`** changes the instance's type **cold**: the instance has to be stopped, and is refused with 409 `INSTANCE_RESIZE_REQUIRES_STOP` otherwise. Its operating system is not booted for the change, and it is still stopped once the change is applied; start it when you are ready. An instance stopped by the legacy stop, which released its host, is refused with 409 `INSTANCE_SHELVED`; start it once and stop it again. A target type that cannot hold what the instance already uses is refused before anything is ordered: fewer network interfaces than are attached with 409 `INSTANCE_RESIZE_NETWORK_INTERFACES_EXCEED`, fewer elastic IPs than are associated with 409 `INSTANCE_RESIZE_ELASTIC_IPS_EXCEED`, and less purchasable bandwidth than an associated elastic IP has with 409 `INSTANCE_BANDWIDTH_CEILING` naming it in `meta.elastic_ip_id`. The request returns 202 with the instance and the Checkout Session for the change, including for metered terms. The instance keeps its usage type and period, priced with the target type's matching option; a target type without that option is refused with 409 `BILLING_OPTION_UNAVAILABLE`. The resize starts once Billing accepts the order. Do not submit the change again after paying. After an uncertain response, look the Checkout Session up in Billing before submitting again.
-    ///
-    /// The instance is `resizing` until the resize is applied, its Checkout Session expires or its order is canceled, so other operations and a second resize are refused with `COMPUTE_RESOURCE_BUSY` meanwhile. It keeps its current type until the resize is applied; the new type takes effect, and is billed from then on, when `instance_type_id` shows it. If checkout is not completed, the order is not accepted or the resize fails, the instance keeps its current type and Billing shows the outcome. A completed resize is final and cannot be reverted; to return to the previous type, submit another resize.
+    /// - `description` is a free-text note about this instance: what it runs, and what to be careful about before touching it. **The whole note is replaced**; send an empty string to clear it. Do not put credentials here. The note is visible to platform operators.
     ///
     /// `PATCH /api/v2/instances/{instanceId}`
     pub async fn update_instance(
         &self,
         instance_id: impl AsRef<str>,
         request: UpdateInstanceRequestBody,
-    ) -> Result<UpdateInstanceResponseBody, ApiOpError<UpdateInstanceApiError>> {
+    ) -> Result<Instance, ApiOpError<UpdateInstanceApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
@@ -10780,7 +11299,7 @@ impl HttpClient {
             __read_bounded_response_body(response, self.max_response_body_bytes).await?;
         let raw_body = body_bytes;
         let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 || status_code == 202u16 {
+        if false || status_code == 200u16 {
             match serde_json::from_str(&body_text) {
                 Ok(body) => Ok(body),
                 Err(e) => Err(ApiOpError::Api(ApiError {
@@ -10801,23 +11320,13 @@ impl HttpClient {
                 typed: None,
                 parse_error: Some(format!(
                     "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200, 202",
+                    status_code, "200",
                 )),
             }))
         } else {
             let typed: Option<UpdateInstanceApiError>;
             let parse_error: Option<String>;
             match status_code {
-                409u16 => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(UpdateInstanceApiError::Status409(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(UpdateInstanceApiError::Default(v));
@@ -10929,10 +11438,7 @@ impl HttpClient {
     }
     /// Update a network interface
     ///
-    /// Changes the name, or replaces the security groups. The two are never combined (422 `UPDATE_FIELDS_COMBINED`).
-    ///
-    /// - `name` is not an operation, is accepted at any time and answers 200.
-    /// - `security_group_ids` is the complete new set, one to five groups of the network interface's virtual private cloud; groups left out are removed. It applies to traffic of the running instance as soon as it is in place, and answers 202 with the network interface `updating_security_groups` until then.
+    /// Changes the name. It is not an operation and is accepted at any time. Replacing the security groups is `:replaceSecurityGroups`.
     ///
     /// Secondary IPv4 addresses are added and removed under `/network-interfaces/{networkInterfaceId}/addresses`.
     ///
@@ -10971,7 +11477,7 @@ impl HttpClient {
             __read_bounded_response_body(response, self.max_response_body_bytes).await?;
         let raw_body = body_bytes;
         let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 || status_code == 202u16 {
+        if false || status_code == 200u16 {
             match serde_json::from_str(&body_text) {
                 Ok(body) => Ok(body),
                 Err(e) => Err(ApiOpError::Api(ApiError {
@@ -10992,7 +11498,7 @@ impl HttpClient {
                 typed: None,
                 parse_error: Some(format!(
                     "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200, 202",
+                    status_code, "200",
                 )),
             }))
         } else {
@@ -11377,24 +11883,14 @@ impl HttpClient {
     }
     /// Update a volume
     ///
-    /// Changes the name, the capacity or the volume type. The availability zone is immutable.
-    ///
-    /// `size_gib` and `volume_type_id` are operational fields: each starts a change and cannot be combined with any other field in the same request, including the other one. Such a request is refused with 422 `UPDATE_FIELDS_COMBINED`, because a rename that committed beside a change that was then refused would leave the request half applied. `checkout` and `proration_date` belong to the purchase of the change and are accepted only together with one of them.
-    ///
-    /// **Renaming** is not an operation and is accepted at any time. It returns 200 with `checkout_session_id` and `order_id` null.
-    ///
-    /// **Resizing** accepts only an increase; a smaller `size_gib` is refused with `VOLUME_CANNOT_SHRINK` (422), since a file system cannot be shrunk from outside the instance. It returns 202 with the volume and the Checkout Session for the resize, which keeps the volume's usage type and period. The volume is `resizing` until the resize is applied, its Checkout Session expires or its order is canceled, so other operations and a second resize are refused with `COMPUTE_RESOURCE_BUSY` meanwhile. The volume keeps its current size until the resize is applied; once `size_gib` shows the new size, extend the file system inside the instance. If checkout is not completed, the order is not accepted or the resize fails, the volume keeps its size and Billing shows the outcome.
-    ///
-    /// **Changing the type** moves the volume to another volume type at the same capacity, priced as that type, and returns 202 with the volume and the Checkout Session for the change, which keeps the volume's usage type and period. The volume has to be detached (409 `VOLUME_RETYPE_ATTACHED`), so a boot volume cannot change its type. The target has to be on sale (`VOLUME_TYPE_OFF_SALE`), in the volume's region (422 `VOLUME_RETYPE_OTHER_REGION`), of the volume's availability zone (422 `VOLUME_TYPE_OTHER_AVAILABILITY_ZONE`) with room for the volume (409 `VOLUME_TYPE_SOLD_OUT`, `VOLUME_TYPE_CAPACITY_REACHED`, `VOLUME_TYPE_NO_POOL_ROOM`), admit the volume's capacity (422 `VOLUME_SIZE_OUT_OF_RANGE`, `VOLUME_SIZE_NOT_ON_STEP`) and differ from the current one (422 `VOLUME_RETYPE_SAME_TYPE`). The volume is `retyping` until the change is applied, its Checkout Session expires or its order is canceled. A target on the same storage backend takes effect at once; one on another backend copies the volume's data there first, which takes longer the larger the volume is. The volume keeps its type until `volume_type_id` shows the new one, and its `performance` follows from then on; a change that did not take effect leaves the volume as it was and is refunded.
-    ///
-    /// An attached volume, including a boot volume, can be resized. The capacity is usable at once, and the volume's `performance` shows what its type gives the new size. **That performance applies from the volume's next attachment, or the next start of its stopped instance**: the storage reads a volume's limits only while connecting it. Until then the attachment's `performance` shows what is in effect.
+    /// Changes the name. It is not an operation and is accepted at any time. Growing the volume is `:resize` and moving it to another type is `:retype`.
     ///
     /// `PATCH /api/v2/volumes/{volumeId}`
     pub async fn update_volume(
         &self,
         volume_id: impl AsRef<str>,
         request: UpdateVolumeRequestBody,
-    ) -> Result<UpdateVolumeResponseBody, ApiOpError<UpdateVolumeApiError>> {
+    ) -> Result<VolumeResource, ApiOpError<UpdateVolumeApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
@@ -11424,7 +11920,7 @@ impl HttpClient {
             __read_bounded_response_body(response, self.max_response_body_bytes).await?;
         let raw_body = body_bytes;
         let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 || status_code == 202u16 {
+        if false || status_code == 200u16 {
             match serde_json::from_str(&body_text) {
                 Ok(body) => Ok(body),
                 Err(e) => Err(ApiOpError::Api(ApiError {
@@ -11445,23 +11941,13 @@ impl HttpClient {
                 typed: None,
                 parse_error: Some(format!(
                     "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200, 202",
+                    status_code, "200",
                 )),
             }))
         } else {
             let typed: Option<UpdateVolumeApiError>;
             let parse_error: Option<String>;
             match status_code {
-                409u16 => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(UpdateVolumeApiError::Status409(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(UpdateVolumeApiError::Default(v));
