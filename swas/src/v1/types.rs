@@ -108,7 +108,7 @@ impl AsRef<str> for RefundProgressCancellationState {
         self.as_str()
     }
 }
-///Durable purchase progress. The checkout_session_id identifies the Billing session for user quote, confirmation and payment. It is not ready while checkout creation is pending. SWAS does not quote or charge automatically. delivered and billing_settled describe different facts; acceptance is not delivery.
+///Durable purchase progress. The checkout_session_id identifies the Billing session for user pricing, confirmation and payment. It is not ready while checkout creation is pending. SWAS does not price or charge automatically. delivered and billing_settled describe different facts; acceptance is not delivery.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Purchase {
     pub billing_settled: bool,
@@ -616,7 +616,7 @@ pub struct Plan {
     pub provider_plan_id: String,
     pub region_id: String,
 }
-///A verified price option for one billing period. Its Billing price must currently be available, use period-end cancellation without an automatic refund, and match this provider plan and region. Archived snapshots, unknown periods and unverified prices are excluded. Selection does not bypass current permissions, Price validation or disabled purchase controls. Billing owns quotes and checkout amounts.
+///A verified price option for one billing period. Its Billing price must currently be available, use period-end cancellation without an automatic refund, and match this provider plan and region. Archived snapshots, unknown periods and unverified prices are excluded. Selection does not bypass current permissions, Price validation or disabled purchase controls. Billing owns prices and checkout amounts.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PriceOption {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -699,7 +699,7 @@ through a float.*/
 pub type Money = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PurchaseCreate {
-    ///Selects a price from the requested plan and current catalog revision. The server resolves its immutable Billing terms, billing period and ownership; the client does not set the billing period. SWAS validates the Price selection only. Billing owns quotes, checkout confirmation and payment.
+    ///Selects a price from the requested plan and current catalog revision. The server resolves its immutable Billing terms, billing period and ownership; the client does not set the billing period. SWAS validates the Price selection only. Billing owns pricing, checkout confirmation and payment.
     ///Constraint: pattern=`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`
     pub billing_price_id: uuid::Uuid,
     ///Constraint: minimum=1, maximum=9007199254740991

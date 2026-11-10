@@ -474,11 +474,6 @@ pub enum GetCancellationApiError {
 pub enum GetCheckoutSessionApiError {
     Default(Error),
 }
-///Typed error responses for `get-checkout-session-quote`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetCheckoutSessionQuoteApiError {
-    Default(Error),
-}
 ///Typed error responses for `get-contact`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetContactApiError {
@@ -519,11 +514,6 @@ pub enum GetProductApiError {
 pub enum GetProjectAssignmentApiError {
     Default(Error),
 }
-///Typed error responses for `get-quote`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetQuoteApiError {
-    Default(Error),
-}
 ///Typed error responses for `get-statement`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetStatementApiError {
@@ -542,6 +532,11 @@ pub enum GetSubscriptionApiError {
 ///Typed error responses for `get-top-up`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetTopUpApiError {
+    Default(Error),
+}
+///Typed error responses for `get-trial-grant`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetTrialGrantApiError {
     Default(Error),
 }
 ///Typed error responses for `get-withdrawal`. One variant per declared non-2xx response.
@@ -572,11 +567,6 @@ pub enum ListBillingAccountsApiError {
 ///Typed error responses for `list-cancellations`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListCancellationsApiError {
-    Default(Error),
-}
-///Typed error responses for `list-checkout-session-items`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListCheckoutSessionItemsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-checkout-sessions`. One variant per declared non-2xx response.
@@ -714,6 +704,11 @@ pub enum ListTopUpsApiError {
 pub enum ListTransactionsApiError {
     Default(Error),
 }
+///Typed error responses for `list-trial-grants`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListTrialGrantsApiError {
+    Default(Error),
+}
 ///Typed error responses for `list-usage-charges`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListUsageChargesApiError {
@@ -742,6 +737,11 @@ pub enum PayTogetherApiError {
 ///Typed error responses for `preview-cancellation`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum PreviewCancellationApiError {
+    Default(Error),
+}
+///Typed error responses for `preview-checkout-session`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum PreviewCheckoutSessionApiError {
     Default(Error),
 }
 ///Typed error responses for `preview-invoice-payment`. One variant per declared non-2xx response.
@@ -803,6 +803,11 @@ pub enum UnlinkProjectBillingAccountApiError {
 ///Typed error responses for `update-billing-account`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum UpdateBillingAccountApiError {
+    Default(Error),
+}
+///Typed error responses for `update-checkout-session`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum UpdateCheckoutSessionApiError {
     Default(Error),
 }
 ///Typed error responses for `update-contact`. One variant per declared non-2xx response.
@@ -1130,11 +1135,13 @@ impl HttpClient {
     }
     /// Confirm a Checkout Session
     ///
-    /// Completes an open session: applies `promotion_code`, or otherwise the best applicable account discount, checks
-    /// the total against `expected_amount` and creates the order with its invoice issued. A zero-total invoice is paid
-    /// at once; otherwise pay the invoice next. A failed payment leaves the order and its terms as they are, and the
-    /// invoice can be paid again until the order expires. Nothing is created when the code is invalid or
-    /// inapplicable or the total differs, which fails with `BILLING_AMOUNT_CHANGED`.
+    /// Completes an open session under the choices saved on it: its promotion code, or otherwise the best applicable
+    /// account discount, and its free trial grant. Checks the total against `expected_amount` and creates the order
+    /// with its invoice issued. A zero-total invoice is paid at once; otherwise pay the invoice next. A failed payment
+    /// leaves the order and its terms as they are, and the invoice can be paid again until the order expires. Nothing
+    /// is created when the total differs, which fails with `BILLING_AMOUNT_CHANGED`, or when a saved code or grant can
+    /// no longer be applied, which fails with its error until the session is updated. A trial grant used by an order
+    /// that is later canceled or fails can be used again.
     ///
     /// Confirming a complete session again with the same terms returns it with its order; different terms are refused
     /// with `BILLING_CHECKOUT_SESSION_COMPLETE`. An expired session is refused with `BILLING_CHECKOUT_SESSION_EXPIRED`.
@@ -1331,8 +1338,9 @@ impl HttpClient {
     ///
     /// `mode` must be allowed for every item. Metered and one-time items end only `immediate`. A licensed item ends
     /// `period_end` while its subscription's paid term lasts, and `immediate` unless its terms allow only the end of
-    /// the paid term and that term has not ended. For `period_end` the paid terms of all items must end at the same
-    /// time.
+    /// the paid term and that term has not ended. During a free trial a licensed item ends either way whatever its
+    /// terms, `period_end` meaning the end of the trial, and nothing is refunded. For `period_end` the paid terms of
+    /// all items must end at the same time.
     ///
     /// Refused with:
     ///
@@ -1434,9 +1442,10 @@ impl HttpClient {
     /// Opens a Checkout Session renewing one or more subscriptions in one order, such as a machine and the separately
     /// bought volumes and elastic IPs attached to it, with periods and price chosen as in renewing. Every subscription
     /// must be paid by the same billing account and belong to the same project and service. Nothing is charged until
-    /// you complete it, when a promotion code can be applied; each subscription then renews from its current_term_end
-    /// at that time. To renew one subscription at once from credit grants, balance or a payment method, renew the
-    /// subscription instead. Purchases and changes of a service's resources are created through that service.
+    /// you complete it; save a promotion code on it first with `update-checkout-session`. Each subscription then renews
+    /// from its current_term_end at that time. To renew one subscription at once from credit grants, balance or a
+    /// payment method, renew the subscription instead. Purchases and changes of a service's resources are created
+    /// through that service.
     ///
     /// Open to the owner of the subscriptions' current billing account and to members of their project with the
     /// project permission `billing:finance.manage`. Keep `checkout_session_id` and read the session after an
@@ -2252,7 +2261,9 @@ impl HttpClient {
     }
     /// Expire a Checkout Session
     ///
-    /// Ends an open session without an order; the service that created it releases what it was holding for the purchase. An expired session is returned unchanged. Open to the owner of the session's billing account and to members of its project.
+    /// Ends an open session without an order; the service that created it releases what it was holding for
+    /// the purchase. An expired session is returned unchanged. Open to the owner of the session's billing account and
+    /// to members of its project.
     ///
     /// `POST /api/v1/checkout-sessions/{checkoutSessionId}:expire`
     pub async fn expire_checkout_session(
@@ -2680,7 +2691,11 @@ impl HttpClient {
     }
     /// Get a Checkout Session
     ///
-    /// A Checkout Session of your billing account or of a project you are a member of. Poll it to follow checkout; once it is complete, read its order for payment and delivery. An unknown session returns 404; any other session returns 403.
+    /// A Checkout Session of your billing account or of a project you are a member of, with what completing it now
+    /// would invoice under the choices saved on it. A saved promotion code or trial grant that can no longer be applied
+    /// is left out of the amounts; `discount` and the subscriptions' `trial_grant_id` show what applies, and confirming
+    /// fails until the session is updated. Poll it to follow checkout; once it is complete, read its order for payment
+    /// and delivery. An unknown session returns 404; any other session returns 403.
     ///
     /// `GET /api/v1/checkout-sessions/{checkoutSessionId}`
     pub async fn get_checkout_session(
@@ -2744,109 +2759,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetCheckoutSessionApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Quote a Checkout Session
-    ///
-    /// What completing this open session now would invoice, with `promotion_code` or otherwise the best applicable
-    /// account discount, and the account funds available for it. Nothing is applied, reserved or redeemed. An invalid
-    /// or inapplicable code fails the request without changing the session.
-    ///
-    /// Complete the session with the returned `total` as `expected_amount`, the same `promotion_code` and, for an
-    /// immediate change, the returned `proration_date`. An expired session is refused with
-    /// `BILLING_CHECKOUT_SESSION_EXPIRED`, and a complete one with `BILLING_CHECKOUT_SESSION_COMPLETE`; read its order
-    /// instead.
-    ///
-    /// Open to the owner of the session's billing account and to members of its project.
-    ///
-    /// `GET /api/v1/checkout-sessions/{checkoutSessionId}/quote`
-    pub async fn get_checkout_session_quote(
-        &self,
-        checkout_session_id: impl AsRef<str>,
-        promotion_code: Option<impl AsRef<str>>,
-    ) -> Result<Quote, ApiOpError<GetCheckoutSessionQuoteApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/checkout-sessions/{}/quote",
-                __pct_encode_path_segment(checkout_session_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = promotion_code {
-                query_params.push(("promotion_code".to_string(), v.as_ref().to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetCheckoutSessionQuoteApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetCheckoutSessionQuoteApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -3551,103 +3463,6 @@ impl HttpClient {
             }))
         }
     }
-    /// Get a quote
-    ///
-    /// Calculates what a proposed purchase, a change of your subscriptions or their renewal would invoice now, and
-    /// what each purchased or changed line renews at. Nothing is saved, reserved or redeemed.
-    ///
-    /// With `billing_account_id`, the quote is for that billing account: its currency, account discounts,
-    /// tax and funds apply, changes and renewals use the account currently paying for each subscription, and an
-    /// access token is required. The account must be yours or currently pay for a project you are a member of.
-    /// Without it, proposed items are priced in `currency` for anyone, signed in or not: no account discount or funds
-    /// apply, and tax that would be added is included only for the customer's `address`.
-    ///
-    /// A change is priced as the service that owns the subscription would order it: pass the returned `total` as the
-    /// expected amount and, for an immediate change, `proration_date` to that service when making the change.
-    ///
-    /// A promotion code is evaluated without being applied. It is applied only when a Checkout Session is completed
-    /// with it; conditions that depend on the account, such as a first purchase, are checked only with an account
-    /// and otherwise reported as `unverified`. Future usage of metered prices is estimated with `estimate-usage`.
-    ///
-    /// `QUERY /api/v1/quotes`
-    pub async fn get_quote(
-        &self,
-        request: QuoteRequest,
-    ) -> Result<Quote, ApiOpError<GetQuoteApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/quotes");
-        let mut req = self.http_client.request(
-            reqwest::Method::from_bytes("QUERY".as_bytes()).expect("invalid HTTP method"),
-            request_url,
-        );
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetQuoteApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetQuoteApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Get statement
     ///
     /// A statement of your billing account with its period, estimated or closed amounts and invoice. Returns 404 for a missing statement and 403 for another user's account.
@@ -4002,6 +3817,90 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetTopUpApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get a free trial grant
+    ///
+    /// A free trial held by one of your billing accounts. Returns 404 if it does not exist or is not yours.
+    ///
+    /// `GET /api/v1/trial-grants/{trialGrantId}`
+    pub async fn get_trial_grant(
+        &self,
+        trial_grant_id: impl AsRef<str>,
+    ) -> Result<TrialGrant, ApiOpError<GetTrialGrantApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/trial-grants/{}",
+                __pct_encode_path_segment(trial_grant_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetTrialGrantApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetTrialGrantApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -4790,107 +4689,10 @@ impl HttpClient {
             }))
         }
     }
-    /// List Checkout Session items
-    ///
-    /// What the session buys, by position. Prices and amounts are in its quote. Readable by whoever can read the session.
-    ///
-    /// `GET /api/v1/checkout-sessions/{checkoutSessionId}/items`
-    pub async fn list_checkout_session_items(
-        &self,
-        checkout_session_id: impl AsRef<str>,
-        page: Option<i64>,
-        page_size: Option<i64>,
-    ) -> Result<CheckoutSessionItemList, ApiOpError<ListCheckoutSessionItemsApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/checkout-sessions/{}/items",
-                __pct_encode_path_segment(checkout_session_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = page {
-                query_params.push(("page".to_string(), v.to_string()));
-            }
-            if let Some(v) = page_size {
-                query_params.push(("page_size".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListCheckoutSessionItemsApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListCheckoutSessionItemsApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// List Checkout Sessions
     ///
-    /// Checkout Sessions of your billing accounts, newest first; members of a project list its sessions with `project_ids`. An open session is a purchase waiting for checkout to be completed.
+    /// Checkout Sessions of your billing accounts, newest first; members of a project list its sessions with
+    /// `project_ids`. An open session is a purchase waiting for checkout to be completed.
     ///
     /// `GET /api/v1/checkout-sessions`
     pub async fn list_checkout_sessions(
@@ -5468,7 +5270,7 @@ impl HttpClient {
     }
     /// List currencies accounts can be opened in
     ///
-    /// Currencies a new billing account can be opened in, and prices and quotes without an account can be given in, for anyone, signed in or not. Retired currencies are not listed.
+    /// Currencies a new billing account can be opened in, and prices and checkout previews without an account can be given in, for anyone, signed in or not. Retired currencies are not listed.
     ///
     /// `GET /api/v1/currencies`
     pub async fn list_currencies(
@@ -8050,6 +7852,126 @@ impl HttpClient {
             }))
         }
     }
+    /// List free trial grants
+    ///
+    /// Free trials held by your billing accounts. Choose an available grant when checking out a purchase its offer
+    /// covers, by saving its ID as `trial_grant_id` on the Checkout Session; a session and its preview list the grants that
+    /// can be used for it.
+    ///
+    /// `GET /api/v1/trial-grants`
+    pub async fn list_trial_grants(
+        &self,
+        page: Option<i64>,
+        page_size: Option<i64>,
+        billing_account_id: Option<i64>,
+        status: Option<Vec<TrialGrantStatus>>,
+    ) -> Result<TrialGrantList, ApiOpError<ListTrialGrantsApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/trial-grants");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = page {
+                query_params.push(("page".to_string(), v.to_string()));
+            }
+            if let Some(v) = page_size {
+                query_params.push(("page_size".to_string(), v.to_string()));
+            }
+            if let Some(v) = billing_account_id {
+                query_params.push(("billing_account_id".to_string(), v.to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListTrialGrantsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListTrialGrantsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// List usage charges
     ///
     /// Priced usage charges in the requested scope; members with the project permission `billing:finance.manage` list a project's charges with `project_ids`. Usage that had no price when it occurred is never charged later.
@@ -8680,6 +8602,102 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(PreviewCancellationApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Preview a Checkout Session
+    ///
+    /// What a Checkout Session for a purchase, a change of your subscriptions or their renewal would invoice if it
+    /// were completed now, returned as a session that is not saved: it has no `id`, and nothing is ordered, reserved
+    /// or redeemed. Use it to show prices before buying; the service that sells a resource creates the session for its
+    /// purchase or change, and you create renewal sessions here.
+    ///
+    /// With `billing_account_id` the preview is for that billing account: its currency, account discounts, tax,
+    /// funds and free trial grants apply, changes and renewals use the account currently paying for each
+    /// subscription, and an access token is required. The account must be yours or currently pay for a project you
+    /// are a member of. Without it, a purchase is priced in `currency` for anyone, signed in or not: no account
+    /// discount, funds or trial grant apply, and tax that would be added is included only for `address`.
+    ///
+    /// A promotion code is evaluated without being applied; conditions that depend on the account, such as a first
+    /// purchase, are checked only with an account and otherwise reported as `unverified`. An invalid or inapplicable
+    /// code or trial grant fails the request. Future usage of metered prices is estimated with `estimate-usage`.
+    ///
+    /// `QUERY /api/v1/checkout-sessions:preview`
+    pub async fn preview_checkout_session(
+        &self,
+        request: CheckoutSessionPreviewRequest,
+    ) -> Result<CheckoutSession, ApiOpError<PreviewCheckoutSessionApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/checkout-sessions:preview");
+        let mut req = self.http_client.request(
+            reqwest::Method::from_bytes("QUERY".as_bytes()).expect("invalid HTTP method"),
+            request_url,
+        );
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<PreviewCheckoutSessionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(PreviewCheckoutSessionApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -9779,6 +9797,105 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(UpdateBillingAccountApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Update a Checkout Session
+    ///
+    /// Saves your checkout choices on an open session: a promotion code, a free trial grant and automatic renewal.
+    /// Choices left out keep their values, and null removes a code or a grant. The session is returned with its
+    /// amounts calculated under the new choices; nothing is redeemed until it is completed.
+    ///
+    /// A code that does not exist or cannot be applied is refused with its promotion error, and a grant that cannot be
+    /// used with `BILLING_TRIAL_GRANT_INAPPLICABLE`; the session is then unchanged. A grant applies to the first new
+    /// subscription of the session whose lines its offer all covers, and that has a licensed line and no trial of its
+    /// own. `auto_renew` turns automatic renewal on or off for every subscription with licensed items the session
+    /// opens; for a free trial, it decides whether the trial converts to paid when it ends. A session that is not
+    /// open is refused with `BILLING_CHECKOUT_SESSION_COMPLETE` or `BILLING_CHECKOUT_SESSION_EXPIRED`.
+    ///
+    /// Open to the owner of the session's billing account and to members of its project.
+    ///
+    /// `PATCH /api/v1/checkout-sessions/{checkoutSessionId}`
+    pub async fn update_checkout_session(
+        &self,
+        checkout_session_id: impl AsRef<str>,
+        request: CheckoutSessionUpdate,
+    ) -> Result<CheckoutSession, ApiOpError<UpdateCheckoutSessionApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/checkout-sessions/{}",
+                __pct_encode_path_segment(checkout_session_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.patch(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<UpdateCheckoutSessionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(UpdateCheckoutSessionApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

@@ -790,7 +790,7 @@ impl HttpClient {
     }
     /// List upgrade options
     ///
-    /// Lists the higher tiers on sale that the membership's tier has an upgrade path to, lowest rank first, with the Billing price `upgrade-membership` would order for each. Price an upgrade before making it with Billing's quote, giving that price with a quantity of 1; a promotion code can be checked there as well. Returns 409 MEMBERSHIP_NOT_ACTIVE or MEMBERSHIP_CHANGE_PENDING when the membership cannot be changed.
+    /// Lists the higher tiers on sale that the membership's tier has an upgrade path to, lowest rank first, with the Billing price `upgrade-membership` would order for each. Price an upgrade before making it with Billing's `preview-checkout-session`, giving that price with a quantity of 1; a promotion code can be checked there as well. Returns 409 MEMBERSHIP_NOT_ACTIVE or MEMBERSHIP_CHANGE_PENDING when the membership cannot be changed.
     ///
     /// `GET /api/v1/memberships/{membershipId}/upgrade-options`
     pub async fn list_membership_upgrade_options(

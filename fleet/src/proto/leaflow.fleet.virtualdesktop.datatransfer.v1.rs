@@ -778,13 +778,13 @@ impl ::prost::Name for ClipboardSource {
             .into()
     }
 }
-/// Part of the data read, from the side that has it (MS-RDPECLIP Format Data
-/// Response PDU). The data comes as the total size, the bytes in order, then
-/// the end; a files read is answered by a file offer alone.
+/// 一次数据读取的响应（MS-RDPECLIP Format Data Response PDU）：
+/// 普通表示依次发送总长度、数据块和结束；文件读取返回文件 offer。
+/// 两者均可先发送一次 preparing，不得为准备预读目标未选择的其它表示。
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DataResponse {
     /// The part.
-    #[prost(oneof = "data_response::Part", tags = "1, 2, 3, 4, 5")]
+    #[prost(oneof = "data_response::Part", tags = "1, 2, 3, 4, 5, 6")]
     pub part: ::core::option::Option<data_response::Part>,
 }
 /// Nested message and enum types in `DataResponse`.
@@ -792,8 +792,8 @@ pub mod data_response {
     /// The part.
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Part {
-        /// The size of the whole data. The first message; the session spools the
-        /// whole data before sending it, so the size is known.
+        /// 整份正文的实际长度；若有 preparing，则跟在它之后。
+        /// 会话在发送正文前完成暂存，因此此时大小已经确定。
         #[prost(uint64, tag = "1")]
         TotalSizeBytes(u64),
         /// The next bytes, at most 256 KiB.
@@ -802,8 +802,8 @@ pub mod data_response {
         /// The end of the data. The last message.
         #[prost(message, tag = "3")]
         End(super::DataEnd),
-        /// The answer to a files read: the files, fetched as for any offer. The
-        /// only message.
+        /// 文件读取的最终响应；若有 preparing，则跟在它之后。
+        /// 接收方按普通文件 offer 的权限、确认和流式正文协议取文件。
         #[prost(message, tag = "4")]
         FileOffer(super::super::super::super::filetransfer::v1::FileTransferOffer),
         /// The read failed; the reader discards what it received. NOT_FOUND when
@@ -814,6 +814,13 @@ pub mod data_response {
         /// last message.
         #[prost(message, tag = "5")]
         Error(super::super::super::super::super::super::google::rpc::Status),
+        /// 原生来源正在兑现本次选中的表示，例如真正 drop 后才生成的文件 promise。
+        /// 必须为 true，且只能作为首条响应发送一次；不能伪造大小、空清单或完成。
+        /// 准备期不设与数据量相关的总时限：等待真实结果、取消或通道断开，
+        /// 不发送定时心跳重置时限。得到长度/文件 offer 后恢复正常的块间时限。
+        /// 读取方丢弃本次读取即取消准备，不撤销仍有效的复制声明或其它读取。
+        #[prost(bool, tag = "6")]
+        Preparing(bool),
     }
 }
 impl ::prost::Name for DataResponse {

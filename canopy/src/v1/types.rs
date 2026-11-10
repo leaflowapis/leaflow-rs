@@ -1306,7 +1306,7 @@ pub struct ServiceResource {
     pub failure_reason: Option<ServiceResourceFailureReason>,
     ///The order that enabled the service, or that the latest enablement's checkout created; null before checkout completes.
     pub order_id: Option<uuid::Uuid>,
-    ///The Billing plan the service is sold under; null where the service is not sold. Price enabling it with Billing's quote, giving this plan with the `recurring` price type, the `metered` usage type and a quantity of 1; token usage is priced per model, at the rates Billing holds for each model's `billing`.
+    ///The Billing plan the service is sold under; null where the service is not sold. Price enabling it with Billing's `preview-checkout-session`, giving this plan with the `recurring` price type, the `metered` usage type and a quantity of 1; token usage is priced per model, at the rates Billing holds for each model's `billing`.
     pub plan_id: Option<uuid::Uuid>,
     ///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of its checkout and acceptance of its order; `active` accepts requests on the forwarding endpoints; `failed` means the enablement failed, as `failure_reason` states. An `inactive` or `failed` service can be enabled again.
     pub status: ServiceResourceStatus,
@@ -1395,7 +1395,8 @@ infrastructure is created for that refusal.*/
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct CheckoutOptions {
     /**Turns on automatic renewal of every subscription with licensed items that the purchase opens. Off
-    when omitted. It must be the customer's own choice.*/
+    when omitted. It must be the customer's own choice. For a free trial, it converts the trial to paid
+    when the trial ends.*/
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auto_renew: Option<bool>,
     /**Expected invoice total after discounts and tax, before applying credit grants or balance.
@@ -1412,6 +1413,13 @@ pub struct CheckoutOptions {
     ///Constraint: maxLength=2048
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_url: Option<url::Url>,
+    /**A free trial grant of the paying billing account that the customer chose to use. The first new
+    subscription of the purchase whose lines the grant's offer all covers, and that has a licensed line and
+    no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
+    HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
+    BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_grant_id: Option<uuid::Uuid>,
 }
 /**A decimal string, in the currency stated alongside it.
 
