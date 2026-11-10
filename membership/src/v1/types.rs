@@ -449,7 +449,8 @@ infrastructure is created for that refusal.*/
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct CheckoutOptions {
     /**Turns on automatic renewal of every subscription with licensed items that the purchase opens. Off
-    when omitted. It must be the customer's own choice.*/
+    when omitted. It must be the customer's own choice. For a free trial, it converts the trial to paid
+    when the trial ends.*/
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auto_renew: Option<bool>,
     /**Expected invoice total after discounts and tax, before applying credit grants or balance.
@@ -466,6 +467,13 @@ pub struct CheckoutOptions {
     ///Constraint: maxLength=2048
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_url: Option<url::Url>,
+    /**A free trial grant of the paying billing account that the customer chose to use. The first new
+    subscription of the purchase whose lines the grant's offer all covers, and that has a licensed line and
+    no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
+    HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
+    BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_grant_id: Option<uuid::Uuid>,
 }
 /**automatic completes checkout with the purchase: the best applicable account discount is applied, and the
 order is created with its invoice issued and paid from eligible credit grants and available balance.

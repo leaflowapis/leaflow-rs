@@ -437,7 +437,7 @@ pub struct RevertVolumeRequestBody {
 pub struct RetypeVolumeRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
-    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
+    ///The `proration_date` of the Billing Checkout Session preview for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
     pub volume_type_id: VolumeTypeId,
@@ -490,7 +490,7 @@ impl RetypeVolumeRequestBodyBuilder {
 pub struct ResizeVolumeRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
-    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
+    ///The `proration_date` of the Billing Checkout Session preview for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
     ///The new capacity. Must be larger than the current capacity
@@ -556,7 +556,7 @@ pub struct ResizeInstanceRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
     pub instance_type_id: InstanceTypeId,
-    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
+    ///The `proration_date` of the Billing Checkout Session preview for this change, so that the order is priced from the same instant. Only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
 }
@@ -5669,7 +5669,7 @@ pub struct ChangeElasticIpBandwidthRequestBody {
     pub bandwidth_mbps: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
-    ///The `proration_date` of the Billing quote for this change, so that the order is priced from the same instant. Only on a prepaid network item, and only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
+    ///The `proration_date` of the Billing Checkout Session preview for this change, so that the order is priced from the same instant. Only on a prepaid network item, and only for automatic checkout; deferred checkout is priced when the customer completes it. Defaults to the time of the request; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
 }
@@ -5725,7 +5725,8 @@ infrastructure is created for that refusal.*/
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct CheckoutOptions {
     /**Turns on automatic renewal of every subscription with licensed items that the purchase opens. Off
-    when omitted. It must be the customer's own choice.*/
+    when omitted. It must be the customer's own choice. For a free trial, it converts the trial to paid
+    when the trial ends.*/
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auto_renew: Option<bool>,
     /**Expected invoice total after discounts and tax, before applying credit grants or balance.
@@ -5742,6 +5743,13 @@ pub struct CheckoutOptions {
     ///Constraint: maxLength=2048
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_url: Option<url::Url>,
+    /**A free trial grant of the paying billing account that the customer chose to use. The first new
+    subscription of the purchase whose lines the grant's offer all covers, and that has a licensed line and
+    no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
+    HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
+    BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_grant_id: Option<uuid::Uuid>,
 }
 /**A decimal string, in the currency stated alongside it.
 
@@ -6053,7 +6061,7 @@ impl AsRef<str> for ExistingBootVolumeType {
         self.as_str()
     }
 }
-///How one order line of a catalog item is sold in Billing. Read its prices with Billing's `search-prices` by `plan_id`, giving `dimensions` to narrow each price's `rates` to this line. Quote a purchase with Billing's `get-quote`, giving the line `plan_id`, `dimensions` unchanged, and the quantity `quantity` names for the usage type chosen; estimate a metered line with `estimate-usage`, giving each of `meters` the same dimensions and the quantity it names. Prices and amounts are Billing's alone.
+///How one order line of a catalog item is sold in Billing. Read its prices with Billing's `search-prices` by `plan_id`, giving `dimensions` to narrow each price's `rates` to this line. Preview a purchase with Billing's `preview-checkout-session`, giving the line `plan_id`, `dimensions` unchanged, and the quantity `quantity` names for the usage type chosen; estimate a metered line with `estimate-usage`, giving each of `meters` the same dimensions and the quantity it names. Prices and amounts are Billing's alone.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BillingComponent {
     ///The line's dimensions, the coordinates Billing prices it at; every meter of the line reads under the same ones, and under its own `resource_dimensions` as well. Pass them to Billing unchanged; they name nothing a client needs to read.

@@ -367,6 +367,11 @@ pub struct UsageChargeDimensions {
     pub additional_properties: std::collections::BTreeMap<String, String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TrialGrantList {
+    pub items: Vec<TrialGrant>,
+    pub pagination: OffsetPagination,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TransactionList {
     pub items: Vec<Transaction>,
     pub pagination: OffsetPagination,
@@ -646,7 +651,7 @@ pub struct Subscription {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub trial_settings: Option<Option<TrialSettings>>,
-    ///Start of the free trial; null without one.
+    ///Start of the free trial; null without one. During the trial the licensed items are free, while metered usage is charged as usual.
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
@@ -654,49 +659,7 @@ pub struct Subscription {
     )]
     pub trial_start: Option<Option<chrono::DateTime<chrono::Utc>>>,
 }
-///How a free trial ends, as Stripe's trial_settings.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct TrialSettings {
-    pub end_behavior: TrialEndBehavior,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct TrialEndBehavior {
-    ///What happens when the trial ends while automatic renewal is off. With it on, the first paid period is charged to the account's funds or saved payment method, and this applies only when that charge fails. `cancel`: the subscription ends and its resources are released. `pause`: service stops, and renewing before the retention period ends restores it, with the first paid period starting at payment. `create_invoice`: as `pause`, and an invoice for the first paid period is issued to pay.
-    pub missing_payment_method: TrialEndBehaviorMissingPaymentMethod,
-    ///How long a subscription stopped at the end of its trial keeps its resources before they are reclaimed; null for the platform's retention period.
-    pub retention_seconds: Option<i64>,
-}
-///What happens when the trial ends while automatic renewal is off. With it on, the first paid period is charged to the account's funds or saved payment method, and this applies only when that charge fails. `cancel`: the subscription ends and its resources are released. `pause`: service stops, and renewing before the retention period ends restores it, with the first paid period starting at payment. `create_invoice`: as `pause`, and an invoice for the first paid period is issued to pay.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum TrialEndBehaviorMissingPaymentMethod {
-    #[default]
-    #[serde(rename = "cancel")]
-    Cancel,
-    #[serde(rename = "pause")]
-    Pause,
-    #[serde(rename = "create_invoice")]
-    CreateInvoice,
-}
-impl TrialEndBehaviorMissingPaymentMethod {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Cancel => "cancel",
-            Self::Pause => "pause",
-            Self::CreateInvoice => "create_invoice",
-        }
-    }
-}
-impl ::std::fmt::Display for TrialEndBehaviorMissingPaymentMethod {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for TrialEndBehaviorMissingPaymentMethod {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///`pending`: the order has not been accepted. `provisioning`: the owning service accepted the order and is delivering. `active`: delivery was confirmed; payment alone does not make a subscription active. `trialing`: in a free trial, in service and not charged until `trial_end`. `suspended`: service is stopped while a lien restricts its use. `canceled`: cancellation of every item completed, or an undelivered purchase was canceled or failed. `terminated`: an operator or the owning service ended it immediately.
+///`pending`: the order has not been accepted. `provisioning`: the owning service accepted the order and is delivering. `active`: delivery was confirmed; payment alone does not make a subscription active. `trialing`: in a free trial, in service, with its licensed items not charged until `trial_end`; metered usage is charged as usual. `suspended`: service is stopped while a lien restricts its use. `canceled`: cancellation of every item completed, or an undelivered purchase was canceled or failed. `terminated`: an operator or the owning service ended it immediately.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum SubscriptionStatus {
     #[default]
@@ -1605,585 +1568,6 @@ impl AsRef<str> for RefundDestination {
         self.as_str()
     }
 }
-///Quote proposed items, changes or renewals: exactly one of them. Give exactly one of `billing_account_id` and `currency`; changes, renewals and items added to an existing subscription need the account. Promotion codes apply to proposed items and changes. An invalid combination fails with `BILLING_PURCHASE_INVALID` and the field.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct QuoteRequest {
-    ///Only with `currency`. Where the customer is, to include the tax that would be added there for a customer who is not tax exempt; `tax_status` is then `complete`. Refused with `billing_account_id`, whose invoice contact decides tax.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub address: Option<QuoteAddress>,
-    ///The billing account to price for; it must be yours or currently pay for a project you are a member of, and an access token is required. Renewals must currently be paid by it.
-    ///Constraint: minimum=1
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub billing_account_id: Option<i64>,
-    ///When the changes take effect; defaults to `immediate`. `immediate` prices the rest of the paid period from `proration_date`, charging an upgrade the difference and showing what a downgrade refunds. `period_end` prices the first period at the new terms, which replaces the renewal when the paid period ends.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub change_effective: Option<QuoteRequestChangeEffective>,
-    ///Preview changing these subscription items in one order, each at most once. Each must currently be paid by `billing_account_id` and be yours to read, as the owner of that account or a member of the subscription's project; all must belong to the same project, or all to no project.
-    ///Constraint: minItems=1, maxItems=100
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub changes: Option<Vec<QuoteChangeInput>>,
-    ///The ISO 4217 currency to price in without an account.
-    ///Constraint: minLength=3, maxLength=3
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub currency: Option<String>,
-    ///A proposed purchase.
-    ///Constraint: minItems=1, maxItems=100
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<QuoteItemInput>>,
-    ///Constraint: minLength=1, maxLength=64
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub promotion_code: Option<String>,
-    ///Preview renewing these subscriptions together in one renewal order, as a renewal Checkout Session does, each at most once; `total` is that order's. Each must currently be paid by `billing_account_id`, be yours to read as the owner of that account or a member of the subscription's project, and all must belong to the same project and service. To apply a promotion code, create a renewal Checkout Session and quote it.
-    ///Constraint: minItems=1, maxItems=100
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub renewals: Option<Vec<QuoteRenewal>>,
-}
-///When the changes take effect; defaults to `immediate`. `immediate` prices the rest of the paid period from `proration_date`, charging an upgrade the difference and showing what a downgrade refunds. `period_end` prices the first period at the new terms, which replaces the renewal when the paid period ends.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuoteRequestChangeEffective {
-    #[default]
-    #[serde(rename = "immediate")]
-    Immediate,
-    #[serde(rename = "period_end")]
-    PeriodEnd,
-}
-impl QuoteRequestChangeEffective {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Immediate => "immediate",
-            Self::PeriodEnd => "period_end",
-        }
-    }
-}
-impl ::std::fmt::Display for QuoteRequestChangeEffective {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuoteRequestChangeEffective {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuoteAddress {
-    ///ISO 3166-1 alpha-2, two uppercase letters.
-    ///Constraint: pattern=`^[A-Z]{2}$`
-    pub country: String,
-    ///The state or province, as the tax rates name it.
-    ///Constraint: minLength=1, maxLength=128
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-}
-/**Price renewing a whole subscription: every continuing licensed item. Give `interval` with
-`interval_count` to renew for another term at the price each item currently sells it for, with
-its own cancellation policy or the only price of that term. Naming the current term, or giving
-neither, renews every item at its agreed amount. A term an item does not sell is refused with
-409 `BILLING_RENEWAL_PRICE_UNAVAILABLE` and `meta.subscription_item_id`; prices the rule cannot
-choose between, with 409 `BILLING_RENEWAL_OPTION_AMBIGUOUS` unless `cancellation_policy` is given.*/
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuoteRenewal {
-    ///With `interval` and `interval_count`, renews every item at its price of that term with this cancellation policy.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cancellation_policy: Option<CancellationPolicy>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub interval: Option<QuoteRenewalInterval>,
-    ///Constraint: minimum=1
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub interval_count: Option<i64>,
-    ///How many consecutive periods to renew for.
-    ///Constraint: minimum=1, maximum=100
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub periods: Option<i64>,
-    pub subscription_id: uuid::Uuid,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuoteRenewalInterval {
-    #[default]
-    #[serde(rename = "day")]
-    Day,
-    #[serde(rename = "month")]
-    Month,
-    #[serde(rename = "year")]
-    Year,
-}
-impl QuoteRenewalInterval {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Day => "day",
-            Self::Month => "month",
-            Self::Year => "year",
-        }
-    }
-}
-impl ::std::fmt::Display for QuoteRenewalInterval {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuoteRenewalInterval {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///Identify a price, or select one for a plan; give each resource's ID or lookup key, never both, and product_id with lookup keys. A metered item includes only any setup charge; its usage is estimated with `estimate-usage`.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuoteItemInput {
-    ///Selects among licensed prices with otherwise identical billing terms. Ambiguous terms are refused instead of choosing a price arbitrarily.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cancellation_policy: Option<CancellationPolicy>,
-    ///The dimension values of what is bought, such as region and instance type. Required whenever the price uses a rate card; prices with their own amounts ignore them. Every key the meter declares must be given. A combination no rate covers is refused with `BILLING_PRICE_UNAVAILABLE` rather than priced at zero. Prices are set per currency, and a currency may not offer some combinations at all, for example in a region it does not sell to.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dimensions: Option<QuoteItemInputDimensions>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub interval: Option<QuoteItemInputInterval>,
-    ///Constraint: minimum=1
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub interval_count: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub plan_id: Option<uuid::Uuid>,
-    ///Constraint: minLength=1, maxLength=128
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub plan_lookup_key: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_id: Option<uuid::Uuid>,
-    ///Constraint: minLength=1, maxLength=128
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_lookup_key: Option<String>,
-    ///Narrows the selection when a plan offers more than one price type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_type: Option<PriceType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub product_id: Option<ProductId>,
-    ///Constraint: pattern=`^(?:(?:[1-9][0-9]{0,27}|0(?:[1-9][0-9]{0,26}|0(?:[1-9][0-9]{0,25}|0(?:[1-9][0-9]{0,24}|0(?:[1-9][0-9]{0,23}|0(?:[1-9][0-9]{0,22}|0(?:[1-9][0-9]{0,21}|0(?:[1-9][0-9]{0,20}|0(?:[1-9][0-9]{0,19}|0(?:[1-9][0-9]{0,18}|0(?:[1-9][0-9]{0,17}|0(?:[1-9][0-9]{0,16}|0(?:[1-9][0-9]{0,15}|0(?:[1-9][0-9]{0,14}|0(?:[1-9][0-9]{0,13}|0(?:[1-9][0-9]{0,12}|0(?:[1-9][0-9]{0,11}|0(?:[1-9][0-9]{0,10}|0(?:[1-9][0-9]{0,9}|0(?:[1-9][0-9]{0,8}|0(?:[1-9][0-9]{0,7}|0(?:[1-9][0-9]{0,6}|0(?:[1-9][0-9]{0,5}|0(?:[1-9][0-9]{0,4}|0(?:[1-9][0-9]{0,3}|0(?:[1-9][0-9]{0,2}|0(?:[1-9][0-9]{0,1}|0[1-9])))))))))))))))))))))))))))([.][0-9]{1,10})?|0{1,28}[.](?:[1-9][0-9]{0,9}|0(?:[1-9][0-9]{0,8}|0(?:[1-9][0-9]{0,7}|0(?:[1-9][0-9]{0,6}|0(?:[1-9][0-9]{0,5}|0(?:[1-9][0-9]{0,4}|0(?:[1-9][0-9]{0,3}|0(?:[1-9][0-9]{0,2}|0(?:[1-9][0-9]{0,1}|0[1-9]))))))))))$`
-    pub quantity: String,
-    ///Price the line as a new item added to this existing subscription, as the owning service adds it when buying for a resource the subscription pays for. Needs `billing_account_id`, which must currently pay for the subscription. A licensed line is priced up to the subscription's `current_term_end`, the rest of the current period in proportion to the time left from `proration_date`, and must have the subscription's interval and interval count; a metered line has no immediate charge; added to a trialing subscription, the line is free until the trial ends.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub subscription_id: Option<uuid::Uuid>,
-    ///Narrows the selection when a plan offers more than one usage type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub usage_type: Option<UsageType>,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuoteItemInputInterval {
-    #[default]
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "day")]
-    Day,
-    #[serde(rename = "month")]
-    Month,
-    #[serde(rename = "year")]
-    Year,
-}
-impl QuoteItemInputInterval {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::None => "none",
-            Self::Day => "day",
-            Self::Month => "month",
-            Self::Year => "year",
-        }
-    }
-}
-impl ::std::fmt::Display for QuoteItemInputInterval {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuoteItemInputInterval {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///The dimension values of what is bought, such as region and instance type. Required whenever the price uses a rate card; prices with their own amounts ignore them. Every key the meter declares must be given. A combination no rate covers is refused with `BILLING_PRICE_UNAVAILABLE` rather than priced at zero. Prices are set per currency, and a currency may not offer some combinations at all, for example in a region it does not sell to.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct QuoteItemInputDimensions {
-    /// Additional properties matching the spec's
-    /// `additionalProperties` value schema.
-    #[serde(flatten)]
-    pub additional_properties: std::collections::BTreeMap<String, String>,
-}
-///The new terms of one subscription item. Identify the price, or the plan to select one from, as for a proposed item. Without a price or billing terms, the plan's price with the item's price type, usage type, interval, interval count and cancellation policy is selected. Omitted dimensions keep the item's.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuoteChangeInput {
-    ///Selects among licensed prices with otherwise identical billing terms.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cancellation_policy: Option<CancellationPolicy>,
-    ///The dimension values after the change, given in full; omit to keep the item's.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dimensions: Option<QuoteChangeInputDimensions>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub interval: Option<QuoteChangeInputInterval>,
-    ///Constraint: minimum=1
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub interval_count: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub plan_id: Option<uuid::Uuid>,
-    ///Constraint: minLength=1, maxLength=128
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub plan_lookup_key: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_id: Option<uuid::Uuid>,
-    ///Constraint: minLength=1, maxLength=128
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_lookup_key: Option<String>,
-    ///Selects the price type instead of keeping the item's.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_type: Option<PriceType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub product_id: Option<ProductId>,
-    ///The quantity after the change.
-    ///Constraint: pattern=`^(?:(?:[1-9][0-9]{0,27}|0(?:[1-9][0-9]{0,26}|0(?:[1-9][0-9]{0,25}|0(?:[1-9][0-9]{0,24}|0(?:[1-9][0-9]{0,23}|0(?:[1-9][0-9]{0,22}|0(?:[1-9][0-9]{0,21}|0(?:[1-9][0-9]{0,20}|0(?:[1-9][0-9]{0,19}|0(?:[1-9][0-9]{0,18}|0(?:[1-9][0-9]{0,17}|0(?:[1-9][0-9]{0,16}|0(?:[1-9][0-9]{0,15}|0(?:[1-9][0-9]{0,14}|0(?:[1-9][0-9]{0,13}|0(?:[1-9][0-9]{0,12}|0(?:[1-9][0-9]{0,11}|0(?:[1-9][0-9]{0,10}|0(?:[1-9][0-9]{0,9}|0(?:[1-9][0-9]{0,8}|0(?:[1-9][0-9]{0,7}|0(?:[1-9][0-9]{0,6}|0(?:[1-9][0-9]{0,5}|0(?:[1-9][0-9]{0,4}|0(?:[1-9][0-9]{0,3}|0(?:[1-9][0-9]{0,2}|0(?:[1-9][0-9]{0,1}|0[1-9])))))))))))))))))))))))))))([.][0-9]{1,10})?|0{1,28}[.](?:[1-9][0-9]{0,9}|0(?:[1-9][0-9]{0,8}|0(?:[1-9][0-9]{0,7}|0(?:[1-9][0-9]{0,6}|0(?:[1-9][0-9]{0,5}|0(?:[1-9][0-9]{0,4}|0(?:[1-9][0-9]{0,3}|0(?:[1-9][0-9]{0,2}|0(?:[1-9][0-9]{0,1}|0[1-9]))))))))))$`
-    pub quantity: String,
-    pub subscription_item_id: uuid::Uuid,
-    ///Selects the usage type instead of keeping the item's.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub usage_type: Option<UsageType>,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuoteChangeInputInterval {
-    #[default]
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "day")]
-    Day,
-    #[serde(rename = "month")]
-    Month,
-    #[serde(rename = "year")]
-    Year,
-}
-impl QuoteChangeInputInterval {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::None => "none",
-            Self::Day => "day",
-            Self::Month => "month",
-            Self::Year => "year",
-        }
-    }
-}
-impl ::std::fmt::Display for QuoteChangeInputInterval {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuoteChangeInputInterval {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///The dimension values after the change, given in full; omit to keep the item's.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct QuoteChangeInputDimensions {
-    /// Additional properties matching the spec's
-    /// `additionalProperties` value schema.
-    #[serde(flatten)]
-    pub additional_properties: std::collections::BTreeMap<String, String>,
-}
-///A complete calculation in `currency`; nothing is saved or reserved. The request fails if any item cannot be priced. A Checkout Session quote gives what completing the session would invoice.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Quote {
-    pub currency: String,
-    ///The discount a purchase would get, not yet applied. Null when there is none, and for renewals.
-    pub discount: Option<QuotedDiscount>,
-    pub discount_amount: Money,
-    ///Account funds for the quoted purchase. Null without an account.
-    pub funds: Option<Funds>,
-    pub items: Vec<QuoteItem>,
-    ///Immediate changes and items added to an existing subscription only; null otherwise. The instant they are priced from; pass it when confirming the Checkout Session so it is priced from the same instant.
-    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
-    pub renewals: Vec<QuoteRenewalResult>,
-    pub subtotal: Money,
-    pub tax_amount: Money,
-    ///`complete`: tax is calculated for the billing account's invoice contact, or for `address` without an account. `requires_location_inputs`: a quote without an account or `address`, which leaves out tax that would be added; tax already contained in a price is included.
-    pub tax_status: QuoteTaxStatus,
-    pub total: Money,
-}
-///The discount selected for this calculation, not applied and not reserved. Amounts are on the quote and its lines.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuotedDiscount {
-    ///`confirmed`: every condition of the discount holds for the billing account. `unverified`: a quote without an account, where conditions that depend on the account, such as a first purchase or a per-account limit, are checked only when a Checkout Session is completed.
-    pub eligibility: QuotedDiscountEligibility,
-    ///Whether the discount continues on renewals of what is bought: `once` applies only to this purchase, `recurring` for `frequency_duration` periods including the first, `forever` on every renewal.
-    pub frequency: QuotedDiscountFrequency,
-    ///For `recurring`, the periods the discount lasts; null otherwise.
-    ///Constraint: minimum=1
-    pub frequency_duration: Option<i64>,
-    pub name: String,
-    ///Code text for a promotion_code discount; null for an account_discount.
-    ///Constraint: minLength=1, maxLength=64
-    pub promotion_code: Option<String>,
-    pub r#type: QuotedDiscountType,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuotedDiscountType {
-    #[default]
-    #[serde(rename = "promotion_code")]
-    PromotionCode,
-    #[serde(rename = "account_discount")]
-    AccountDiscount,
-}
-impl QuotedDiscountType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::PromotionCode => "promotion_code",
-            Self::AccountDiscount => "account_discount",
-        }
-    }
-}
-impl ::std::fmt::Display for QuotedDiscountType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuotedDiscountType {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///Whether the discount continues on renewals of what is bought: `once` applies only to this purchase, `recurring` for `frequency_duration` periods including the first, `forever` on every renewal.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuotedDiscountFrequency {
-    #[default]
-    #[serde(rename = "once")]
-    Once,
-    #[serde(rename = "recurring")]
-    Recurring,
-    #[serde(rename = "forever")]
-    Forever,
-}
-impl QuotedDiscountFrequency {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Once => "once",
-            Self::Recurring => "recurring",
-            Self::Forever => "forever",
-        }
-    }
-}
-impl ::std::fmt::Display for QuotedDiscountFrequency {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuotedDiscountFrequency {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///`confirmed`: every condition of the discount holds for the billing account. `unverified`: a quote without an account, where conditions that depend on the account, such as a first purchase or a per-account limit, are checked only when a Checkout Session is completed.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuotedDiscountEligibility {
-    #[default]
-    #[serde(rename = "confirmed")]
-    Confirmed,
-    #[serde(rename = "unverified")]
-    Unverified,
-}
-impl QuotedDiscountEligibility {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Confirmed => "confirmed",
-            Self::Unverified => "unverified",
-        }
-    }
-}
-impl ::std::fmt::Display for QuotedDiscountEligibility {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuotedDiscountEligibility {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///`complete`: tax is calculated for the billing account's invoice contact, or for `address` without an account. `requires_location_inputs`: a quote without an account or `address`, which leaves out tax that would be added; tax already contained in a price is included.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuoteTaxStatus {
-    #[default]
-    #[serde(rename = "complete")]
-    Complete,
-    #[serde(rename = "requires_location_inputs")]
-    RequiresLocationInputs,
-}
-impl QuoteTaxStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Complete => "complete",
-            Self::RequiresLocationInputs => "requires_location_inputs",
-        }
-    }
-}
-impl ::std::fmt::Display for QuoteTaxStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuoteTaxStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///What renewing one subscription would charge as part of the quoted renewal order.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuoteRenewalResult {
-    ///The price of the periods for every item before the account's discounts, with any discount the items carry already reflected; includes tax only where the price does.
-    pub amount: Money,
-    ///The reduction from a discount the account holds.
-    pub discount_amount: Money,
-    ///Which renewal of the request this answers.
-    pub index: i64,
-    pub interval: QuoteRenewalResultInterval,
-    pub interval_count: i64,
-    ///Each item the renewal covers, with the price it is charged under.
-    pub items: Vec<QuoteRenewalItem>,
-    pub periods: i64,
-    pub subscription_id: uuid::Uuid,
-    ///Tax on the discounted amount.
-    pub tax_amount: Money,
-    ///The part of `tax_amount` already contained in `amount`.
-    pub tax_included_amount: Money,
-    /**What renewing would charge: `amount` less `discount_amount`, plus `tax_amount`, less
-    `tax_included_amount`.*/
-    pub total: Money,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuoteRenewalResultInterval {
-    #[default]
-    #[serde(rename = "day")]
-    Day,
-    #[serde(rename = "month")]
-    Month,
-    #[serde(rename = "year")]
-    Year,
-}
-impl QuoteRenewalResultInterval {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Day => "day",
-            Self::Month => "month",
-            Self::Year => "year",
-        }
-    }
-}
-impl ::std::fmt::Display for QuoteRenewalResultInterval {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuoteRenewalResultInterval {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///One item of a quoted renewal.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuoteRenewalItem {
-    ///The price of the periods for this item before the account's discounts.
-    pub amount: Money,
-    pub plan_id: uuid::Uuid,
-    pub plan_name: String,
-    ///The price the item is charged under.
-    pub price_id: uuid::Uuid,
-    pub subscription_item_id: uuid::Uuid,
-}
-///One fully calculated purchase line. An item with no immediate charge, such as a metered purchase, has zero checkout amounts.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuoteItem {
-    ///Amount before discounts and including any setup charge.
-    pub amount: Money,
-    pub currency: String,
-    ///The dimension values the line is priced at.
-    pub dimensions: QuoteItemDimensions,
-    pub discount_amount: Money,
-    ///Immediate downgrades only, when `unused_amount` exceeds `remaining_amount`; null otherwise.
-    pub downgrade_refund: Option<QuoteDowngradeRefund>,
-    ///The zero-based index of the item or change in the request, or the item's position for a Checkout Session quote.
-    ///Constraint: minimum=0
-    pub index: i64,
-    ///The billing period of a recurring licensed line; `none` otherwise.
-    pub interval: QuoteItemInterval,
-    ///Periods per billing cycle of a recurring licensed line; null otherwise.
-    ///Constraint: minimum=1
-    pub interval_count: Option<i64>,
-    pub plan_id: uuid::Uuid,
-    pub plan_name: String,
-    ///The selected price, also when the request identified it indirectly.
-    pub price_id: uuid::Uuid,
-    pub product_id: ProductId,
-    ///The quantity priced.
-    pub quantity: String,
-    ///Recurring licensed lines only; null otherwise. What each later period renews at, before discounts and tax, which differs from `amount` when the first period is priced differently. `discount` says whether its discount continues on renewals.
-    pub recurring_amount: Option<Money>,
-    ///Immediate changes only; null otherwise. Before tax, the new terms for the time from `proration_date` to the end of the paid period. An upgrade invoices `remaining_amount` minus `unused_amount`.
-    pub remaining_amount: Option<Money>,
-    ///The setup charge already included in `amount`; null when none applies.
-    pub setup_amount: Option<Money>,
-    ///The subscription the line belongs to when it changes an item or is added to an existing subscription; null when it opens a new one.
-    pub subscription_id: Option<uuid::Uuid>,
-    ///The subscription item changed; null for a new line.
-    pub subscription_item_id: Option<uuid::Uuid>,
-    pub tax_amount: Money,
-    pub tax_included_amount: Money,
-    pub total: Money,
-    pub r#type: PriceType,
-    ///Unit price before discounts. Null when no single unit price applies, such as tiered or multiple-rate pricing.
-    pub unit_amount: Option<Money>,
-    ///Immediate changes only; null otherwise. Before tax, for an upgrade or an unchanged period price, the amount paid for that time, up to the new terms' value for the same time; for a downgrade, the remaining value of what was paid, under the refund terms of each paid period.
-    pub unused_amount: Option<Money>,
-    pub usage_type: UsageType,
-}
-///The billing period of a recurring licensed line; `none` otherwise.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum QuoteItemInterval {
-    #[default]
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "day")]
-    Day,
-    #[serde(rename = "month")]
-    Month,
-    #[serde(rename = "year")]
-    Year,
-}
-impl QuoteItemInterval {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::None => "none",
-            Self::Day => "day",
-            Self::Month => "month",
-            Self::Year => "year",
-        }
-    }
-}
-impl ::std::fmt::Display for QuoteItemInterval {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for QuoteItemInterval {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///The dimension values the line is priced at.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct QuoteItemDimensions {
-    /// Additional properties matching the spec's
-    /// `additionalProperties` value schema.
-    #[serde(flatten)]
-    pub additional_properties: std::collections::BTreeMap<String, String>,
-}
-///What an immediate downgrade would refund, estimated as of `proration_date`. The refund itself is determined when the change takes effect.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct QuoteDowngradeRefund {
-    ///Before tax, the part of the excess that the item's refund terms do not return.
-    pub forfeited_amount: Money,
-    ///Returned to the original payment sources, tax paid on it included.
-    pub refundable_amount: Money,
-}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ProjectAssignmentList {
     pub items: Vec<ProjectAssignment>,
@@ -3051,7 +2435,7 @@ pub struct PayTogetherRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order_ids: Option<Vec<String>>,
 }
-///An estimated refund to the original payment sources. Before acceptance, cancellation returns the collected amount. For delivered service, only value paid by this order is included; renewals are evaluated with their own orders under the agreed cancellation terms. Nothing is refunded by the quote; the amount is fixed when cancellation or termination is confirmed.
+///An estimated refund to the original payment sources. Before acceptance, cancellation returns the collected amount. For delivered service, only value paid by this order is included; renewals are evaluated with their own orders under the agreed cancellation terms. Nothing is refunded by the preview; the amount is fixed when cancellation or termination is confirmed.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct OrderRefundPreview {
     pub credit_amount: Money,
@@ -3348,25 +2732,6 @@ impl AsRef<str> for InvoiceCustomerTaxExempt {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
-}
-/**Account funding for this purchase, calculated by Billing. Amounts use the enclosing response currency.
-Credit eligibility and all purchase requirements are already evaluated. Nothing is charged or reserved.
-A licensed purchase may instead be paid with an online payment method.
-*/
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Funds {
-    ///Spendable balance after pending returns.
-    pub available_balance_amount: Money,
-    ///Additional balance needed now. Zero means account funds satisfy this quote. No funds are reserved.
-    pub balance_shortfall_amount: Money,
-    ///Minimum spendable balance needed after eligible credits, covering immediate charges and every new metered purchase's admission requirement.
-    pub required_balance_amount: Money,
-    ///Minimum recharge that covers the shortfall, respecting the currency minimum recharge and currency precision. Zero when no additional balance is needed.
-    pub required_top_up_amount: Money,
-    ///Currently effective credits that cannot fund any quoted purchase or metered target. Unused eligible credits are not restricted.
-    pub restricted_credit_amount: Money,
-    ///Currently effective credits eligible for the quoted purchases or metered usage. Each grant is counted once.
-    pub usable_credit_amount: Money,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FeatureGrantList {
@@ -4382,40 +3747,377 @@ impl AsRef<str> for InvoiceStatus {
         self.as_str()
     }
 }
+/**The session to preview, as it would be created. Give exactly one of `billing_account_id` and `currency`;
+changes, renewals, items added to an existing subscription and trial grants need the account. A request that
+does not fit `type` fails with `BILLING_PURCHASE_INVALID` and the field.*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CheckoutSessionPreviewRequest {
+    /**Only with `currency`. Where the customer is, to include the tax that would be added there for a customer
+    who is not tax exempt; `tax_status` is then `complete`. Refused with `billing_account_id`, whose invoice
+    contact decides tax.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<CustomerAddress>,
+    ///The billing account to price for; it must be yours or currently pay for a project you are a member of, and an access token is required. Subscriptions changed or renewed must currently be paid by it.
+    ///Constraint: minimum=1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub billing_account_id: Option<i64>,
+    ///For `renew` only, as in creating a renewal Checkout Session.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cancellation_policy: Option<CancellationPolicy>,
+    /**For `modify` only; defaults to `immediate`. `immediate` prices the rest of the paid period from
+    `proration_date`, charging an upgrade the difference and showing what a downgrade refunds. `period_end`
+    prices the first period at the new terms, which replaces the renewal when the paid period ends.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change_effective: Option<CheckoutSessionPreviewRequestChangeEffective>,
+    ///For `new` only. The ISO 4217 currency to price in without an account.
+    ///Constraint: minLength=3, maxLength=3
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+    ///For `renew` only, as in creating a renewal Checkout Session.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interval: Option<CheckoutSessionPreviewRequestInterval>,
+    ///For `renew` only, as in creating a renewal Checkout Session.
+    ///Constraint: minimum=1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interval_count: Option<i64>,
+    ///For `renew` only, as in creating a renewal Checkout Session.
+    ///Constraint: minimum=1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub periods: Option<i64>,
+    ///For `new` and `modify`. Evaluated without being applied.
+    ///Constraint: minLength=1, maxLength=64
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub promotion_code: Option<String>,
+    ///At most 100 items in all for `new` and `modify`, and each subscription at most once for `renew`.
+    ///Constraint: minItems=1, maxItems=100
+    pub subscriptions: Vec<CheckoutSessionPreviewSubscription>,
+    ///For `new` with `billing_account_id`. A free trial grant of the account to preview the purchase with.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_grant_id: Option<uuid::Uuid>,
+    ///`new` previews a purchase, `modify` a change of subscription items, `renew` a renewal.
+    pub r#type: CheckoutSessionPreviewRequestType,
+}
+impl CheckoutSessionPreviewRequest {
+    /// Construct this request with every required wire field.
+    pub fn new(
+        subscriptions: Vec<CheckoutSessionPreviewSubscription>,
+        r#type: CheckoutSessionPreviewRequestType,
+    ) -> Self {
+        Self {
+            subscriptions,
+            r#type,
+            address: None,
+            billing_account_id: None,
+            cancellation_policy: None,
+            change_effective: None,
+            currency: None,
+            interval: None,
+            interval_count: None,
+            periods: None,
+            promotion_code: None,
+            trial_grant_id: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(
+        subscriptions: Vec<CheckoutSessionPreviewSubscription>,
+        r#type: CheckoutSessionPreviewRequestType,
+    ) -> CheckoutSessionPreviewRequestBuilder {
+        CheckoutSessionPreviewRequestBuilder::new(subscriptions, r#type)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct CheckoutSessionPreviewRequestBuilder {
+    value: CheckoutSessionPreviewRequest,
+}
+impl CheckoutSessionPreviewRequestBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(
+        subscriptions: Vec<CheckoutSessionPreviewSubscription>,
+        r#type: CheckoutSessionPreviewRequestType,
+    ) -> Self {
+        Self {
+            value: CheckoutSessionPreviewRequest::new(subscriptions, r#type),
+        }
+    }
+    #[doc = concat!("Set the optional `", "address", "` request field.")]
+    #[must_use]
+    pub fn address(mut self, address: CustomerAddress) -> Self {
+        self.value.address = Some(address);
+        self
+    }
+    #[doc = concat!("Set the optional `", "billing_account_id", "` request field.")]
+    #[must_use]
+    pub fn billing_account_id(mut self, billing_account_id: i64) -> Self {
+        self.value.billing_account_id = Some(billing_account_id);
+        self
+    }
+    #[doc = concat!("Set the optional `", "cancellation_policy", "` request field.")]
+    #[must_use]
+    pub fn cancellation_policy(mut self, cancellation_policy: CancellationPolicy) -> Self {
+        self.value.cancellation_policy = Some(cancellation_policy);
+        self
+    }
+    #[doc = concat!("Set the optional `", "change_effective", "` request field.")]
+    #[must_use]
+    pub fn change_effective(
+        mut self,
+        change_effective: CheckoutSessionPreviewRequestChangeEffective,
+    ) -> Self {
+        self.value.change_effective = Some(change_effective);
+        self
+    }
+    #[doc = concat!("Set the optional `", "currency", "` request field.")]
+    #[must_use]
+    pub fn currency(mut self, currency: String) -> Self {
+        self.value.currency = Some(currency);
+        self
+    }
+    #[doc = concat!("Set the optional `", "interval", "` request field.")]
+    #[must_use]
+    pub fn interval(mut self, interval: CheckoutSessionPreviewRequestInterval) -> Self {
+        self.value.interval = Some(interval);
+        self
+    }
+    #[doc = concat!("Set the optional `", "interval_count", "` request field.")]
+    #[must_use]
+    pub fn interval_count(mut self, interval_count: i64) -> Self {
+        self.value.interval_count = Some(interval_count);
+        self
+    }
+    #[doc = concat!("Set the optional `", "periods", "` request field.")]
+    #[must_use]
+    pub fn periods(mut self, periods: i64) -> Self {
+        self.value.periods = Some(periods);
+        self
+    }
+    #[doc = concat!("Set the optional `", "promotion_code", "` request field.")]
+    #[must_use]
+    pub fn promotion_code(mut self, promotion_code: String) -> Self {
+        self.value.promotion_code = Some(promotion_code);
+        self
+    }
+    #[doc = concat!("Set the optional `", "trial_grant_id", "` request field.")]
+    #[must_use]
+    pub fn trial_grant_id(mut self, trial_grant_id: uuid::Uuid) -> Self {
+        self.value.trial_grant_id = Some(trial_grant_id);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> CheckoutSessionPreviewRequest {
+        self.value
+    }
+}
+///Where a customer is, for the tax that would be added there.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CustomerAddress {
+    ///ISO 3166-1 alpha-2, two uppercase letters.
+    ///Constraint: pattern=`^[A-Z]{2}$`
+    pub country: String,
+    ///The state or province, as the tax rates name it.
+    ///Constraint: minLength=1, maxLength=128
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+}
+/**One subscription of the previewed session. For `new`, give its items, with `subscription_id` to add them to
+that existing subscription and otherwise optionally `subscription_data`; for `modify`, the subscription and the
+items changed; for `renew`, only the subscription.*/
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct CheckoutSessionPreviewSubscription {
+    ///Constraint: minItems=1, maxItems=100
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<CheckoutSessionItemInput>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subscription_data: Option<SubscriptionDataInput>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<uuid::Uuid>,
+}
+///Settings of a subscription a previewed purchase opens, as the owning service would give them.
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct SubscriptionDataInput {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_end: Option<chrono::DateTime<chrono::Utc>>,
+    ///Give this or `trial_end`, not both.
+    ///Constraint: minimum=1, maximum=730
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_period_days: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_settings: Option<TrialSettings>,
+}
+///`new` previews a purchase, `modify` a change of subscription items, `renew` a renewal.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionPreviewRequestType {
+    #[default]
+    #[serde(rename = "new")]
+    New,
+    #[serde(rename = "renew")]
+    Renew,
+    #[serde(rename = "modify")]
+    Modify,
+}
+impl CheckoutSessionPreviewRequestType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::New => "new",
+            Self::Renew => "renew",
+            Self::Modify => "modify",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionPreviewRequestType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionPreviewRequestType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///For `renew` only, as in creating a renewal Checkout Session.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionPreviewRequestInterval {
+    #[default]
+    #[serde(rename = "day")]
+    Day,
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+}
+impl CheckoutSessionPreviewRequestInterval {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Day => "day",
+            Self::Month => "month",
+            Self::Year => "year",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionPreviewRequestInterval {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionPreviewRequestInterval {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**For `modify` only; defaults to `immediate`. `immediate` prices the rest of the paid period from
+`proration_date`, charging an upgrade the difference and showing what a downgrade refunds. `period_end`
+prices the first period at the new terms, which replaces the renewal when the paid period ends.*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionPreviewRequestChangeEffective {
+    #[default]
+    #[serde(rename = "immediate")]
+    Immediate,
+    #[serde(rename = "period_end")]
+    PeriodEnd,
+}
+impl CheckoutSessionPreviewRequestChangeEffective {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Immediate => "immediate",
+            Self::PeriodEnd => "period_end",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionPreviewRequestChangeEffective {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionPreviewRequestChangeEffective {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CheckoutSessionList {
     pub items: Vec<CheckoutSession>,
     pub pagination: OffsetPagination,
 }
+/**Identify a price, or select one for a plan; give each resource's ID or lookup key, never both, and
+product_id with lookup keys. A change names its `subscription_item_id`; without a price or billing terms the
+plan's price with the item's price type, usage type, interval, interval count and cancellation policy is
+selected, and omitted dimensions keep the item's. A metered item includes only any setup charge; its usage is
+estimated with `estimate-usage`.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CheckoutSessionItemList {
-    pub items: Vec<CheckoutSessionItem>,
-    pub pagination: OffsetPagination,
-}
-///One item of the session. It becomes the order item at the same position; its price is chosen when checkout completes.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CheckoutSessionItem {
-    ///The dimension values of what is bought, such as region and instance type.
-    pub dimensions: CheckoutSessionItemDimensions,
-    ///Renewals only; null otherwise. How many consecutive periods are renewed.
+pub struct CheckoutSessionItemInput {
+    ///Selects among licensed prices with otherwise identical billing terms. Ambiguous terms are refused instead of choosing a price arbitrarily.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cancellation_policy: Option<CancellationPolicy>,
+    ///The dimension values of what is bought, such as region and instance type, or after a change, given in full. Required whenever the price uses a rate card; prices with their own amounts ignore them. Every key the meter declares must be given. A combination no rate covers is refused with `BILLING_PRICE_UNAVAILABLE` rather than priced at zero. Prices are set per currency, and a currency may not offer some combinations at all, for example in a region it does not sell to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dimensions: Option<CheckoutSessionItemInputDimensions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interval: Option<CheckoutSessionItemInputInterval>,
     ///Constraint: minimum=1
-    pub periods: Option<i64>,
-    pub plan_id: uuid::Uuid,
-    pub plan_name: String,
-    ///Constraint: minimum=0
-    pub position: i64,
-    ///The price the item named. Null when Billing selects it by billing terms or from the subscription being changed or renewed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interval_count: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan_id: Option<uuid::Uuid>,
+    ///Constraint: minLength=1, maxLength=128
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan_lookup_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_id: Option<uuid::Uuid>,
+    ///Constraint: minLength=1, maxLength=128
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price_lookup_key: Option<String>,
+    ///Narrows the selection when a plan offers more than one price type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price_type: Option<PriceType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub product_id: Option<ProductId>,
+    ///The quantity bought, or after a change.
+    ///Constraint: pattern=`^(?:(?:[1-9][0-9]{0,27}|0(?:[1-9][0-9]{0,26}|0(?:[1-9][0-9]{0,25}|0(?:[1-9][0-9]{0,24}|0(?:[1-9][0-9]{0,23}|0(?:[1-9][0-9]{0,22}|0(?:[1-9][0-9]{0,21}|0(?:[1-9][0-9]{0,20}|0(?:[1-9][0-9]{0,19}|0(?:[1-9][0-9]{0,18}|0(?:[1-9][0-9]{0,17}|0(?:[1-9][0-9]{0,16}|0(?:[1-9][0-9]{0,15}|0(?:[1-9][0-9]{0,14}|0(?:[1-9][0-9]{0,13}|0(?:[1-9][0-9]{0,12}|0(?:[1-9][0-9]{0,11}|0(?:[1-9][0-9]{0,10}|0(?:[1-9][0-9]{0,9}|0(?:[1-9][0-9]{0,8}|0(?:[1-9][0-9]{0,7}|0(?:[1-9][0-9]{0,6}|0(?:[1-9][0-9]{0,5}|0(?:[1-9][0-9]{0,4}|0(?:[1-9][0-9]{0,3}|0(?:[1-9][0-9]{0,2}|0(?:[1-9][0-9]{0,1}|0[1-9])))))))))))))))))))))))))))([.][0-9]{1,10})?|0{1,28}[.](?:[1-9][0-9]{0,9}|0(?:[1-9][0-9]{0,8}|0(?:[1-9][0-9]{0,7}|0(?:[1-9][0-9]{0,6}|0(?:[1-9][0-9]{0,5}|0(?:[1-9][0-9]{0,4}|0(?:[1-9][0-9]{0,3}|0(?:[1-9][0-9]{0,2}|0(?:[1-9][0-9]{0,1}|0[1-9]))))))))))$`
     pub quantity: String,
-    ///The item's subscription, as its index in the session's `subscriptions`.
-    ///Constraint: minimum=0
-    pub subscription_index: i64,
-    ///The subscription item changed or renewed. Null for an item the purchase adds.
+    ///For `modify` only. The subscription item changed.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub subscription_item_id: Option<uuid::Uuid>,
+    ///Narrows the selection when a plan offers more than one usage type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usage_type: Option<UsageType>,
 }
-///The dimension values of what is bought, such as region and instance type.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionItemInputInterval {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "day")]
+    Day,
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+}
+impl CheckoutSessionItemInputInterval {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Day => "day",
+            Self::Month => "month",
+            Self::Year => "year",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionItemInputInterval {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionItemInputInterval {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///The dimension values of what is bought, such as region and instance type, or after a change, given in full. Required whenever the price uses a rate card; prices with their own amounts ignore them. Every key the meter declares must be given. A combination no rate covers is refused with `BILLING_PRICE_UNAVAILABLE` rather than priced at zero. Prices are set per currency, and a currency may not offer some combinations at all, for example in a region it does not sell to.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct CheckoutSessionItemDimensions {
+pub struct CheckoutSessionItemInputDimensions {
     /// Additional properties matching the spec's
     /// `additionalProperties` value schema.
     #[serde(flatten)]
@@ -4576,13 +4278,11 @@ impl AsRef<str> for CancellationPolicy {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CheckoutSessionConfirm {
-    ///The quote's `total`, after discounts and tax and before credit grants or balance.
+    ///The session's `total` as read, after discounts and tax and before credit grants or balance.
     pub expected_amount: serde_json::Value,
-    ///As quoted. Omit to apply the best applicable account discount.
-    ///Constraint: minLength=1, maxLength=64
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub promotion_code: Option<String>,
-    ///Immediate changes only. The quote's `proration_date`; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is refused with `BILLING_CHANGE_INVALID`. Defaults to the time of the request.
+    /**Immediate changes and items added to an existing subscription only. The session's `proration_date` as
+    read; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is
+    refused with `BILLING_CHANGE_INVALID`. Defaults to the time of the request.*/
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
 }
@@ -4591,7 +4291,6 @@ impl CheckoutSessionConfirm {
     pub fn new(expected_amount: serde_json::Value) -> Self {
         Self {
             expected_amount,
-            promotion_code: None,
             proration_date: None,
         }
     }
@@ -4613,12 +4312,6 @@ impl CheckoutSessionConfirmBuilder {
             value: CheckoutSessionConfirm::new(expected_amount),
         }
     }
-    #[doc = concat!("Set the optional `", "promotion_code", "` request field.")]
-    #[must_use]
-    pub fn promotion_code(mut self, promotion_code: String) -> Self {
-        self.value.promotion_code = Some(promotion_code);
-        self
-    }
     #[doc = concat!("Set the optional `", "proration_date", "` request field.")]
     #[must_use]
     pub fn proration_date(mut self, proration_date: chrono::DateTime<chrono::Utc>) -> Self {
@@ -4630,36 +4323,158 @@ impl CheckoutSessionConfirmBuilder {
         self.value
     }
 }
-///A purchase waiting for you to complete checkout. Completing it applies the discount and creates the order with its invoice issued; the order carries the session's ID.
+/**A purchase, a change of subscriptions or their renewal, waiting for checkout to be completed, and what
+completing it invoices. Completing it applies the choices saved on it and creates the order with its invoice
+issued; the order carries the session's ID. A preview returns the same object without saving it.
+
+Amounts are what completing an open session would invoice at the time it is read, and for a complete session
+those of its order's invoice. An expired session has no amounts; they are null.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CheckoutSession {
-    pub account: AccountIdentity,
-    pub billing_account_id: i64,
+    ///Null in a preview without an account.
+    pub account: Option<AccountIdentity>,
+    ///Null in a preview without an account.
+    pub billing_account_id: Option<i64>,
     ///When a change takes effect, as on the order it creates; `none` for anything that is not a change.
     pub change_effective: CheckoutSessionChangeEffective,
-    ///The checkout choices as the purchase gave them. Billing does not check `return_url`; validate it before navigating.
+    /**The checkout choices, as the purchase gave them and as you saved them since. Billing does not check
+    `return_url`; validate it before navigating.*/
     pub checkout: CheckoutOptions,
     pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
+    ///Null in a preview.
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
     pub currency: String,
+    ///The discount the session gets, from its promotion code or otherwise the best applicable account discount. Null when there is none, and for an expired session.
+    pub discount: Option<CheckoutSessionDiscount>,
+    ///Total item discounts.
+    pub discount_amount: Option<Money>,
     pub expired_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///When an open session expires. The order a complete session created has its own payment deadline.
-    pub expires_at: chrono::DateTime<chrono::Utc>,
-    pub id: uuid::Uuid,
+    ///When an open session expires; null in a preview. The order a complete session created has its own payment deadline.
+    pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Account funds for completing an open session; null for other sessions and without an account.
+    pub funds: Option<Funds>,
+    ///Null in a preview.
+    pub id: Option<uuid::Uuid>,
     ///The order created when the session completed. Null otherwise.
     pub order_id: Option<uuid::Uuid>,
     pub product_id: ProductId,
-    ///The project and its current name. Null for an account-level purchase or when the project cannot be read; `project_id` still identifies it.
+    /**The project and its current name. Null when `project_id` is, or when the project cannot be read;
+    `project_id` still identifies it.*/
     pub project: Option<NamedIdentity>,
-    ///The project the purchase is for. Null for an account-level purchase, such as a membership.
+    ///The project the purchase is for. Null for an account-level purchase, such as a membership, and in a preview.
     pub project_id: Option<uuid::Uuid>,
+    ///The promotion code saved on the session, or used to complete it; null without one.
+    pub promotion_code: Option<String>,
+    /**Immediate changes and items added to an existing subscription of an open session only; null otherwise.
+    The instant they are priced from; confirm the session with it so it is priced from the same instant.*/
+    pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
+    ///`open` in a preview.
     pub status: CheckoutSessionStatus,
-    ///The subscriptions the session buys, renews or changes, in order; each item names its entry in `subscription_index`.
+    ///The subscriptions the session buys, renews or changes, in order, each with its items.
     pub subscriptions: Vec<CheckoutSessionSubscription>,
-    ///`new` buys, `renew` extends subscriptions, `modify` changes subscription items' configuration or billing terms.
+    ///Sum before discounts, excluding tax already included in the item amounts.
+    pub subtotal: Option<Money>,
+    ///Total tax on the discounted amounts.
+    pub tax_amount: Option<Money>,
+    /**"`complete`: tax is calculated for the billing account's invoice contact, or for `address` in a preview
+without an account. `requires_location_inputs`: a preview without an account or `address`, which leaves out
+tax that would be added; tax already contained in a price is included."*/
+    pub tax_status: CheckoutSessionTaxStatus,
+    ///subtotal minus discount_amount plus tax_amount, before credit grants and balance. Confirm an open session with it as `expected_amount`.
+    pub total: Option<Money>,
+    /**The free trial grants of the account that the session can use now, soonest to expire first. Empty for a
+    session that is not open, without an account, and for changes and renewals.*/
+    pub trial_grants: Vec<TrialGrant>,
+    /**"`new` buys, `renew` extends subscriptions, `modify` changes subscription items' configuration or
+    billing terms."*/
     pub r#type: CheckoutSessionType,
 }
-///`new` buys, `renew` extends subscriptions, `modify` changes subscription items' configuration or billing terms.
+///One free trial held by a billing account for a period. It is used for one subscription; if the order it was used for is canceled or fails, it can be used again while it is valid.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TrialGrant {
+    pub billing_account_id: i64,
+    pub id: uuid::Uuid,
+    ///The order the grant was used for; null until it is used.
+    pub order_id: Option<uuid::Uuid>,
+    pub redeemed_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub status: TrialGrantStatus,
+    ///The subscription the grant was used for; null until it is used.
+    pub subscription_id: Option<uuid::Uuid>,
+    pub trial_offer: TrialOffer,
+    pub valid_from: chrono::DateTime<chrono::Utc>,
+    ///Null when the grant does not expire.
+    pub valid_until: Option<chrono::DateTime<chrono::Utc>>,
+    pub voided_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+///The terms of a free trial. The licensed items of the subscription it is used for are free for `trial_period_days`, while metered usage is charged as usual. When the trial ends it converts to paid if automatic renewal is on; otherwise `trial_settings` applies.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TrialOffer {
+    ///The purchases it can be used for. Every line of the subscription must be covered.
+    pub applies_to: Applicability,
+    pub description: String,
+    pub id: uuid::Uuid,
+    pub name: String,
+    ///Constraint: minimum=1, maximum=730
+    pub trial_period_days: i64,
+    pub trial_settings: TrialSettings,
+}
+///`scheduled` before valid_from, `available` to be chosen at checkout, `redeemed` once used for a subscription, `expired` after valid_until without being used, or `voided` once withdrawn.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum TrialGrantStatus {
+    #[default]
+    #[serde(rename = "scheduled")]
+    Scheduled,
+    #[serde(rename = "available")]
+    Available,
+    #[serde(rename = "redeemed")]
+    Redeemed,
+    #[serde(rename = "expired")]
+    Expired,
+    #[serde(rename = "voided")]
+    Voided,
+}
+impl TrialGrantStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Scheduled => "scheduled",
+            Self::Available => "available",
+            Self::Redeemed => "redeemed",
+            Self::Expired => "expired",
+            Self::Voided => "voided",
+        }
+    }
+}
+impl ::std::fmt::Display for TrialGrantStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for TrialGrantStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**Account funding for this purchase, calculated by Billing. Amounts use the enclosing response currency.
+Credit eligibility and all purchase requirements are already evaluated. Nothing is charged or reserved.
+A licensed purchase may instead be paid with an online payment method.
+*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Funds {
+    ///Spendable balance after pending returns.
+    pub available_balance_amount: Money,
+    ///Additional balance needed now. Zero means account funds satisfy this purchase. No funds are reserved.
+    pub balance_shortfall_amount: Money,
+    ///Minimum spendable balance needed after eligible credits, covering immediate charges and every new metered purchase's admission requirement.
+    pub required_balance_amount: Money,
+    ///Minimum recharge that covers the shortfall, respecting the currency minimum recharge and currency precision. Zero when no additional balance is needed.
+    pub required_top_up_amount: Money,
+    ///Currently effective credits that cannot fund any purchase being checked out or metered target. Unused eligible credits are not restricted.
+    pub restricted_credit_amount: Money,
+    ///Currently effective credits eligible for the purchases being checked out or metered usage. Each grant is counted once.
+    pub usable_credit_amount: Money,
+}
+/**"`new` buys, `renew` extends subscriptions, `modify` changes subscription items' configuration or
+billing terms."*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum CheckoutSessionType {
     #[default]
@@ -4689,17 +4504,271 @@ impl AsRef<str> for CheckoutSessionType {
         self.as_str()
     }
 }
-///One subscription of the session.
+/**"`complete`: tax is calculated for the billing account's invoice contact, or for `address` in a preview
+without an account. `requires_location_inputs`: a preview without an account or `address`, which leaves out
+tax that would be added; tax already contained in a price is included."*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionTaxStatus {
+    #[default]
+    #[serde(rename = "complete")]
+    Complete,
+    #[serde(rename = "requires_location_inputs")]
+    RequiresLocationInputs,
+}
+impl CheckoutSessionTaxStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Complete => "complete",
+            Self::RequiresLocationInputs => "requires_location_inputs",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionTaxStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionTaxStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///One subscription of the session and its items, with its share of the session's amounts.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CheckoutSessionSubscription {
+    ///The items' amounts before discounts, including any setup charge.
+    pub amount: Option<Money>,
+    pub discount_amount: Option<Money>,
+    ///The term every item of the subscription renews for, for renewals; `none` otherwise.
+    pub interval: CheckoutSessionSubscriptionInterval,
+    ///Renewals only; null otherwise.
+    ///Constraint: minimum=1
+    pub interval_count: Option<i64>,
+    ///The subscription's items, in order.
+    pub items: Vec<CheckoutSessionItem>,
+    ///Renewals only; null otherwise. How many consecutive terms are renewed.
+    ///Constraint: minimum=1
+    pub periods: Option<i64>,
+    ///The settings the owning service gave a subscription the purchase opens; null without any.
+    pub subscription_data: Option<SubscriptionData>,
     ///The existing subscription renewed or changed, or that new items are added to. Null for a subscription the purchase opens.
     pub subscription_id: Option<uuid::Uuid>,
-    ///The end of the free trial a subscription the purchase opens gets; null without one or when given in days.
-    pub trial_end: Option<chrono::DateTime<chrono::Utc>>,
-    ///The free trial a subscription the purchase opens gets; null without one.
-    pub trial_period_days: Option<i64>,
+    ///Tax on the discounted amount, including any tax already contained in it.
+    pub tax_amount: Option<Money>,
+    ///The part of `tax_amount` already contained in `amount` minus `discount_amount`.
+    pub tax_included_amount: Option<Money>,
+    ///amount minus discount_amount plus tax_amount minus tax_included_amount; this subscription's share of the session's `total`.
+    pub total: Option<Money>,
+    ///The free trial the subscription opens with, from `subscription_data` or the trial grant. Null without one, and for an expired session.
+    pub trial: Option<CheckoutSessionTrial>,
+    ///The free trial grant this subscription uses, saved on an open session or used by a complete one; null otherwise.
+    pub trial_grant_id: Option<uuid::Uuid>,
 }
-///`open`: waiting for you to complete checkout; nothing is ordered, invoiced or reserved. `complete`: the order and its issued invoice exist; read the order for payment and delivery. `expired`: ended without an order.
+///Settings of a subscription a purchase opens, as Stripe Checkout's subscription_data.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SubscriptionData {
+    ///The end of the free trial; null without one or when given in days.
+    pub trial_end: Option<chrono::DateTime<chrono::Utc>>,
+    ///A free trial of this many days; null without one or when given as `trial_end`.
+    ///Constraint: minimum=1, maximum=730
+    pub trial_period_days: Option<i64>,
+    ///How the free trial ends; null without a trial.
+    pub trial_settings: Option<TrialSettings>,
+}
+/**A free trial a subscription opens with. Its licensed items are free until `trial_end`; metered usage is
+charged as usual. For an open session the times are as if it were completed now.*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CheckoutSessionTrial {
+    pub trial_end: chrono::DateTime<chrono::Utc>,
+    pub trial_settings: TrialSettings,
+    pub trial_start: chrono::DateTime<chrono::Utc>,
+}
+///How a free trial ends, as Stripe's trial_settings.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TrialSettings {
+    pub end_behavior: TrialEndBehavior,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TrialEndBehavior {
+    ///What happens when the trial ends while automatic renewal is off. With it on, the first paid period is charged to the account's funds or saved payment method, and this applies only when that charge fails. `cancel`: the subscription ends and its resources are released. `pause`: service stops, and renewing before the retention period ends restores it, with the first paid period starting at payment. `create_invoice`: as `pause`, and an invoice for the first paid period is issued to pay.
+    pub missing_payment_method: TrialEndBehaviorMissingPaymentMethod,
+    ///How long a subscription stopped at the end of its trial keeps its resources before they are reclaimed; null for the platform's retention period.
+    pub retention_seconds: Option<i64>,
+}
+///What happens when the trial ends while automatic renewal is off. With it on, the first paid period is charged to the account's funds or saved payment method, and this applies only when that charge fails. `cancel`: the subscription ends and its resources are released. `pause`: service stops, and renewing before the retention period ends restores it, with the first paid period starting at payment. `create_invoice`: as `pause`, and an invoice for the first paid period is issued to pay.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum TrialEndBehaviorMissingPaymentMethod {
+    #[default]
+    #[serde(rename = "cancel")]
+    Cancel,
+    #[serde(rename = "pause")]
+    Pause,
+    #[serde(rename = "create_invoice")]
+    CreateInvoice,
+}
+impl TrialEndBehaviorMissingPaymentMethod {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Cancel => "cancel",
+            Self::Pause => "pause",
+            Self::CreateInvoice => "create_invoice",
+        }
+    }
+}
+impl ::std::fmt::Display for TrialEndBehaviorMissingPaymentMethod {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for TrialEndBehaviorMissingPaymentMethod {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///The term every item of the subscription renews for, for renewals; `none` otherwise.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionSubscriptionInterval {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "day")]
+    Day,
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+}
+impl CheckoutSessionSubscriptionInterval {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Day => "day",
+            Self::Month => "month",
+            Self::Year => "year",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionSubscriptionInterval {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionSubscriptionInterval {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**One item of the session; it becomes the order item at the same position. Its price is selected as when
+checkout completes, and amounts are this item's share of the session's.*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CheckoutSessionItem {
+    ///Amount before discounts, including any setup charge.
+    pub amount: Option<Money>,
+    ///The dimension values of what is bought, such as region and instance type.
+    pub dimensions: CheckoutSessionItemDimensions,
+    ///Total reduction on this item, including any continuing renewal discount.
+    pub discount_amount: Option<Money>,
+    ///Immediate downgrades only, when `unused_amount` exceeds `remaining_amount`; null otherwise.
+    pub downgrade_refund: Option<CheckoutSessionItemDowngradeRefund>,
+    ///The billing period of a recurring licensed price; `none` otherwise, and when `price_id` is null.
+    pub interval: CheckoutSessionItemInterval,
+    ///Periods per billing cycle of a recurring licensed price; null otherwise.
+    ///Constraint: minimum=1
+    pub interval_count: Option<i64>,
+    ///Renewals only; null otherwise. How many consecutive periods are renewed.
+    ///Constraint: minimum=1
+    pub periods: Option<i64>,
+    pub plan_id: uuid::Uuid,
+    pub plan_name: String,
+    ///Counted across the session's subscriptions in order, starting from zero.
+    ///Constraint: minimum=0
+    pub position: i64,
+    /**The price the item is charged under: the one it named, or the one selected by billing terms or from the
+    subscription item changed or renewed. Null for an expired session whose item did not name one.*/
+    pub price_id: Option<uuid::Uuid>,
+    pub product_id: ProductId,
+    pub quantity: String,
+    /**Recurring licensed items only; null otherwise. What each later period renews at, before discounts and
+    tax, which differs from `amount` when the first period is priced differently, such as in a free trial. The
+    session's `discount` says whether its discount continues on renewals.*/
+    pub recurring_amount: Option<Money>,
+    /**Immediate changes only; null otherwise. Before tax, the new terms for the time from `proration_date` to
+    the end of the paid period. An upgrade invoices `remaining_amount` minus `unused_amount`.*/
+    pub remaining_amount: Option<Money>,
+    ///The setup charge already included in `amount`; null when none applies.
+    pub setup_amount: Option<Money>,
+    ///The subscription item changed or renewed. Null for an item the purchase adds.
+    pub subscription_item_id: Option<uuid::Uuid>,
+    ///Tax on the discounted amount, including any tax already contained in that amount.
+    pub tax_amount: Option<Money>,
+    ///The part of tax_amount already contained in amount minus discount_amount.
+    pub tax_included_amount: Option<Money>,
+    ///amount minus discount_amount plus tax_amount minus tax_included_amount.
+    pub total: Option<Money>,
+    ///The price type; null when `price_id` is.
+    pub r#type: Option<PriceType>,
+    ///Unit price before discounts. Null when no single unit price applies, such as tiered or multiple-rate pricing.
+    pub unit_amount: Option<Money>,
+    /**Immediate changes only; null otherwise. Before tax, for an upgrade or an unchanged period price, the
+    amount paid for that time, up to the new terms' value for the same time; for a downgrade, the remaining value
+    of what was paid, under the refund terms of each paid period.*/
+    pub unused_amount: Option<Money>,
+    ///The usage type; null when `price_id` is.
+    pub usage_type: Option<UsageType>,
+}
+///The billing period of a recurring licensed price; `none` otherwise, and when `price_id` is null.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionItemInterval {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "day")]
+    Day,
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+}
+impl CheckoutSessionItemInterval {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Day => "day",
+            Self::Month => "month",
+            Self::Year => "year",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionItemInterval {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionItemInterval {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**What an immediate downgrade would refund, estimated as of `proration_date`. The refund itself is determined
+when the change takes effect.*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CheckoutSessionItemDowngradeRefund {
+    ///Before tax, the part of the excess that the item's refund terms do not return.
+    pub forfeited_amount: Money,
+    ///Returned to the original payment sources, tax paid on it included.
+    pub refundable_amount: Money,
+}
+///The dimension values of what is bought, such as region and instance type.
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct CheckoutSessionItemDimensions {
+    /// Additional properties matching the spec's
+    /// `additionalProperties` value schema.
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, String>,
+}
+/**"`open`: waiting for you to complete checkout; nothing is ordered, invoiced or reserved. `complete`:
+the order and its issued invoice exist; read the order for payment and delivery. `expired`: ended without an
+order."*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum CheckoutSessionStatus {
     #[default]
@@ -4725,6 +4794,111 @@ impl ::std::fmt::Display for CheckoutSessionStatus {
     }
 }
 impl AsRef<str> for CheckoutSessionStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///The discount a session gets. It is redeemed only when the session completes.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CheckoutSessionDiscount {
+    /**"`confirmed`: every condition of the discount holds for the billing account. `unverified`: a preview
+without an account, where conditions that depend on the account, such as a first purchase or a per-account
+limit, are checked only when a session is completed."*/
+    pub eligibility: CheckoutSessionDiscountEligibility,
+    /**"Whether the discount continues on renewals of what is bought: `once` applies only to this
+    purchase, `recurring` for `frequency_duration` periods including the first, `forever` on every renewal."*/
+    pub frequency: CheckoutSessionDiscountFrequency,
+    ///For `recurring`, the periods the discount lasts; null otherwise.
+    ///Constraint: minimum=1
+    pub frequency_duration: Option<i64>,
+    pub name: String,
+    ///Code text for a promotion_code discount; null for an account_discount.
+    ///Constraint: minLength=1, maxLength=64
+    pub promotion_code: Option<String>,
+    pub r#type: CheckoutSessionDiscountType,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionDiscountType {
+    #[default]
+    #[serde(rename = "promotion_code")]
+    PromotionCode,
+    #[serde(rename = "account_discount")]
+    AccountDiscount,
+}
+impl CheckoutSessionDiscountType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::PromotionCode => "promotion_code",
+            Self::AccountDiscount => "account_discount",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionDiscountType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionDiscountType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**"Whether the discount continues on renewals of what is bought: `once` applies only to this
+purchase, `recurring` for `frequency_duration` periods including the first, `forever` on every renewal."*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionDiscountFrequency {
+    #[default]
+    #[serde(rename = "once")]
+    Once,
+    #[serde(rename = "recurring")]
+    Recurring,
+    #[serde(rename = "forever")]
+    Forever,
+}
+impl CheckoutSessionDiscountFrequency {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Once => "once",
+            Self::Recurring => "recurring",
+            Self::Forever => "forever",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionDiscountFrequency {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionDiscountFrequency {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**"`confirmed`: every condition of the discount holds for the billing account. `unverified`: a preview
+without an account, where conditions that depend on the account, such as a first purchase or a per-account
+limit, are checked only when a session is completed."*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutSessionDiscountEligibility {
+    #[default]
+    #[serde(rename = "confirmed")]
+    Confirmed,
+    #[serde(rename = "unverified")]
+    Unverified,
+}
+impl CheckoutSessionDiscountEligibility {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Confirmed => "confirmed",
+            Self::Unverified => "unverified",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutSessionDiscountEligibility {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutSessionDiscountEligibility {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -4773,7 +4947,8 @@ infrastructure is created for that refusal.*/
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct CheckoutOptions {
     /**Turns on automatic renewal of every subscription with licensed items that the purchase opens. Off
-    when omitted. It must be the customer's own choice.*/
+    when omitted. It must be the customer's own choice. For a free trial, it converts the trial to paid
+    when the trial ends.*/
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auto_renew: Option<bool>,
     /**Expected invoice total after discounts and tax, before applying credit grants or balance.
@@ -4790,6 +4965,13 @@ pub struct CheckoutOptions {
     ///Constraint: maxLength=2048
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_url: Option<url::Url>,
+    /**A free trial grant of the paying billing account that the customer chose to use. The first new
+    subscription of the purchase whose lines the grant's offer all covers, and that has a licensed line and
+    no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
+    HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
+    BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_grant_id: Option<uuid::Uuid>,
 }
 /**automatic completes checkout with the purchase: the best applicable account discount is applied, and the
 order is created with its invoice issued and paid from eligible credit grants and available balance.
@@ -5948,6 +6130,28 @@ pub struct BillingAccountUpdate {
     ///Constraint: maxLength=255
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+///Give at least one choice. Saving a choice equal to the current one changes nothing.
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct CheckoutSessionUpdate {
+    ///Turns on or off automatic renewal of every subscription with licensed items the session opens. It must be your own choice.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_renew: Option<bool>,
+    ///The promotion code to complete the session with; null removes it, and the best applicable account discount applies instead.
+    ///Constraint: minLength=1, maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub promotion_code: Option<Option<String>>,
+    ///A free trial grant of the session's billing account to use; null removes it.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub trial_grant_id: Option<Option<uuid::Uuid>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ContactCreate {
