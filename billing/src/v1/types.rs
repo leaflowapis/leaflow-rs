@@ -2503,7 +2503,7 @@ pub struct InvoiceItemList {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InvoiceItem {
     pub amount: Money,
-    ///The coupon applied to this line.
+    ///The coupon whose discount this line gets, including one continuing on a renewal from the purchase that first used it.
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
@@ -4664,6 +4664,10 @@ checkout completes, and amounts are this item's share of the session's.*/
 pub struct CheckoutSessionItem {
     ///Amount before discounts, including any setup charge.
     pub amount: Option<Money>,
+    /**The coupon behind `discount_amount`, so the discount can be named: the one this checkout applies, or on
+    a renewal the one continuing from the purchase that first used it. Null when the item has no coupon
+    discount.*/
+    pub coupon: Option<ObjectIdentity>,
     ///The dimension values of what is bought, such as region and instance type.
     pub dimensions: CheckoutSessionItemDimensions,
     ///Total reduction on this item, including any continuing renewal discount.
