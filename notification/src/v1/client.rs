@@ -333,11 +333,6 @@ pub enum DeleteTypePreferenceApiError {
 pub enum DeleteUserChannelApiError {
     Default(Error),
 }
-///Typed error responses for `describe-credential-ticket`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum DescribeCredentialTicketApiError {
-    Default(Error),
-}
 ///Typed error responses for `get-notification`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetNotificationApiError {
@@ -396,11 +391,6 @@ pub enum ReadAllAnnouncementsApiError {
 ///Typed error responses for `read-announcement`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ReadAnnouncementApiError {
-    Default(Error),
-}
-///Typed error responses for `reveal-credential`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum RevealCredentialApiError {
     Default(Error),
 }
 ///Typed error responses for `send-email-override-code`. One variant per declared non-2xx response.
@@ -1016,94 +1006,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(DeleteUserChannelApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Describe a one-time credential
-    ///
-    /// Reports whether the credential is still available without consuming it. It never contains
-    /// the credential itself.
-    ///
-    /// A ticket addressed to someone else returns `CREDENTIAL_TICKET_NOT_FOUND`, the same answer
-    /// as one that does not exist.
-    ///
-    /// `GET /api/v1/credentials/{ticketId}`
-    pub async fn describe_credential_ticket(
-        &self,
-        ticket_id: impl AsRef<str>,
-    ) -> Result<CredentialTicketResource, ApiOpError<DescribeCredentialTicketApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/credentials/{}",
-                __pct_encode_path_segment(ticket_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<DescribeCredentialTicketApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DescribeCredentialTicketApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -2143,104 +2045,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ReadAnnouncementApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Reveal a one-time credential
-    ///
-    /// Returns the credential and destroys it in the same step. **This is the only operation that
-    /// ever returns it, and it succeeds only once.**
-    ///
-    /// Every subsequent request returns `CREDENTIAL_TICKET_CONSUMED`, including one issued
-    /// concurrently with the first: exactly one caller receives the credential.
-    ///
-    /// A ticket that has expired returns `CREDENTIAL_TICKET_EXPIRED`, and one withdrawn by the
-    /// service that created it returns `CREDENTIAL_TICKET_REVOKED`. In all three cases the
-    /// credential is already gone and cannot be recovered; obtain a new one from the service that
-    /// owns the resource.
-    ///
-    /// This operation is a POST rather than a GET because a GET would be followed by link
-    /// scanners in mail clients and by browser prefetching, either of which would consume the
-    /// credential before the recipient opened it.
-    ///
-    /// `POST /api/v1/credentials/{ticketId}:reveal`
-    pub async fn reveal_credential(
-        &self,
-        ticket_id: impl AsRef<str>,
-    ) -> Result<RevealedCredentialResource, ApiOpError<RevealCredentialApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/credentials/{}:reveal",
-                __pct_encode_path_segment(ticket_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.post(request_url);
-        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<RevealCredentialApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(RevealCredentialApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

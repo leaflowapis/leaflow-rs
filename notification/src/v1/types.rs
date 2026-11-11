@@ -121,18 +121,6 @@ pub struct TypePreferenceResource {
     pub project_id: Option<uuid::Uuid>,
     pub r#type: String,
 }
-/**The credential itself. This shape is returned by exactly one operation, and that operation
-succeeds at most once per ticket.*/
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct RevealedCredentialResource {
-    pub revealed_at: chrono::DateTime<chrono::Utc>,
-    ///The credential. It is destroyed as this response is produced and cannot be obtained again
-    pub secret: String,
-    pub subject_id: String,
-    pub subject_kind: CredentialSubjectKind,
-    ///The account the credential belongs to, where the resource has one; null otherwise
-    pub username: Option<String>,
-}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NotificationTypeListResponseBody {
     pub items: Vec<NotificationTypeDescriptor>,
@@ -374,47 +362,6 @@ pub struct FieldViolation {
     ///Why the field was rejected, such as `REQUIRED` or `OUT_OF_RANGE`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-}
-///A one-time credential, described without being consumed.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CredentialTicketResource {
-    /**True when the credential can still be revealed. False once it has been revealed, has
-    expired, or was withdrawn — in all three cases it is already destroyed*/
-    pub available: bool,
-    ///After this moment the credential is destroyed whether or not it was read
-    pub expires_at: chrono::DateTime<chrono::Utc>,
-    pub id: uuid::Uuid,
-    ///When it was revealed; null if it has not been
-    pub revealed_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///When the service that issued it withdrew it; null if it did not
-    pub revoked_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///The resource the credential belongs to
-    pub subject_id: String,
-    pub subject_kind: CredentialSubjectKind,
-}
-///What the credential belongs to.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum CredentialSubjectKind {
-    #[default]
-    #[serde(rename = "compute_instance")]
-    ComputeInstance,
-}
-impl CredentialSubjectKind {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::ComputeInstance => "compute_instance",
-        }
-    }
-}
-impl ::std::fmt::Display for CredentialSubjectKind {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for CredentialSubjectKind {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateChannelRequestBody {
