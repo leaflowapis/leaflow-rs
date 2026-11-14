@@ -3831,15 +3831,11 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(
-                                HttpError::serialization_error(
-                                        format!(
-                                            "query array `{}` contains a comma; use explode=true for lossless string values",
-                                            "tag",
-                                        ),
-                                    )
-                                    .into(),
-                            );
+                            return Err(HttpError::serialization_error(format!(
+                                "query array `{}` contains a comma; use explode=true for lossless string values",
+                                "tag",
+                            ))
+                            .into());
                         }
                         parts.push(item);
                     }
@@ -4124,15 +4120,11 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(
-                                HttpError::serialization_error(
-                                        format!(
-                                            "query array `{}` contains a comma; use explode=true for lossless string values",
-                                            "tag",
-                                        ),
-                                    )
-                                    .into(),
-                            );
+                            return Err(HttpError::serialization_error(format!(
+                                "query array `{}` contains a comma; use explode=true for lossless string values",
+                                "tag",
+                            ))
+                            .into());
                         }
                         parts.push(item);
                     }

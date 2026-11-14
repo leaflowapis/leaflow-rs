@@ -346,6 +346,40 @@ pub struct UsageBucketResource {
     ///End of the bucket, exclusive
     pub to: chrono::DateTime<chrono::Utc>,
 }
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct UpdateAPIKeyRequestBody {
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub allowed_models: Option<Option<Vec<String>>>,
+    ///True removes the expiry
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clear_expiry: Option<bool>,
+    ///Sets the expiry. To remove it, use `clear_expiry`
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_aliases: Option<ModelAliases>,
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub name: Option<Option<String>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub restrict_models: Option<Option<bool>>,
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TotalsResource {
     ///Null when this range has no token usage.
@@ -447,6 +481,13 @@ pub struct ModelListResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ModelResource {
+    /**Who can call the model. Every model is listed to every project.
+
+    - `public`: callable by every project.
+    - `restricted`: callable only by projects holding a grant. A request from any other project fails with 403 `MODEL_ACCESS_REQUIRED`.*/
+    pub access: ModelResourceAccess,
+    ///Whether the current project can call the model. Always true for a public model
+    pub access_granted: bool,
     pub billing: ModelBilling,
     pub capabilities: ModelCapabilities,
     ///The context window. Advisory only; the server does not truncate on its basis
@@ -463,6 +504,8 @@ pub struct ModelResource {
     pub input_modalities: Option<Vec<Modality>>,
     ///The maximum output length. Advisory only
     pub max_output_tokens: i64,
+    ///True when the model is served without upstream content moderation
+    pub moderation_disabled: bool,
     ///Produced output modalities. Image input does not imply image generation.
     pub output_modalities: Option<Vec<Modality>>,
     pub status: ModelResourceStatus,
@@ -492,6 +535,36 @@ impl ::std::fmt::Display for ModelResourceStatus {
     }
 }
 impl AsRef<str> for ModelResourceStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**Who can call the model. Every model is listed to every project.
+
+- `public`: callable by every project.
+- `restricted`: callable only by projects holding a grant. A request from any other project fails with 403 `MODEL_ACCESS_REQUIRED`.*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ModelResourceAccess {
+    #[default]
+    #[serde(rename = "public")]
+    Public,
+    #[serde(rename = "restricted")]
+    Restricted,
+}
+impl ModelResourceAccess {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Public => "public",
+            Self::Restricted => "restricted",
+        }
+    }
+}
+impl ::std::fmt::Display for ModelResourceAccess {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ModelResourceAccess {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -882,6 +955,7 @@ pub struct IssuedAPIKeyResource {
     pub last_four: String,
     ///When the key was last used to forward a request successfully, accurate to about a minute
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub model_aliases: ModelAliases,
     pub name: String,
     ///The leading characters of the plaintext, by which a key is recognised in a list
     pub prefix: String,
@@ -1387,6 +1461,123 @@ pub struct CreateServiceRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
 }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateAPIKeyRequestBody {
+    ///Ignored while `restrict_models` is false
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub allowed_models: Option<Option<Vec<String>>>,
+    ///When the key expires. Omitted means it never expires
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_aliases: Option<ModelAliases>,
+    ///A name for the holder's own use, such as CI or Production
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
+    ///While true, only the models listed in `allowed_models` are permitted
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub restrict_models: Option<bool>,
+}
+impl CreateAPIKeyRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            allowed_models: None,
+            expires_at: None,
+            model_aliases: None,
+            restrict_models: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(name: String) -> CreateAPIKeyRequestBodyBuilder {
+        CreateAPIKeyRequestBodyBuilder::new(name)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct CreateAPIKeyRequestBodyBuilder {
+    value: CreateAPIKeyRequestBody,
+}
+impl CreateAPIKeyRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(name: String) -> Self {
+        Self {
+            value: CreateAPIKeyRequestBody::new(name),
+        }
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "allowed_models", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn allowed_models(mut self, allowed_models: Vec<String>) -> Self {
+        self.value.allowed_models = Some(Some(allowed_models));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "allowed_models", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn allowed_models_null(mut self) -> Self {
+        self.value.allowed_models = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "allowed_models", "` request field."
+    )]
+    #[must_use]
+    pub fn allowed_models_absent(mut self) -> Self {
+        self.value.allowed_models = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "expires_at", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn expires_at(mut self, expires_at: chrono::DateTime<chrono::Utc>) -> Self {
+        self.value.expires_at = Some(Some(expires_at));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "expires_at", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn expires_at_null(mut self) -> Self {
+        self.value.expires_at = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "expires_at", "` request field.")]
+    #[must_use]
+    pub fn expires_at_absent(mut self) -> Self {
+        self.value.expires_at = None;
+        self
+    }
+    #[doc = concat!("Set the optional `", "model_aliases", "` request field.")]
+    #[must_use]
+    pub fn model_aliases(mut self, model_aliases: ModelAliases) -> Self {
+        self.value.model_aliases = Some(model_aliases);
+        self
+    }
+    #[doc = concat!("Set the optional `", "restrict_models", "` request field.")]
+    #[must_use]
+    pub fn restrict_models(mut self, restrict_models: bool) -> Self {
+        self.value.restrict_models = Some(restrict_models);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> CreateAPIKeyRequestBody {
+        self.value
+    }
+}
 /**Shared checkout choices for a product purchase. The service may set them or forward its client's
 choices unchanged; it does not need to read them, and Billing validates them. Omitting this object or
 mode selects automatic checkout. Each purchase creates its own Checkout Session. Promotion codes are supplied
@@ -1414,8 +1605,8 @@ pub struct CheckoutOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_url: Option<url::Url>,
     /**A free trial grant of the paying billing account that the customer chose to use. The first new
-    subscription of the purchase whose lines the grant's offer all covers, and that has a licensed line and
-    no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
+    subscription of the purchase whose lines are all of plans the grant's offer lists, within each plan's
+    max_quantity, and that has a licensed line and no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
     HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
     BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1620,6 +1811,7 @@ pub struct APIKeyResource {
     pub last_four: String,
     ///When the key was last used to forward a request successfully, accurate to about a minute
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub model_aliases: ModelAliases,
     pub name: String,
     ///The leading characters of the plaintext, by which a key is recognised in a list
     pub prefix: String,
@@ -1628,6 +1820,16 @@ pub struct APIKeyResource {
     pub status: APIKeyResourceStatus,
     ///True indicates that the key was disabled because its project is suspended, and that the project has to be restored before the key can be used again
     pub suspended: bool,
+}
+/**Model names the key rewrites. A request naming a key of this map is served by the model it maps to, and is admitted, billed and recorded as that model; aliases are not followed in chains. At most 10 entries, each name and model at most 128 characters.
+
+The model must exist, and while `restrict_models` is true it must also be listed in `allowed_models`. A restricted model is callable only while the project holds a grant for it.*/
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ModelAliases {
+    /// Additional properties matching the spec's
+    /// `additionalProperties` value schema.
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum APIKeyResourceStatus {
@@ -1664,114 +1866,6 @@ pub struct ChatCompletion {
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
 }
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CreateAPIKeyRequestBody {
-    ///Ignored while `restrict_models` is false
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub allowed_models: Option<Option<Vec<String>>>,
-    ///When the key expires. Omitted means it never expires
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
-    ///A name for the holder's own use, such as CI or Production
-    ///Constraint: minLength=1, maxLength=128
-    pub name: String,
-    ///While true, only the models listed in `allowed_models` are permitted
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restrict_models: Option<bool>,
-}
-impl CreateAPIKeyRequestBody {
-    /// Construct this request with every required wire field.
-    pub fn new(name: String) -> Self {
-        Self {
-            name,
-            allowed_models: None,
-            expires_at: None,
-            restrict_models: None,
-        }
-    }
-    /// Start a dependency-free builder with every required wire field.
-    pub fn builder(name: String) -> CreateAPIKeyRequestBodyBuilder {
-        CreateAPIKeyRequestBodyBuilder::new(name)
-    }
-}
-/// Dependency-free builder for [`#struct_name`].
-#[derive(Debug, Clone)]
-#[must_use]
-pub struct CreateAPIKeyRequestBodyBuilder {
-    value: CreateAPIKeyRequestBody,
-}
-impl CreateAPIKeyRequestBodyBuilder {
-    /// Start a builder with every required wire field.
-    pub fn new(name: String) -> Self {
-        Self {
-            value: CreateAPIKeyRequestBody::new(name),
-        }
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "allowed_models", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn allowed_models(mut self, allowed_models: Vec<String>) -> Self {
-        self.value.allowed_models = Some(Some(allowed_models));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "allowed_models", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn allowed_models_null(mut self) -> Self {
-        self.value.allowed_models = Some(None);
-        self
-    }
-    #[doc = concat!(
-        "Omit the optional nullable `", "allowed_models", "` request field."
-    )]
-    #[must_use]
-    pub fn allowed_models_absent(mut self) -> Self {
-        self.value.allowed_models = None;
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "expires_at", "` request field to a value."
-    )]
-    #[must_use]
-    pub fn expires_at(mut self, expires_at: chrono::DateTime<chrono::Utc>) -> Self {
-        self.value.expires_at = Some(Some(expires_at));
-        self
-    }
-    #[doc = concat!(
-        "Set the optional nullable `", "expires_at", "` request field to JSON null."
-    )]
-    #[must_use]
-    pub fn expires_at_null(mut self) -> Self {
-        self.value.expires_at = Some(None);
-        self
-    }
-    #[doc = concat!("Omit the optional nullable `", "expires_at", "` request field.")]
-    #[must_use]
-    pub fn expires_at_absent(mut self) -> Self {
-        self.value.expires_at = None;
-        self
-    }
-    #[doc = concat!("Set the optional `", "restrict_models", "` request field.")]
-    #[must_use]
-    pub fn restrict_models(mut self, restrict_models: bool) -> Self {
-        self.value.restrict_models = Some(restrict_models);
-        self
-    }
-    /// Finish building the request model.
-    pub fn build(self) -> CreateAPIKeyRequestBody {
-        self.value
-    }
-}
 pub type EmbeddingRequestInputVariant2 = Vec<serde_json::Value>;
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct EmbeddingResponse {
@@ -1798,36 +1892,4 @@ pub struct ResponseResource {
     /// Additional properties not explicitly defined in the schema
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct UpdateAPIKeyRequestBody {
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub allowed_models: Option<Option<Vec<String>>>,
-    ///True removes the expiry
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub clear_expiry: Option<bool>,
-    ///Sets the expiry. To remove it, use `clear_expiry`
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
-    ///Constraint: maxLength=128
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub name: Option<Option<String>>,
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default,
-        deserialize_with = "tri_state_serde::deserialize"
-    )]
-    pub restrict_models: Option<Option<bool>>,
 }

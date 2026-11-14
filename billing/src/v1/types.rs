@@ -763,9 +763,12 @@ pub struct SubscriptionItem {
     )]
     pub ended_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
     pub id: uuid::Uuid,
-    ///Licensed recurring only, the `monthly_list_amount` that a renewal at the agreed amount keeps; see the order item.
+    ///Licensed recurring only, the frozen reference amount preserved by renewal at the agreed amount; see the order item.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub monthly_list_amount: Option<String>,
+    pub list_amount: Option<String>,
+    ///Unit of the frozen list_amount. Present exactly when list_amount has a value; uses Billing's interval vocabulary. It is the reference price unit, not necessarily the purchased period unit.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub list_interval: Option<SubscriptionItemListInterval>,
     ///The order item that created it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order_item_id: Option<uuid::Uuid>,
@@ -803,7 +806,40 @@ pub struct SubscriptionItem {
     pub started_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
     pub subscription_id: uuid::Uuid,
     pub r#type: PriceType,
+    ///The plan's current unit label, which a licensed item's quantity counts, such as GiB or Mbps. Absent for a metered item and when the plan has none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit_label: Option<String>,
     pub usage_type: UsageType,
+}
+///Unit of the frozen list_amount. Present exactly when list_amount has a value; uses Billing's interval vocabulary. It is the reference price unit, not necessarily the purchased period unit.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum SubscriptionItemListInterval {
+    #[default]
+    #[serde(rename = "day")]
+    Day,
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+}
+impl SubscriptionItemListInterval {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Day => "day",
+            Self::Month => "month",
+            Self::Year => "year",
+        }
+    }
+}
+impl ::std::fmt::Display for SubscriptionItemListInterval {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for SubscriptionItemListInterval {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 ///The dimension values of what was bought, such as region and instance type. Empty when the purchase gave none.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
@@ -1126,6 +1162,9 @@ pub struct ScheduledChange {
     ///The target licensed renewal amount before tax.
     pub recurring_amount: String,
     pub status: OrderStatus,
+    ///The plan's unit label when the change was placed, which a licensed quantity counts, such as GiB or Mbps. Absent for a metered item and when the plan had none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit_label: Option<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ScheduledChangeInterval {
@@ -1482,8 +1521,8 @@ impl AsRef<str> for RefundStatus {
 - `future_period_canceled`: a renewal that had not started was withdrawn.
 - `downgrade_difference`: after a downgrade, the remaining paid value, valued under each paid period's refund
   policy and as `prorated` where that policy is `none`, minus the new configuration's value for the remaining
-  time: each whole month at the change item's `monthly_list_amount` and the remainder in proportion to the
-  length of the month it falls in, or without `monthly_list_amount`, the new period price in proportion to the
+  time: each complete `list_interval` at the change item's `list_amount` and the remainder in proportion to the
+  length of the reference interval it falls in, or without `list_amount`, the new period price in proportion to the
   remaining time.
 - `usage_true_up`: usage priced over the whole month cost less than was charged.
 - `payment_not_applied`: a payment arrived after its invoice could no longer be paid.
@@ -2004,6 +2043,9 @@ pub struct Plan {
     pub name: String,
     pub product: Product,
     pub product_id: ProductId,
+    ///What a licensed quantity of the plan counts, as shown next to it, such as GiB or Mbps. Absent when the plan has none. Metered usage is measured in its meter's unit instead.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit_label: Option<String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PlanFeature {
@@ -2573,6 +2615,7 @@ pub struct InvoiceItem {
     pub tax_included_amount: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub taxable: Option<bool>,
+    ///What `quantity` counts: the plan's unit label for a licensed purchase line, such as GiB, or the meter's unit for a usage line. Empty when there is none.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -2886,7 +2929,7 @@ pub struct Discount {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub frequency_duration: Option<i64>,
     pub id: uuid::Uuid,
-    ///Caps a percentage discount.
+    ///The most one purchase is reduced by, for a percentage, price override or free-setup discount.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_discount: Option<Money>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -3459,13 +3502,16 @@ pub struct OrderItem {
     ///Financial lines produced by this purchase item, including setup charges.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub invoice_item_ids: Option<Vec<String>>,
-    ///Recurring licensed items only: a month at list price for this item's quantity, before tax and discounts, which values time under a refund or a downgrade. It is the monthly amount of the shortest period the plan sells, not longer than the one bought, at the item's dimensions, fixed at purchase; a renewal at the agreed amount keeps the previous value. Null when time used is valued at the amount paid, as for a daily period.
+    ///Recurring licensed items only: the reference list amount for one list_interval, for this item's quantity and dimensions, in the order currency before tax and discounts. For monthly or yearly purchases it is the monthly amount of the shortest eligible monthly or yearly price; for daily purchases it is the daily amount of the shortest eligible daily price. Eligible prices belong to the same plan, are sellable at purchase, and do not exceed the purchased period. The purchased price itself is a candidate. Frozen at purchase; renewal at the agreed amount preserves it. Absent or null when used time is valued proportionally at the amount paid.
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
         deserialize_with = "tri_state_serde::deserialize"
     )]
-    pub monthly_list_amount: Option<Option<String>>,
+    pub list_amount: Option<Option<String>>,
+    ///Unit of the frozen list_amount. Present exactly when list_amount has a value; uses Billing's interval vocabulary. It is the reference price unit, not necessarily the purchased period unit.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub list_interval: Option<OrderItemListInterval>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order_id: Option<uuid::Uuid>,
     ///The end of that service period, exclusive.
@@ -3535,22 +3581,16 @@ pub struct OrderItem {
     ///The unit amount of the price the line is charged under. Absent for a tiered price, and for an immediate change, which is charged as `gross_amount` describes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit_amount: Option<Money>,
+    ///The plan's unit label when the line was placed, which a licensed line's quantity counts, such as GiB or Mbps. Absent for a metered line and when the plan had none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit_label: Option<String>,
     pub usage_type: UsageType,
 }
 /**`none` refunds nothing.
 
-`prorated` refunds the amount paid for the current period minus the value of the time used, never below zero
-or above what remains unrefunded. Time used runs from the period start to the effective cancellation, by the
-second. Each whole month from the period start is valued at the order item's `monthly_list_amount`, and the
-remainder at that amount in proportion to the length of the month it falls in; without `monthly_list_amount`,
-time used is valued at the amount paid in proportion to the length of the period. A renewal starts a new
-period, and an immediate change starts one at the change. Discounts and setup fees are not refunded. Refunds
-return to the original payment sources, with tax refunded in proportion.
+`prorated` refunds the amount paid for the current period minus the value of the time used, never below zero or above what remains unrefunded. Time used runs from the period start to effective cancellation, by the second. The order item freezes `list_amount` for one `list_interval`: each complete interval uses that amount, and the remainder is proportional to the actual length of its interval. Calendar intervals are anchored at the service period start in UTC. Without a frozen reference, time used is valued at the amount paid in proportion to the period length. A renewal starts a new period; an immediate change starts one at the change. Discounts and setup fees are not refunded. Refunds return to the original payment sources, with tax refunded in proportion.
 
-`short_rate` refunds as `prorated`, except that when the cancellation takes effect less than
-`short_rate_threshold_seconds` after the period start, the value of the time used is multiplied by
-`short_rate_multiplier`, up to `monthly_list_amount` for each month begun or, without `monthly_list_amount`,
-up to the amount paid.*/
+`short_rate` applies the same calculation, but when cancellation takes effect less than `short_rate_threshold_seconds` after the period start, multiplies the used value by `short_rate_multiplier`, capped at `list_amount` for each reference interval begun, or at the amount paid when no reference was frozen.*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum RefundPolicy {
     #[default]
@@ -3609,6 +3649,36 @@ impl ::std::fmt::Display for OrderItemStatus {
     }
 }
 impl AsRef<str> for OrderItemStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///Unit of the frozen list_amount. Present exactly when list_amount has a value; uses Billing's interval vocabulary. It is the reference price unit, not necessarily the purchased period unit.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum OrderItemListInterval {
+    #[default]
+    #[serde(rename = "day")]
+    Day,
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+}
+impl OrderItemListInterval {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Day => "day",
+            Self::Month => "month",
+            Self::Year => "year",
+        }
+    }
+}
+impl ::std::fmt::Display for OrderItemListInterval {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for OrderItemListInterval {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -4406,17 +4476,28 @@ pub struct TrialGrant {
     pub valid_until: Option<chrono::DateTime<chrono::Utc>>,
     pub voided_at: Option<chrono::DateTime<chrono::Utc>>,
 }
-///The terms of a free trial. The licensed items of the subscription it is used for are free for `trial_period_days`, while metered usage is charged as usual. When the trial ends it converts to paid if automatic renewal is on; otherwise `trial_settings` applies.
+///The terms of a free trial. The licensed items of the subscription it is used for are free for `trial_period_days`, while metered usage is charged as usual. The subscription holds only the listed plans and no more of each than its `max_quantity`, both when it is bought and while the trial lasts. When the trial ends it converts to paid if automatic renewal is on; otherwise `trial_settings` applies.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TrialOffer {
-    ///The purchases it can be used for. Every line of the subscription must be covered.
-    pub applies_to: Applicability,
     pub description: String,
     pub id: uuid::Uuid,
+    ///The plans a subscription on the trial may hold. An offer without items applies to no purchase.
+    pub items: Vec<TrialOfferItem>,
     pub name: String,
     ///Constraint: minimum=1, maximum=730
     pub trial_period_days: i64,
     pub trial_settings: TrialSettings,
+}
+///A plan a subscription on the trial may hold, and how much of it.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TrialOfferItem {
+    ///The most the subscription's licensed items of this plan may hold together, in the plan's quantity unit, such as gibibytes of storage or megabits per second of bandwidth. Metered items of the plan are charged as usual and do not count towards it.
+    pub max_quantity: String,
+    ///The plan, which may since have been archived.
+    pub plan: ObjectIdentity,
+    ///The plan's unit label, which `max_quantity` counts, such as GiB or Mbps. Absent when the plan has none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit_label: Option<String>,
 }
 ///`scheduled` before valid_from, `available` to be chosen at checkout, `redeemed` once used for a subscription, `expired` after valid_until without being used, or `voided` once withdrawn.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -4592,7 +4673,7 @@ pub struct TrialSettings {
 pub struct TrialEndBehavior {
     ///What happens when the trial ends while automatic renewal is off. With it on, the first paid period is charged to the account's funds or saved payment method, and this applies only when that charge fails. `cancel`: the subscription ends and its resources are released. `pause`: service stops, and renewing before the retention period ends restores it, with the first paid period starting at payment. `create_invoice`: as `pause`, and an invoice for the first paid period is issued to pay.
     pub missing_payment_method: TrialEndBehaviorMissingPaymentMethod,
-    ///How long a subscription stopped at the end of its trial keeps its resources before they are reclaimed; null for the platform's retention period.
+    ///How long a subscription stopped at the end of its trial keeps its resources before they are reclaimed; null for the platform's retention period. Must be null with `cancel`, which releases the resources when the trial ends.
     pub retention_seconds: Option<i64>,
 }
 ///What happens when the trial ends while automatic renewal is off. With it on, the first paid period is charged to the account's funds or saved payment method, and this applies only when that charge fails. `cancel`: the subscription ends and its resources are released. `pause`: service stops, and renewing before the retention period ends restores it, with the first paid period starting at payment. `create_invoice`: as `pause`, and an invoice for the first paid period is issued to pay.
@@ -4713,6 +4794,9 @@ pub struct CheckoutSessionItem {
     pub r#type: Option<PriceType>,
     ///Unit price before discounts. Null when no single unit price applies, such as tiered or multiple-rate pricing.
     pub unit_amount: Option<Money>,
+    ///The plan's unit label, which a licensed line's quantity counts, such as GiB or Mbps. A completed session shows the label its order was placed with. Absent for a metered line and when the plan has none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit_label: Option<String>,
     /**Immediate changes only; null otherwise. Before tax, for an upgrade or an unchanged period price, the
     amount paid for that time, up to the new terms' value for the same time; for a downgrade, the remaining value
     of what was paid, under the refund terms of each paid period.*/
@@ -4970,8 +5054,8 @@ pub struct CheckoutOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_url: Option<url::Url>,
     /**A free trial grant of the paying billing account that the customer chose to use. The first new
-    subscription of the purchase whose lines the grant's offer all covers, and that has a licensed line and
-    no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
+    subscription of the purchase whose lines are all of plans the grant's offer lists, within each plan's
+    max_quantity, and that has a licensed line and no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
     HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
     BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
     #[serde(skip_serializing_if = "Option::is_none")]
