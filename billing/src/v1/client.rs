@@ -4036,11 +4036,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4157,11 +4161,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4182,11 +4190,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4302,11 +4314,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4324,11 +4340,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4434,11 +4454,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4557,11 +4581,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4576,11 +4604,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4692,11 +4724,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4711,11 +4747,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -4923,11 +4963,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -5139,11 +5183,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -5344,11 +5392,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -5465,11 +5517,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -5680,11 +5736,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -6006,11 +6066,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -6031,11 +6095,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -6145,11 +6213,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -6769,11 +6841,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -6891,11 +6967,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7123,11 +7203,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7233,11 +7317,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7356,11 +7444,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "subscription_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "subscription_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7384,11 +7476,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7403,11 +7499,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7517,11 +7617,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7640,11 +7744,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "type",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "type",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7659,11 +7767,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7775,11 +7887,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -7911,11 +8027,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "project_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "project_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -8129,11 +8249,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "status",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
@@ -8725,11 +8849,15 @@ impl HttpClient {
                     for item in &v {
                         let item = item.to_string();
                         if item.contains(',') {
-                            return Err(HttpError::serialization_error(format!(
-                                "query array `{}` contains a comma; use explode=true for lossless string values",
-                                "order_item_ids",
-                            ))
-                            .into());
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "order_item_ids",
+                                        ),
+                                    )
+                                    .into(),
+                            );
                         }
                         parts.push(item);
                     }
