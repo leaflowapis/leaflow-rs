@@ -2026,8 +2026,7 @@ impl AsRef<str> for VolumeAttachmentOnInstanceRelease {
 pub type InstanceVolumeId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateVolumeRequestBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub billing: Option<BillingChoice>,
+    pub billing: BillingChoice,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -2046,11 +2045,11 @@ pub struct CreateVolumeRequestBody {
 }
 impl CreateVolumeRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(name: String, volume_type_id: VolumeTypeId) -> Self {
+    pub fn new(billing: BillingChoice, name: String, volume_type_id: VolumeTypeId) -> Self {
         Self {
+            billing,
             name,
             volume_type_id,
-            billing: None,
             checkout: None,
             instance_id: None,
             size_gib: None,
@@ -2059,8 +2058,12 @@ impl CreateVolumeRequestBody {
         }
     }
     /// Start a dependency-free builder with every required wire field.
-    pub fn builder(name: String, volume_type_id: VolumeTypeId) -> CreateVolumeRequestBodyBuilder {
-        CreateVolumeRequestBodyBuilder::new(name, volume_type_id)
+    pub fn builder(
+        billing: BillingChoice,
+        name: String,
+        volume_type_id: VolumeTypeId,
+    ) -> CreateVolumeRequestBodyBuilder {
+        CreateVolumeRequestBodyBuilder::new(billing, name, volume_type_id)
     }
 }
 /// Dependency-free builder for [`#struct_name`].
@@ -2071,16 +2074,10 @@ pub struct CreateVolumeRequestBodyBuilder {
 }
 impl CreateVolumeRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(name: String, volume_type_id: VolumeTypeId) -> Self {
+    pub fn new(billing: BillingChoice, name: String, volume_type_id: VolumeTypeId) -> Self {
         Self {
-            value: CreateVolumeRequestBody::new(name, volume_type_id),
+            value: CreateVolumeRequestBody::new(billing, name, volume_type_id),
         }
-    }
-    #[doc = concat!("Set the optional `", "billing", "` request field.")]
-    #[must_use]
-    pub fn billing(mut self, billing: BillingChoice) -> Self {
-        self.value.billing = Some(billing);
-        self
     }
     #[doc = concat!("Set the optional `", "checkout", "` request field.")]
     #[must_use]
@@ -3295,7 +3292,7 @@ impl AsRef<str> for InstanceAccessState {
 }
 /**Every part a launch template can describe may come from `launch_template` instead: a part given here overrides the template's, and `data_volumes`, when given, replaces the template's list. After that the instance type, the boot volume and the network interface are required, each refused with 422 `INSTANCE_CREATE_INVALID` naming the field when neither gives it.
 
-Every component bought with the instance (its boot volume, data volumes and elastic IP) shares the usage type and period of `compute.billing`; a component's own `billing` exists to choose a different termination policy, and when omitted it is `compute.billing`.*/
+Every newly purchased component (compute capacity, boot volume, data volume and elastic IP network) requires its own `billing.price_id` from that component's Billing plan. Billing checks subscription compatibility; price IDs are never inherited between components.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateInstanceRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -3937,8 +3934,7 @@ pub struct CreateInstanceRequestBodyLabels {
 ///An empty data volume created in the instance's availability zone. Its terms follow the rule shared by every component of the purchase, so a pay-as-you-go instance gets pay-as-you-go data volumes, which stay pay-as-you-go once detached.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NewDataVolume {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub billing: Option<BillingChoice>,
+    pub billing: BillingChoice,
     ///What releasing the instance does to this volume. `delete` deletes it with the instance; `detach` keeps it, still billed on its own terms, for you to attach elsewhere or delete.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub on_instance_release: Option<NewDataVolumeOnInstanceRelease>,
@@ -4157,8 +4153,7 @@ pub struct NewElasticIp {
     ///Any whole number of Mbps within the line's `min_bandwidth_mbps` and `max_bandwidth_mbps`, otherwise refused with `ELASTIC_IP_BANDWIDTH_RANGE`.
     ///Constraint: minimum=1, maximum=1000
     pub bandwidth_mbps: i64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub billing: Option<BillingChoice>,
+    pub billing: BillingChoice,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub internet_charge_type: Option<InternetChargeType>,
     pub line_id: ElasticIpLineId,
@@ -5549,8 +5544,7 @@ pub struct CreateElasticIpRequestBody {
     later updates the same elastic IP through `change-elastic-ip-bandwidth`, not an independent bandwidth resource.*/
     ///Constraint: minimum=1, maximum=1000
     pub bandwidth_mbps: i64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub billing: Option<BillingChoice>,
+    pub billing: BillingChoice,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -5561,12 +5555,12 @@ pub struct CreateElasticIpRequestBody {
 }
 impl CreateElasticIpRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(bandwidth_mbps: i64, line_id: ElasticIpLineId) -> Self {
+    pub fn new(bandwidth_mbps: i64, billing: BillingChoice, line_id: ElasticIpLineId) -> Self {
         Self {
             bandwidth_mbps,
+            billing,
             line_id,
             address: None,
-            billing: None,
             checkout: None,
             instance_id: None,
             internet_charge_type: None,
@@ -5575,9 +5569,10 @@ impl CreateElasticIpRequestBody {
     /// Start a dependency-free builder with every required wire field.
     pub fn builder(
         bandwidth_mbps: i64,
+        billing: BillingChoice,
         line_id: ElasticIpLineId,
     ) -> CreateElasticIpRequestBodyBuilder {
-        CreateElasticIpRequestBodyBuilder::new(bandwidth_mbps, line_id)
+        CreateElasticIpRequestBodyBuilder::new(bandwidth_mbps, billing, line_id)
     }
 }
 /// Dependency-free builder for [`#struct_name`].
@@ -5588,21 +5583,15 @@ pub struct CreateElasticIpRequestBodyBuilder {
 }
 impl CreateElasticIpRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(bandwidth_mbps: i64, line_id: ElasticIpLineId) -> Self {
+    pub fn new(bandwidth_mbps: i64, billing: BillingChoice, line_id: ElasticIpLineId) -> Self {
         Self {
-            value: CreateElasticIpRequestBody::new(bandwidth_mbps, line_id),
+            value: CreateElasticIpRequestBody::new(bandwidth_mbps, billing, line_id),
         }
     }
     #[doc = concat!("Set the optional `", "address", "` request field.")]
     #[must_use]
     pub fn address(mut self, address: Ipv4HostAddress) -> Self {
         self.value.address = Some(address);
-        self
-    }
-    #[doc = concat!("Set the optional `", "billing", "` request field.")]
-    #[must_use]
-    pub fn billing(mut self, billing: BillingChoice) -> Self {
-        self.value.billing = Some(billing);
         self
     }
     #[doc = concat!("Set the optional `", "checkout", "` request field.")]
@@ -5744,8 +5733,8 @@ pub struct CheckoutOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_url: Option<url::Url>,
     /**A free trial grant of the paying billing account that the customer chose to use. The first new
-    subscription of the purchase whose lines the grant's offer all covers, and that has a licensed line and
-    no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
+    subscription of the purchase whose lines are all of plans the grant's offer lists, within each plan's
+    max_quantity, and that has a licensed line and no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
     HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
     BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -5965,8 +5954,7 @@ impl<'de> serde::Deserialize<'de> for BootVolume {
 ///A boot volume created from an image and recorded in the instance order. Its commercial terms are explicit and its release policy does not override them.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NewBootVolume {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub billing: Option<BillingChoice>,
+    pub billing: BillingChoice,
     pub image_id: ImageId,
     ///What releasing the instance does to this volume. `delete` deletes it with the instance; `detach` keeps it, still billed on its own terms, for you to attach elsewhere or delete.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -6030,6 +6018,12 @@ impl AsRef<str> for NewBootVolumeOnInstanceRelease {
 }
 ///Compute Image TypeID. UUID text is not accepted.
 pub type ImageId = String;
+///The Billing price selected for this component's plan. Billing validates the price, currency, availability, cancellation terms and subscription period. Each newly purchased component selects its own price; a price cannot be inherited from a different component's plan.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct BillingChoice {
+    ///The ID of a recurring price returned by Billing for this component's plan.
+    pub price_id: uuid::Uuid,
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ExistingBootVolume {
     ///The existing account used to log in to this volume's operating system.
@@ -6162,102 +6156,6 @@ pub struct BillingComponentDimensions {
     /// `additionalProperties` value schema.
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, String>,
-}
-///The commercial terms for one newly purchased component. Licensed requires period and termination_policy; metered refuses both. Components in one instance purchase must use the same usage type and period, while their termination policies may differ.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct BillingChoice {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub period: Option<BillingPeriod>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub termination_policy: Option<TerminationPolicy>,
-    ///`licensed` pays for a period in advance; `metered` bills usage until canceled.
-    pub usage_type: BillingChoiceUsageType,
-}
-///Immediate ends service when cancellation takes effect, with refunds governed by the purchased terms. Period-end keeps service until the paid period ends.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum TerminationPolicy {
-    #[default]
-    #[serde(rename = "immediate")]
-    Immediate,
-    #[serde(rename = "period_end")]
-    PeriodEnd,
-}
-impl TerminationPolicy {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Immediate => "immediate",
-            Self::PeriodEnd => "period_end",
-        }
-    }
-}
-impl ::std::fmt::Display for TerminationPolicy {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for TerminationPolicy {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct BillingPeriod {
-    ///Constraint: minimum=1, maximum=2147483647
-    pub count: i32,
-    pub unit: BillingPeriodUnit,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum BillingPeriodUnit {
-    #[default]
-    #[serde(rename = "month")]
-    Month,
-    #[serde(rename = "year")]
-    Year,
-}
-impl BillingPeriodUnit {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Month => "month",
-            Self::Year => "year",
-        }
-    }
-}
-impl ::std::fmt::Display for BillingPeriodUnit {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for BillingPeriodUnit {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///`licensed` pays for a period in advance; `metered` bills usage until canceled.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum BillingChoiceUsageType {
-    #[default]
-    #[serde(rename = "licensed")]
-    Licensed,
-    #[serde(rename = "metered")]
-    Metered,
-}
-impl BillingChoiceUsageType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Licensed => "licensed",
-            Self::Metered => "metered",
-        }
-    }
-}
-impl ::std::fmt::Display for BillingChoiceUsageType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for BillingChoiceUsageType {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
 }
 ///A Billing cancellation that Compute created to release a resource and the subscription items in its release set. Billing owns it; read its progress and any refund there by `id`.
 #[derive(Debug, Clone, Deserialize, Serialize)]

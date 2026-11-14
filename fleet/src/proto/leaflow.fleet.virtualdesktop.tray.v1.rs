@@ -427,6 +427,53 @@ impl ::prost::Name for SendTrayMenuEventResponse {
             .into()
     }
 }
+/// The request of SetTrayIconPointer. Like other tray actions this requires the
+/// input lease. Pointer motion is ordered with window input by the X11 backend.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SetTrayIconPointerRequest {
+    /// The XEmbed icon.
+    #[prost(uint64, tag = "1")]
+    pub tray_icon_id: u64,
+    /// True on entry; false on departure. Entry moves to the icon's center.
+    #[prost(bool, tag = "2")]
+    pub entered: bool,
+    /// The icon's area in session canvas coordinates. Required, with x and y in
+    /// 0..32743 and width and height in 1..256. The XEmbed host uses a 24px icon.
+    #[prost(message, optional, tag = "3")]
+    pub icon_area: ::core::option::Option<super::super::display::v1::Rectangle>,
+    /// Pointer position after departure, in session canvas coordinates, 0..32767.
+    /// An old departure is ignored if newer window input already left the icon.
+    #[prost(sint32, tag = "4")]
+    pub x: i32,
+    /// Vertical pointer position, in the same coordinates and range as x.
+    #[prost(sint32, tag = "5")]
+    pub y: i32,
+}
+impl ::prost::Name for SetTrayIconPointerRequest {
+    const NAME: &'static str = "SetTrayIconPointerRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.virtualdesktop.tray.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.virtualdesktop.tray.v1.SetTrayIconPointerRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.virtualdesktop.tray.v1.SetTrayIconPointerRequest"
+            .into()
+    }
+}
+/// The pointer request was accepted; no application button event is generated.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SetTrayIconPointerResponse {}
+impl ::prost::Name for SetTrayIconPointerResponse {
+    const NAME: &'static str = "SetTrayIconPointerResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.virtualdesktop.tray.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.virtualdesktop.tray.v1.SetTrayIconPointerResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.virtualdesktop.tray.v1.SetTrayIconPointerResponse"
+            .into()
+    }
+}
 /// How an application provides a tray icon.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -761,6 +808,7 @@ pub mod tray_service {
     pub const NAME: &str = "leaflow.fleet.virtualdesktop.tray.v1.TrayService";
     pub const CLICK_TRAY_ICON: &str = "/leaflow.fleet.virtualdesktop.tray.v1.TrayService/ClickTrayIcon";
     pub const SCROLL_TRAY_ICON: &str = "/leaflow.fleet.virtualdesktop.tray.v1.TrayService/ScrollTrayIcon";
+    pub const SET_TRAY_ICON_POINTER: &str = "/leaflow.fleet.virtualdesktop.tray.v1.TrayService/SetTrayIconPointer";
     pub const GET_TRAY_MENU: &str = "/leaflow.fleet.virtualdesktop.tray.v1.TrayService/GetTrayMenu";
     pub const SEND_TRAY_MENU_EVENT: &str = "/leaflow.fleet.virtualdesktop.tray.v1.TrayService/SendTrayMenuEvent";
 }
