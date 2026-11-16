@@ -1555,8 +1555,6 @@ pub struct RequestResource {
     pub started_at: chrono::DateTime<chrono::Utc>,
     pub status: RequestResourceStatus,
     pub stream: bool,
-    ///The id of the request on the upstream side. Quote it when reporting a problem
-    pub upstream_request_id: String,
     ///The HTTP status returned upstream. 0 indicates that the request never reached it
     pub upstream_status: i64,
     ///upstream means the figures were reported by the provider; estimated means they were derived from the character classes of the payload

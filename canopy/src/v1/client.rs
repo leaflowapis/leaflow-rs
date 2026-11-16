@@ -7226,7 +7226,7 @@ impl HttpClient {
     ///
     /// Cursor-paged, most recent first. An empty `next_cursor` indicates the last page.
     ///
-    /// **The request and response bodies are not returned**; they are not recorded. Quote the `upstream_request_id` when reporting a problem.
+    /// **The request and response bodies are not returned**; they are not recorded. Quote the request `id` when reporting a problem.
     ///
     /// A `usage_source` of `estimated` indicates that the upstream provider reported no usage for that request, and that the figures are derived from the character classes of the payload.
     ///
