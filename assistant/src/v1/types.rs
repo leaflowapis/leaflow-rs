@@ -878,6 +878,8 @@ pub struct SkillResourceFiles {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SettingsResource {
+    #[serde(rename = "defaultApprovalMode")]
+    pub default_approval_mode: ApprovalMode,
     #[serde(rename = "defaultModel")]
     pub default_model: DefaultModelResource,
     ///The caller's choice. Null when none is set.
@@ -1809,15 +1811,17 @@ pub struct DefaultModelResource {
     pub model_id: Option<String>,
     #[serde(rename = "reasoningEffort")]
     pub reasoning_effort: Option<ReasoningEffort>,
-    ///`user` when it is the caller's choice, `catalog` when it comes from the Canopy catalogue.
+    ///`user` when it is the caller's choice, `platform` for the platform default, or `catalog` for the catalogue fallback.
     pub source: DefaultModelResourceSource,
 }
-///`user` when it is the caller's choice, `catalog` when it comes from the Canopy catalogue.
+///`user` when it is the caller's choice, `platform` for the platform default, or `catalog` for the catalogue fallback.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum DefaultModelResourceSource {
     #[default]
     #[serde(rename = "user")]
     User,
+    #[serde(rename = "platform")]
+    Platform,
     #[serde(rename = "catalog")]
     Catalog,
 }
@@ -1825,6 +1829,7 @@ impl DefaultModelResourceSource {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::User => "user",
+            Self::Platform => "platform",
             Self::Catalog => "catalog",
         }
     }

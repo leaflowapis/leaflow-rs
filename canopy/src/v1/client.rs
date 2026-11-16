@@ -530,6 +530,11 @@ impl AsRef<str> for StreamGenerateContentAlt {
 pub enum CreateApiKeyApiError {
     Default(Error),
 }
+///Typed error responses for `create-audio-translation`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateAudioTranslationApiError {
+    Default(InferenceError),
+}
 ///Typed error responses for `create-chat-completion`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CreateChatCompletionApiError {
@@ -555,6 +560,16 @@ pub enum CreateResponseApiError {
 pub enum CreateServiceApiError {
     Status409(Error),
     Default(Error),
+}
+///Typed error responses for `create-speech`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateSpeechApiError {
+    Default(InferenceError),
+}
+///Typed error responses for `create-transcription`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateTranscriptionApiError {
+    Default(InferenceError),
 }
 ///Typed error responses for `create-video`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
@@ -733,6 +748,582 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(CreateApiKeyApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Translate audio into English
+    ///
+    /// Translates an uploaded audio file into English. Consult the selected model's audio capabilities before calling.
+    ///
+    /// `POST /v1/audio/translations`
+    pub async fn create_audio_translation(
+        &self,
+        request: AudioTranslationRequest,
+    ) -> Result<Transcription, ApiOpError<CreateAudioTranslationApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/translations");
+        let mut req = self.http_client.post(request_url);
+        let mut form = reqwest::multipart::Form::new();
+        let value = &request.file;
+        let mut part = reqwest::multipart::Part::bytes(value.content.to_vec());
+        if let Some(file_name) = &value.file_name {
+            part = part.file_name(file_name.clone());
+        }
+        if let Some(content_type) = value.content_type.as_deref() {
+            part = part.mime_str(content_type).map_err(|error| {
+                HttpError::Config(format!(
+                    "{} `{}`: {}",
+                    "multipart field `file` has an invalid content type", content_type, error
+                ))
+            })?;
+        }
+        form = form.part("file", part);
+        let value = &request.model;
+        form = form.text("model", value.to_string());
+        if let Some(value) = &request.prompt {
+            form = form.text("prompt", value.to_string());
+        }
+        if let Some(value) = &request.response_format {
+            form = form.text("response_format", value.to_string());
+        }
+        if let Some(value) = &request.temperature {
+            form = form.text("temperature", value.to_string());
+        }
+        req = req.multipart(form);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateAudioTranslationApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateAudioTranslationApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Translate audio into English
+    ///
+    /// Translates an uploaded audio file into English. Consult the selected model's audio capabilities before calling.
+    ///
+    /// `POST /v1/audio/translations`
+    ///Select `text/plain` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_audio_translation_text_text_plain(
+        &self,
+        request: AudioTranslationRequest,
+    ) -> Result<String, ApiOpError<CreateAudioTranslationApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/translations");
+        let mut req = self.http_client.post(request_url);
+        let mut form = reqwest::multipart::Form::new();
+        let value = &request.file;
+        let mut part = reqwest::multipart::Part::bytes(value.content.to_vec());
+        if let Some(file_name) = &value.file_name {
+            part = part.file_name(file_name.clone());
+        }
+        if let Some(content_type) = value.content_type.as_deref() {
+            part = part.mime_str(content_type).map_err(|error| {
+                HttpError::Config(format!(
+                    "{} `{}`: {}",
+                    "multipart field `file` has an invalid content type", content_type, error
+                ))
+            })?;
+        }
+        form = form.part("file", part);
+        let value = &request.model;
+        form = form.text("model", value.to_string());
+        if let Some(value) = &request.prompt {
+            form = form.text("prompt", value.to_string());
+        }
+        if let Some(value) = &request.response_format {
+            form = form.text("response_format", value.to_string());
+        }
+        if let Some(value) = &request.temperature {
+            form = form.text("temperature", value.to_string());
+        }
+        req = req.multipart(form);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "text/plain");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "text/plain";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateAudioTranslationApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateAudioTranslationApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            let _ = raw_body;
+            Ok(body_text)
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateAudioTranslationApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateAudioTranslationApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Translate audio into English
+    ///
+    /// Translates an uploaded audio file into English. Consult the selected model's audio capabilities before calling.
+    ///
+    /// `POST /v1/audio/translations`
+    ///Select `text/vtt` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_audio_translation_text_text_vtt(
+        &self,
+        request: AudioTranslationRequest,
+    ) -> Result<String, ApiOpError<CreateAudioTranslationApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/translations");
+        let mut req = self.http_client.post(request_url);
+        let mut form = reqwest::multipart::Form::new();
+        let value = &request.file;
+        let mut part = reqwest::multipart::Part::bytes(value.content.to_vec());
+        if let Some(file_name) = &value.file_name {
+            part = part.file_name(file_name.clone());
+        }
+        if let Some(content_type) = value.content_type.as_deref() {
+            part = part.mime_str(content_type).map_err(|error| {
+                HttpError::Config(format!(
+                    "{} `{}`: {}",
+                    "multipart field `file` has an invalid content type", content_type, error
+                ))
+            })?;
+        }
+        form = form.part("file", part);
+        let value = &request.model;
+        form = form.text("model", value.to_string());
+        if let Some(value) = &request.prompt {
+            form = form.text("prompt", value.to_string());
+        }
+        if let Some(value) = &request.response_format {
+            form = form.text("response_format", value.to_string());
+        }
+        if let Some(value) = &request.temperature {
+            form = form.text("temperature", value.to_string());
+        }
+        req = req.multipart(form);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "text/vtt");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "text/vtt";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateAudioTranslationApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateAudioTranslationApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            let _ = raw_body;
+            Ok(body_text)
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateAudioTranslationApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateAudioTranslationApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -1787,6 +2378,3241 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(CreateServiceApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    pub async fn create_speech(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<bytes::Bytes, ApiOpError<CreateSpeechApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/octet-stream");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `application/octet-stream` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn create_speech_binary_application_octet_stream_stream(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<>,
+        ApiOpError<CreateSpeechApiError>,
+    > {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/octet-stream");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "application/octet-stream";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/aac` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_speech_binary_audio_aac(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<bytes::Bytes, ApiOpError<CreateSpeechApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/aac");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/aac";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/aac` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn create_speech_binary_audio_aac_stream(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<>,
+        ApiOpError<CreateSpeechApiError>,
+    > {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/aac");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/aac";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/flac` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_speech_binary_audio_flac(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<bytes::Bytes, ApiOpError<CreateSpeechApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/flac");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/flac";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/flac` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn create_speech_binary_audio_flac_stream(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<>,
+        ApiOpError<CreateSpeechApiError>,
+    > {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/flac");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/flac";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/mpeg` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_speech_binary_audio_mpeg(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<bytes::Bytes, ApiOpError<CreateSpeechApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/mpeg");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/mpeg";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/mpeg` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn create_speech_binary_audio_mpeg_stream(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<>,
+        ApiOpError<CreateSpeechApiError>,
+    > {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/mpeg");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/mpeg";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/ogg` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_speech_binary_audio_ogg(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<bytes::Bytes, ApiOpError<CreateSpeechApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/ogg");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/ogg";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/ogg` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn create_speech_binary_audio_ogg_stream(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<>,
+        ApiOpError<CreateSpeechApiError>,
+    > {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/ogg");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/ogg";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/wav` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_speech_binary_audio_wav(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<bytes::Bytes, ApiOpError<CreateSpeechApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/wav");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/wav";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `audio/wav` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn create_speech_binary_audio_wav_stream(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<>,
+        ApiOpError<CreateSpeechApiError>,
+    > {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "audio/wav");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "audio/wav";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Generate speech from text
+    ///
+    /// Generates audio from text. Read the selected model's capabilities.audio.voices and capabilities.audio.formats before selecting a voice and format. Null capability values mean unknown, not unrestricted support.
+    ///
+    /// `POST /v1/audio/speech`
+    ///Select `text/event-stream` as raw_event_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_speech_event_stream(
+        &self,
+        request: SpeechRequest,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<>,
+        ApiOpError<CreateSpeechApiError>,
+    > {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/speech");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "text/event-stream");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "text/event-stream";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateSpeechApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateSpeechApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<CreateSpeechApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateSpeechApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Transcribe audio
+    ///
+    /// Transcribes an uploaded audio file. Consult the selected model's audio capabilities for accepted formats and upload limits.
+    ///
+    /// `POST /v1/audio/transcriptions`
+    pub async fn create_transcription(
+        &self,
+        request: TranscriptionRequest,
+    ) -> Result<Transcription, ApiOpError<CreateTranscriptionApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/transcriptions");
+        let mut req = self.http_client.post(request_url);
+        let mut form = reqwest::multipart::Form::new();
+        let value = &request.file;
+        let mut part = reqwest::multipart::Part::bytes(value.content.to_vec());
+        if let Some(file_name) = &value.file_name {
+            part = part.file_name(file_name.clone());
+        }
+        if let Some(content_type) = value.content_type.as_deref() {
+            part = part.mime_str(content_type).map_err(|error| {
+                HttpError::Config(format!(
+                    "{} `{}`: {}",
+                    "multipart field `file` has an invalid content type", content_type, error
+                ))
+            })?;
+        }
+        form = form.part("file", part);
+        if let Some(value) = &request.language {
+            form = form.text("language", value.to_string());
+        }
+        let value = &request.model;
+        form = form.text("model", value.to_string());
+        if let Some(value) = &request.prompt {
+            form = form.text("prompt", value.to_string());
+        }
+        if let Some(value) = &request.response_format {
+            form = form.text("response_format", value.to_string());
+        }
+        if let Some(value) = &request.temperature {
+            form = form.text("temperature", value.to_string());
+        }
+        if let Some(value) = &request.timestamp_granularities {
+            for value in value {
+                form = form.text("timestamp_granularities[]", value.to_string());
+            }
+        }
+        req = req.multipart(form);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateTranscriptionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateTranscriptionApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Transcribe audio
+    ///
+    /// Transcribes an uploaded audio file. Consult the selected model's audio capabilities for accepted formats and upload limits.
+    ///
+    /// `POST /v1/audio/transcriptions`
+    ///Select `text/plain` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_transcription_text_text_plain(
+        &self,
+        request: TranscriptionRequest,
+    ) -> Result<String, ApiOpError<CreateTranscriptionApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/transcriptions");
+        let mut req = self.http_client.post(request_url);
+        let mut form = reqwest::multipart::Form::new();
+        let value = &request.file;
+        let mut part = reqwest::multipart::Part::bytes(value.content.to_vec());
+        if let Some(file_name) = &value.file_name {
+            part = part.file_name(file_name.clone());
+        }
+        if let Some(content_type) = value.content_type.as_deref() {
+            part = part.mime_str(content_type).map_err(|error| {
+                HttpError::Config(format!(
+                    "{} `{}`: {}",
+                    "multipart field `file` has an invalid content type", content_type, error
+                ))
+            })?;
+        }
+        form = form.part("file", part);
+        if let Some(value) = &request.language {
+            form = form.text("language", value.to_string());
+        }
+        let value = &request.model;
+        form = form.text("model", value.to_string());
+        if let Some(value) = &request.prompt {
+            form = form.text("prompt", value.to_string());
+        }
+        if let Some(value) = &request.response_format {
+            form = form.text("response_format", value.to_string());
+        }
+        if let Some(value) = &request.temperature {
+            form = form.text("temperature", value.to_string());
+        }
+        if let Some(value) = &request.timestamp_granularities {
+            for value in value {
+                form = form.text("timestamp_granularities[]", value.to_string());
+            }
+        }
+        req = req.multipart(form);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "text/plain");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "text/plain";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateTranscriptionApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateTranscriptionApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            let _ = raw_body;
+            Ok(body_text)
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateTranscriptionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateTranscriptionApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Transcribe audio
+    ///
+    /// Transcribes an uploaded audio file. Consult the selected model's audio capabilities for accepted formats and upload limits.
+    ///
+    /// `POST /v1/audio/transcriptions`
+    ///Select `text/vtt` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    pub async fn create_transcription_text_text_vtt(
+        &self,
+        request: TranscriptionRequest,
+    ) -> Result<String, ApiOpError<CreateTranscriptionApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/v1/audio/transcriptions");
+        let mut req = self.http_client.post(request_url);
+        let mut form = reqwest::multipart::Form::new();
+        let value = &request.file;
+        let mut part = reqwest::multipart::Part::bytes(value.content.to_vec());
+        if let Some(file_name) = &value.file_name {
+            part = part.file_name(file_name.clone());
+        }
+        if let Some(content_type) = value.content_type.as_deref() {
+            part = part.mime_str(content_type).map_err(|error| {
+                HttpError::Config(format!(
+                    "{} `{}`: {}",
+                    "multipart field `file` has an invalid content type", content_type, error
+                ))
+            })?;
+        }
+        form = form.part("file", part);
+        if let Some(value) = &request.language {
+            form = form.text("language", value.to_string());
+        }
+        let value = &request.model;
+        form = form.text("model", value.to_string());
+        if let Some(value) = &request.prompt {
+            form = form.text("prompt", value.to_string());
+        }
+        if let Some(value) = &request.response_format {
+            form = form.text("response_format", value.to_string());
+        }
+        if let Some(value) = &request.temperature {
+            form = form.text("temperature", value.to_string());
+        }
+        if let Some(value) = &request.timestamp_granularities {
+            for value in value {
+                form = form.text("timestamp_granularities[]", value.to_string());
+            }
+        }
+        req = req.multipart(form);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "text/vtt");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "text/vtt";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body =
+                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<CreateTranscriptionApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(CreateTranscriptionApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            let _ = raw_body;
+            Ok(body_text)
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateTranscriptionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<InferenceError>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateTranscriptionApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

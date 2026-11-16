@@ -324,6 +324,32 @@ impl AsRef<str> for ListElasticIpTrafficUsageInterval {
         self.as_str()
     }
 }
+///Allowed values for the `interval` query parameter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+pub enum ListVirtualPrivateCloudIpv6TrafficUsageInterval {
+    #[serde(rename = "hour")]
+    Hour,
+    #[serde(rename = "day")]
+    Day,
+}
+impl ListVirtualPrivateCloudIpv6TrafficUsageInterval {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Hour => "hour",
+            Self::Day => "day",
+        }
+    }
+}
+impl std::fmt::Display for ListVirtualPrivateCloudIpv6TrafficUsageInterval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ListVirtualPrivateCloudIpv6TrafficUsageInterval {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
 ///Typed error responses for `accept-virtual-private-cloud-peering`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum AcceptVirtualPrivateCloudPeeringApiError {
@@ -333,6 +359,12 @@ pub enum AcceptVirtualPrivateCloudPeeringApiError {
 ///Typed error responses for `associate-elastic-ip`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum AssociateElasticIpApiError {
+    Status409(Error),
+    Default(Error),
+}
+///Typed error responses for `associate-virtual-private-cloud-ipv6-cidr-block`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum AssociateVirtualPrivateCloudIpv6CidrBlockApiError {
     Status409(Error),
     Default(Error),
 }
@@ -552,21 +584,15 @@ pub enum DetachInstanceVolumeApiError {
     Status409(Error),
     Default(Error),
 }
-///Typed error responses for `disable-virtual-private-cloud-ipv6`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum DisableVirtualPrivateCloudIpv6ApiError {
-    Status409(Error),
-    Default(Error),
-}
 ///Typed error responses for `disassociate-elastic-ip`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DisassociateElasticIpApiError {
     Status409(Error),
     Default(Error),
 }
-///Typed error responses for `enable-virtual-private-cloud-ipv6`. One variant per declared non-2xx response.
+///Typed error responses for `disassociate-virtual-private-cloud-ipv6-cidr-block`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum EnableVirtualPrivateCloudIpv6ApiError {
+pub enum DisassociateVirtualPrivateCloudIpv6CidrBlockApiError {
     Status409(Error),
     Default(Error),
 }
@@ -585,11 +611,6 @@ pub enum GetElasticIpApiError {
 pub enum GetElasticIpAssociationApiError {
     Default(Error),
 }
-///Typed error responses for `get-elastic-ip-line`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetElasticIpLineApiError {
-    Default(Error),
-}
 ///Typed error responses for `get-instance`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetInstanceApiError {
@@ -603,6 +624,11 @@ pub enum GetInstanceFamilyApiError {
 ///Typed error responses for `get-instance-type`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetInstanceTypeApiError {
+    Default(Error),
+}
+///Typed error responses for `get-internet-line`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetInternetLineApiError {
     Default(Error),
 }
 ///Typed error responses for `get-launch-template`. One variant per declared non-2xx response.
@@ -705,11 +731,6 @@ pub enum GetVolumeTypeApiError {
 pub enum ListAvailabilityZonesApiError {
     Default(Error),
 }
-///Typed error responses for `list-elastic-ip-lines`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListElasticIpLinesApiError {
-    Default(Error),
-}
 ///Typed error responses for `list-elastic-ip-traffic-usage`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListElasticIpTrafficUsageApiError {
@@ -743,6 +764,11 @@ pub enum ListInstanceVolumesApiError {
 ///Typed error responses for `list-instances`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListInstancesApiError {
+    Default(Error),
+}
+///Typed error responses for `list-internet-lines`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListInternetLinesApiError {
     Default(Error),
 }
 ///Typed error responses for `list-launch-template-versions`. One variant per declared non-2xx response.
@@ -793,6 +819,11 @@ pub enum ListSecurityGroupRulesApiError {
 ///Typed error responses for `list-security-groups`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListSecurityGroupsApiError {
+    Default(Error),
+}
+///Typed error responses for `list-virtual-private-cloud-ipv6-traffic-usage`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListVirtualPrivateCloudIpv6TrafficUsageApiError {
     Default(Error),
 }
 ///Typed error responses for `list-virtual-private-cloud-peerings`. One variant per declared non-2xx response.
@@ -971,7 +1002,7 @@ pub enum UpdateVolumeSnapshotApiError {
 impl HttpClient {
     /// Accept a peering
     ///
-    /// Starts the provisioning of the connectivity; the peering is `provisioning` until it is `active`. It does not change security groups or provide transitive routing. Only the accepter project may decide; the requester project is refused, because a peering would otherwise be accepted by the party who asked for it. The decision is made once: a peering whose `acceptance` is no longer `pending` refuses both methods.
+    /// Starts the provisioning of the connectivity; the peering is `provisioning` until it is `active`. It does not change security groups or provide transitive routing. Only the accepter project may accept or reject the peering. The decision is made once: a peering whose `acceptance` is no longer `pending` refuses both methods.
     ///
     /// `POST /api/v2/virtual-private-cloud-peerings/{virtualPrivateCloudPeeringId}:accept`
     pub async fn accept_virtual_private_cloud_peering(
@@ -1073,7 +1104,7 @@ impl HttpClient {
     ///
     /// The target becomes what the elastic IP points at. Repeating the request for the target it already points at changes nothing; an elastic IP associated with another target is refused with `ELASTIC_IP_ALREADY_ASSOCIATED` (409), and is moved by disassociating it first, so that the moment traffic stops reaching the old target is one the caller chose. The elastic IP is `associating` until the association is confirmed, and with an instance as the target that instance is `associating_elastic_ip` as well, so the instance must not have another operation in progress. An instance still being created after its order was accepted can be the target: the association is accepted and made once the instance is created, and fails with `COMPUTE_RESOURCE_CREATION_FAILED` if the instance's creation fails. An instance whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`.
     ///
-    /// The elastic IP must be in the same region as the target. With an instance as the target, the elastic IP's `bandwidth_mbps` must not exceed the `max_bandwidth_mbps` of that instance's type; a higher limit is refused with `INSTANCE_BANDWIDTH_CEILING`.
+    /// The elastic IP must be in the same region as the target. With an instance as the target, the elastic IP's `bandwidth_mbps` must not exceed the `max_bandwidth_mbps` of that instance's type; a higher limit is refused with `INSTANCE_BANDWIDTH_CEILING`. An elastic IP whose line cannot be used together with the internet lines already in use in the target's virtual private cloud is refused with 409 `INTERNET_LINE_MISMATCH`.
     ///
     /// `POST /api/v2/elastic-ips/{elasticIpId}:associate`
     pub async fn associate_elastic_ip(
@@ -1169,9 +1200,121 @@ impl HttpClient {
             }))
         }
     }
+    /// Associate an IPv6 CIDR block with a virtual private cloud
+    ///
+    /// Associates an IPv6 /56 CIDR block from the selected internet line with the virtual private cloud. Each existing subnet receives a /64, and each existing network interface receives one IPv6 address from its subnet. Subsequent subnets and network interfaces receive their IPv6 configuration automatically. Existing IPv4 addresses and elastic IP associations are preserved. IPv6 addresses cannot be selected, added or removed individually. Security group rules apply to IPv6 traffic; assigning an address does not permit inbound traffic unless the rules allow it.
+    ///
+    /// The guest operating system must support IPv6 automatic configuration to use the assigned address. Address assignment does not indicate that the guest operating system has configured the address.
+    ///
+    /// The addresses of the block reach the internet. Each network interface sends at most its instance type's `max_bandwidth_mbps`, and the bytes the addresses send to the internet are billed by the line's `ipv6_billing`, pay-as-you-go; inbound traffic is not billed. The association therefore goes through a Billing Checkout Session that opens a subscription of its own with one metered item; `billing.price_id` selects its price.
+    ///
+    /// A virtual private cloud has at most one IPv6 CIDR block that is not `failed`; another is refused with 409 `VIRTUAL_PRIVATE_CLOUD_IPV6_CIDR_BLOCK_LIMIT_EXCEEDED`. A line that supplies no IPv6 is refused with 409 `INTERNET_LINE_IPV6_UNAVAILABLE`, and a line that cannot be used together with the elastic IPs associated in the virtual private cloud with 409 `INTERNET_LINE_MISMATCH`.
+    ///
+    /// The block remains `pending` until its order is accepted, then becomes `associating` while the block, subnet ranges and network interface addresses are configured. It becomes `associated` when this configuration is complete; order acceptance alone does not enable internet access. If checkout expires, the order is declined or canceled, or provisioning fails, the block becomes `failed` with a `failure_reason`. A failed association removes any IPv6 configuration introduced by that association, preserves IPv4 configuration and refunds any payment collected for the failed provisioning.
+    ///
+    /// `POST /api/v2/virtual-private-clouds/{virtualPrivateCloudId}:associateIpv6CidrBlock`
+    pub async fn associate_virtual_private_cloud_ipv6_cidr_block(
+        &self,
+        virtual_private_cloud_id: impl AsRef<str>,
+        request: AssociateIpv6CidrBlockRequestBody,
+    ) -> Result<
+        AssociateIpv6CidrBlockResponseBody,
+        ApiOpError<AssociateVirtualPrivateCloudIpv6CidrBlockApiError>,
+    > {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/virtual-private-clouds/{}:associateIpv6CidrBlock",
+                __pct_encode_path_segment(virtual_private_cloud_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 202u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "202",
+                )),
+            }))
+        } else {
+            let typed: Option<AssociateVirtualPrivateCloudIpv6CidrBlockApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed =
+                            Some(AssociateVirtualPrivateCloudIpv6CidrBlockApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(AssociateVirtualPrivateCloudIpv6CidrBlockApiError::Default(
+                            v,
+                        ));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Attach a network interface
     ///
-    /// Returns the network interface; the instance is `attaching_network_interface` and the interface is `attaching` until the attachment is confirmed. The instance has to be running or stopped; one stopped by the legacy stop, which released its host, is refused with 409 `INSTANCE_SHELVED`. A network interface still being created can be attached right away, so an interface can be created and attached in two consecutive requests. The attachment is accepted and goes ahead once the interface is created, and fails with `NETWORK_INTERFACE_UNAVAILABLE` if the interface's creation fails. An instance still being created is refused with `INSTANCE_STILL_PENDING`.
+    /// Returns the network interface; the instance is `attaching_network_interface` and the interface is `attaching` until the attachment is confirmed. The instance has to be running or stopped; if refused with 409 `INSTANCE_SHELVED`, start the instance once first. A network interface still being created can be attached right away, so an interface can be created and attached in two consecutive requests. The attachment is accepted and goes ahead once the interface is created, and fails with `NETWORK_INTERFACE_UNAVAILABLE` if the interface's creation fails. An instance still being created is refused with `INSTANCE_STILL_PENDING`.
     ///
     /// `POST /api/v2/instances/{instanceId}/network-interfaces`
     pub async fn attach_instance_network_interface(
@@ -1367,7 +1510,7 @@ impl HttpClient {
     }
     /// Change the bandwidth of an elastic IP
     ///
-    /// Changes the bandwidth ceiling of this elastic IP. No separate bandwidth resource is created, and the limit applies to inbound and outbound traffic alike. The new value may be any whole number of Mbps within the line's bandwidth range, otherwise the request is refused with `ELASTIC_IP_BANDWIDTH_RANGE`. How the change is paid follows the elastic IP's network item:
+    /// Changes the bandwidth ceiling of this elastic IP, which limits the traffic the address sends. The new value may be any whole number of Mbps within the line's bandwidth range, otherwise the request is refused with `INTERNET_LINE_BANDWIDTH_RANGE`. How the change is paid follows the elastic IP's network item:
     ///
     /// - **Prepaid**: the change goes through a Checkout Session that changes the network item, priced for the rest of its period. It starts once Billing accepts the order; if checkout is not completed, the order is not accepted or the change fails, `bandwidth_mbps` keeps its value and Billing shows the outcome. During a free trial that began with a trial grant, the subscription has to stay within the plans and quantities of the trial offer, otherwise Billing refuses with 422 `BILLING_TRIAL_OFFER_EXCEEDED`.
     /// - **Pay-as-you-go**: there is no checkout. The change starts at once, `checkout_session_id` and `order_id` are null, and the new limit is metered from the instant it is applied; if it fails, the old limit stays in effect and metered. `checkout` and `proration_date` are refused with `ELASTIC_IP_CHECKOUT_UNUSED`.
@@ -1472,9 +1615,9 @@ impl HttpClient {
     }
     /// Change what an elastic IP is charged for
     ///
-    /// Moves a pay-as-you-go elastic IP between charging for its bandwidth and charging for its traffic, within the same network item and without checkout. A prepaid network item has paid for its bandwidth and is refused with `ELASTIC_IP_CHARGE_TYPE_PREPAID`; `traffic` on a line whose `traffic_sale_status` is `off_sale` is refused with `ELASTIC_IP_TRAFFIC_UNAVAILABLE`, the type already in effect with `ELASTIC_IP_CHARGE_TYPE_UNCHANGED`, and a type the currency of the network item does not offer on the line with HTTP 403 `ELASTIC_IP_CHARGE_TYPE_NOT_OFFERED`: prices are set per currency, and a currency without one there does not sell that type.
+    /// Moves a pay-as-you-go elastic IP between charging for its bandwidth and charging for its traffic, within the same network item and without checkout. A prepaid network item has paid for its bandwidth and is refused with `ELASTIC_IP_CHARGE_TYPE_PREPAID`; `traffic` on a line whose `traffic_sale_status` is `off_sale` is refused with `INTERNET_LINE_TRAFFIC_UNAVAILABLE`, the type already in effect with `ELASTIC_IP_CHARGE_TYPE_UNCHANGED`, and a type the currency of the network item does not offer on the line with HTTP 403 `ELASTIC_IP_CHARGE_TYPE_NOT_OFFERED`: prices are set per currency, and a currency without one there does not sell that type.
     ///
-    /// The change takes effect at the instant it is applied: bandwidth stops being metered then and traffic starts being, or the other way round. Traffic is counted in windows, and a window is charged the way the elastic IP was charged for most of it, so a report that arrives late is still charged as it was at the time and a window the change falls in is never charged both ways. `bandwidth_mbps` stays the ceiling either way. The elastic IP is `updating_internet_charge_type` until the change is applied.
+    /// The change takes effect at the instant it is applied: bandwidth stops being metered then and traffic starts being, or the other way round. `bandwidth_mbps` stays the ceiling either way. The elastic IP is `updating_internet_charge_type` until the change is applied.
     ///
     /// `POST /api/v2/elastic-ips/{elasticIpId}:changeChargeType`
     pub async fn change_elastic_ip_charge_type(
@@ -1572,15 +1715,15 @@ impl HttpClient {
     }
     /// Allocate an elastic IP
     ///
-    /// Select an elastic IP line. The elastic IP is bought through a Billing Checkout Session, and no address is allocated before its order is accepted.
+    /// Select an internet line. The elastic IP is bought through a Billing Checkout Session, and no address is allocated before its order is accepted.
     ///
-    /// The line has to have an address left, counted before anything is ordered: refused with 409 `ELASTIC_IP_LINE_EXHAUSTED` when every address it sells is held or already promised to a purchase waiting for its order. Two purchases checked at the same moment can both pass on the last address; the later one ends `failed` with `provisioning_failed` and its charge is refunded.
+    /// The line has to have an address left, counted before anything is ordered: refused with 409 `INTERNET_LINE_EXHAUSTED` when every address it sells is held or already promised to a purchase waiting for its order. If no address remains when the order is accepted, the elastic IP ends `failed` with `provisioning_failed` and its charge is refunded.
     ///
     /// Returns the elastic IP as `pending` with its Checkout Session; `address` is null until the address is allocated after the order is accepted. A requested `address` is not held while pending; if it is no longer available then, the elastic IP ends `failed` with `provisioning_failed` and its charge is refunded.
     ///
-    /// IPv6 is not requested through this endpoint. IPv6 addresses are assigned to instances by the virtual private cloud; enable IPv6 on that network instead.
+    /// IPv6 is not requested through this endpoint: instances receive IPv6 addresses from their virtual private cloud once an IPv6 CIDR block is associated with it through `associate-virtual-private-cloud-ipv6-cidr-block`.
     ///
-    /// Allocation does not select or create a virtual private cloud. A later association selects an assigned network-interface address; Compute then establishes the required network connectivity.
+    /// Allocation does not select a virtual private cloud; an association later points the address at a private address of a network interface.
     ///
     /// An elastic IP bought on its own has a Billing subscription of its own, with two items: the address, always pay-as-you-go and charged while the address is not associated with anything, and the network, on the chosen terms.
     ///
@@ -1680,7 +1823,7 @@ impl HttpClient {
     ///
     /// Creation starts once Billing accepts the order: the instance stays `pending` while it is created, then becomes `running`. With automatic checkout, insufficient funds refuse the request and nothing is created. With deferred checkout, the instances stay `pending` until the customer completes checkout in Billing and the order is paid; an expired Checkout Session, or a canceled or expired order, leaves them `failed` with `checkout_expired`, `order_canceled` or `order_expired`. Do not submit another creation request after paying. After an uncertain response, look the Checkout Session up in Billing before submitting again.
     ///
-    /// The instances are created in the availability zone of their instance type, and the volumes bought with them have to be of volume types of that zone (422 `VOLUME_TYPE_OTHER_AVAILABILITY_ZONE`). The types have to have room for all of them, checked before anything is ordered: refused with 409 `INSTANCE_TYPE_SOLD_OUT` or `VOLUME_TYPE_SOLD_OUT` when a type takes no new orders for now, `INSTANCE_TYPE_CAPACITY_REACHED` or `VOLUME_TYPE_CAPACITY_REACHED` when what is sold of it is used up, `INSTANCE_TYPE_NO_HOST_ROOM` when no host of the zone can take the machine, `VOLUME_TYPE_NO_POOL_ROOM` when the storage of the zone cannot take the boot volume, and `ELASTIC_IP_LINE_EXHAUSTED` when the line of the new elastic IPs has fewer addresses left than instances. Two orders placed at the same moment can both pass; an instance that finds a type full when its order is accepted is not created and is refunded, ending `failed` with `provisioning_failed`.
+    /// The instances are created in the availability zone of their instance type, and the volumes bought with them have to be of volume types of that zone (422 `VOLUME_TYPE_OTHER_AVAILABILITY_ZONE`). The types have to have room for all of them, checked before anything is ordered: refused with 409 `INSTANCE_TYPE_SOLD_OUT` or `VOLUME_TYPE_SOLD_OUT` when a type takes no new orders for now, `INSTANCE_TYPE_CAPACITY_REACHED` or `VOLUME_TYPE_CAPACITY_REACHED` when what is sold of it is used up, `INSTANCE_TYPE_NO_HOST_ROOM` when no host of the zone can take the machine, `VOLUME_TYPE_NO_POOL_ROOM` when the storage of the zone cannot take the boot volume, and `INTERNET_LINE_EXHAUSTED` when the line of the new elastic IPs has fewer addresses left than instances. If capacity is full when the order is accepted, the instance is not created, ends `failed` with `provisioning_failed`, and its charge is refunded.
     ///
     /// Choose an image or existing volume through boot_volume, and exactly one of network_interface_id or subnet_id. Existing network interfaces, boot volumes or elastic IPs require count=1. They are not held while the instance is pending; if one is no longer usable when the order is accepted, the instance ends `failed` with `provisioning_failed`. Any of them, and a private image, may still be being created after its own order was accepted: the instance is created once they exist, and if one of them is not created, the instance ends `failed` with `provisioning_failed` and its part of the order is refunded. One whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`. Image boots require boot_volume; existing volumes retain their own subscription. Each instance gets its own Billing subscription, with the boot volume, data volumes and elastic IP bought with it as items of it: they renew, renew automatically and expire with the machine as a whole, while each can still be changed or released alone. `checkout.auto_renew` turns automatic renewal on for each machine.
     ///
@@ -2726,7 +2869,7 @@ impl HttpClient {
     }
     /// Create a subnet
     ///
-    /// The IPv4 CIDR must fall inside the virtual private cloud's CIDR and must not overlap another subnet of it; to find a free one, read the virtual private cloud's `free-subnet-cidr`. In a virtual private cloud with IPv6 enabled the subnet also takes the lowest free /64 of the cloud's /56, refused with 409 `VIRTUAL_PRIVATE_CLOUD_SUBNET_IPV6_CIDR_EXHAUSTED` when none is left.
+    /// The IPv4 CIDR must fall inside the virtual private cloud's CIDR and must not overlap another subnet of it; to find a free one, read the virtual private cloud's `free-subnet-cidr`. In a virtual private cloud with an associated IPv6 CIDR block the subnet also takes the lowest free /64 of the block, refused with 409 `VIRTUAL_PRIVATE_CLOUD_SUBNET_IPV6_CIDR_EXHAUSTED` when none is left.
     ///
     /// `POST /api/v2/virtual-private-clouds/{virtualPrivateCloudId}/subnets`
     pub async fn create_virtual_private_cloud_subnet(
@@ -2817,7 +2960,7 @@ impl HttpClient {
     ///
     /// The volume is created in the availability zone of its volume type, and only an instance in the same zone can attach it.
     ///
-    /// The type has to have room for it, checked before anything is ordered: refused with 409 `VOLUME_TYPE_SOLD_OUT` when the type takes no new volumes for now, `VOLUME_TYPE_CAPACITY_REACHED` when what is sold of it is used up, and `VOLUME_TYPE_NO_POOL_ROOM` when the storage of its zone cannot take the volume. Two orders placed at the same moment can both pass; the one that finds the type full when its order is accepted is not created and is refunded, ending `failed` with `provisioning_failed`.
+    /// The type has to have room for it, checked before anything is ordered: refused with 409 `VOLUME_TYPE_SOLD_OUT` when the type takes no new volumes for now, `VOLUME_TYPE_CAPACITY_REACHED` when what is sold of it is used up, and `VOLUME_TYPE_NO_POOL_ROOM` when the storage of its zone cannot take the volume. If capacity is full when the order is accepted, the volume is not created, ends `failed` with `provisioning_failed`, and its charge is refunded.
     ///
     /// The volume is empty, or is restored from exactly one source: `volume_snapshot_id` or `volume_backup_id`. Giving both is refused with 422 `VOLUME_SOURCE_CONFLICT`. A restore is a purchase of a **new** volume; the source volume is unaffected and need not still exist. The snapshot or backup may still be being created after its order was accepted: the volume is created from it once it is ready, and is refunded if its creation fails. One whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`.
     ///
@@ -3108,7 +3251,7 @@ impl HttpClient {
     }
     /// Release an elastic IP
     ///
-    /// Releases the elastic IP after dissociating it. The elastic IP is `deleting` until cleanup is confirmed; the address then immediately returns to available inventory, with no cooldown period. Deleting the association or replacing it alone does not release the address.
+    /// Releases the elastic IP after dissociating it. The elastic IP is `deleting` until the release is complete. Deleting the association or replacing it alone does not release the address.
     ///
     /// Refused with `COMPUTE_PURCHASE_PENDING` while the purchase that created it still awaits checkout or payment; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead.
     ///
@@ -3570,7 +3713,7 @@ impl HttpClient {
     }
     /// Remove a secondary IPv4 address
     ///
-    /// Removes a secondary IPv4 address and answers 202 with the network interface `removing_address` until it is gone. The primary address goes only with the network interface (409 `NETWORK_INTERFACE_ADDRESS_PRIMARY`), and an address an elastic IP is associated with is refused until it is disassociated (409 `NETWORK_INTERFACE_ADDRESS_ASSOCIATED`).
+    /// Removes a secondary IPv4 address and answers 202 with the network interface `removing_address` until it is gone. The primary address goes only with the network interface (409 `NETWORK_INTERFACE_ADDRESS_PRIMARY`), and an address an elastic IP is associated with is refused until it is disassociated (409 `NETWORK_INTERFACE_ADDRESS_ASSOCIATED`). This operation does not remove IPv6 addresses; an IPv6 address is rejected with 409 `NETWORK_INTERFACE_ADDRESS_PRIMARY`. IPv6 addresses are removed when their virtual private cloud CIDR block is disassociated or their network interface is deleted.
     ///
     /// `DELETE /api/v2/network-interfaces/{networkInterfaceId}/addresses/{addressId}`
     pub async fn delete_network_interface_address(
@@ -3664,7 +3807,7 @@ impl HttpClient {
     ///
     /// Quota capacity and storage metering are released only after cleanup is confirmed.
     ///
-    /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation. Cleanup must be confirmed before metering is stopped; unknown cleanup is not proof of release.
+    /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation.
     ///
     /// While subscription items pay for the private image (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the private image working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
@@ -3918,7 +4061,7 @@ impl HttpClient {
     }
     /// Release a virtual private cloud
     ///
-    /// Deletion is rejected while instances or network interfaces remain in the network. Its subnets, routes, security groups and IPv6 configuration are removed with it.
+    /// Deletion is rejected while instances or network interfaces remain in the network. Its subnets, routes, security groups and IPv6 CIDR blocks are removed with it, and the traffic of its IPv6 CIDR blocks stops being billed.
     ///
     /// `DELETE /api/v2/virtual-private-clouds/{virtualPrivateCloudId}`
     pub async fn delete_virtual_private_cloud(
@@ -4371,7 +4514,7 @@ impl HttpClient {
     ///
     /// Quota capacity and storage metering are released only after cleanup is confirmed.
     ///
-    /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation. Cleanup must be confirmed before metering is stopped; unknown cleanup is not proof of release.
+    /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation.
     ///
     /// While subscription items pay for the volume backup (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the volume backup working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
@@ -4479,7 +4622,7 @@ impl HttpClient {
     ///
     /// Deletes this resource. Quota capacity and storage metering are released only after cleanup is confirmed.
     ///
-    /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation. Cleanup must be confirmed before metering is stopped; unknown cleanup is not proof of release.
+    /// A resource whose purchase still awaits checkout or payment is refused with `COMPUTE_PURCHASE_PENDING`; `meta.checkout_session_id` names its Checkout Session and `meta.order_id` its order once checkout created one. Expire the session or cancel the order in Billing instead. A subscribed resource is released through its subscription cancellation.
     ///
     /// While subscription items pay for the snapshot (those in its `release_set`), deleting it cancels them rather than being refused: Compute creates one Billing cancellation for the whole set and answers with it in `cancellation`. `cancellation_mode` chooses when: `immediate` cancels the set now, a licensed item being refunded under its terms, and `period_end` keeps the snapshot working until `scheduled_at` and releases it then. Asking again while that cancellation is pending answers with it again, whatever mode is asked for.
     ///
@@ -4585,7 +4728,7 @@ impl HttpClient {
     }
     /// Detach a network interface
     ///
-    /// The primary network interface cannot be detached; the instance would lose its network address. The instance has to be running or stopped; one stopped by the legacy stop, which released its host, is refused with 409 `INSTANCE_SHELVED`.
+    /// The primary network interface cannot be detached; the instance would lose its network address. The instance has to be running or stopped; if refused with 409 `INSTANCE_SHELVED`, start the instance once first.
     ///
     /// Returns the network interface; the instance is `detaching_network_interface` and the interface is `detaching` until it is detached.
     ///
@@ -4781,101 +4924,6 @@ impl HttpClient {
             }))
         }
     }
-    /// Disable IPv6 on a virtual private cloud
-    ///
-    /// Removes the IPv6 of every subnet and gives the /56 back. Refused while a network interface remains in the virtual private cloud, since its IPv6 address would stop working with nothing reporting it.
-    ///
-    /// `POST /api/v2/virtual-private-clouds/{virtualPrivateCloudId}:disableIpv6`
-    pub async fn disable_virtual_private_cloud_ipv6(
-        &self,
-        virtual_private_cloud_id: impl AsRef<str>,
-    ) -> Result<VirtualPrivateCloud, ApiOpError<DisableVirtualPrivateCloudIpv6ApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v2/virtual-private-clouds/{}:disableIpv6",
-                __pct_encode_path_segment(virtual_private_cloud_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.post(request_url);
-        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 202u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "202",
-                )),
-            }))
-        } else {
-            let typed: Option<DisableVirtualPrivateCloudIpv6ApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                409u16 => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DisableVirtualPrivateCloudIpv6ApiError::Status409(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DisableVirtualPrivateCloudIpv6ApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Remove the association of an elastic IP
     ///
     /// The address remains held by the project and simply no longer points at any network interface. The elastic IP is `disassociating` until the change is confirmed, and an instance whose primary interface it pointed at is `disassociating_elastic_ip`. Removing an association that does not exist is refused with 404 `ELASTIC_IP_NOT_ASSOCIATED`.
@@ -4971,27 +5019,33 @@ impl HttpClient {
             }))
         }
     }
-    /// Enable IPv6 on a virtual private cloud
+    /// Disassociate an IPv6 CIDR block from a virtual private cloud
     ///
-    /// Gives the virtual private cloud a /56 that is routed to it, and every subnet of it a /64 of that /56; a subnet created afterwards takes its /64 at creation. It requires no elastic IP or NAT gateway: IPv6 is routed, not translated. A network interface created afterwards receives an address of its subnet's /64; addresses cannot be requested or released individually, and security groups apply to them as to IPv4. An interface created before IPv6 was enabled keeps only its IPv4 address.
+    /// Disassociates the block and cancels its traffic subscription in Billing. This operation removes all network interface IPv6 addresses and subnet IPv6 ranges allocated from the block, including those on attached interfaces. Existing IPv6 connections are interrupted. IPv4 addresses, elastic IP associations, network interfaces and instances are preserved. Network interfaces holding addresses from the block do not prevent disassociation.
     ///
-    /// Enabling IPv6 that is already enabled answers with the virtual private cloud as it is.
+    /// The block remains `disassociating` until its IPv6 configuration has been removed, then is no longer listed. Outbound internet traffic remains billable until internet access is disabled, not merely until the request is accepted. Usage incurred before that point may be billed later. A `failed` block is removed immediately.
     ///
-    /// `POST /api/v2/virtual-private-clouds/{virtualPrivateCloudId}:enableIpv6`
-    pub async fn enable_virtual_private_cloud_ipv6(
+    /// A `pending` block is rejected with 409 `COMPUTE_PURCHASE_PENDING`; expire its Checkout Session or cancel its order in Billing instead. An `associating` block is rejected with 409 `COMPUTE_RESOURCE_BUSY`. Repeating this request for a `disassociating` block returns its current state without starting another disassociation.
+    ///
+    /// `POST /api/v2/virtual-private-clouds/{virtualPrivateCloudId}:disassociateIpv6CidrBlock`
+    pub async fn disassociate_virtual_private_cloud_ipv6_cidr_block(
         &self,
         virtual_private_cloud_id: impl AsRef<str>,
-    ) -> Result<VirtualPrivateCloud, ApiOpError<EnableVirtualPrivateCloudIpv6ApiError>> {
+        request: DisassociateIpv6CidrBlockRequestBody,
+    ) -> Result<VirtualPrivateCloud, ApiOpError<DisassociateVirtualPrivateCloudIpv6CidrBlockApiError>>
+    {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v2/virtual-private-clouds/{}:enableIpv6",
+                "/api/v2/virtual-private-clouds/{}:disassociateIpv6CidrBlock",
                 __pct_encode_path_segment(virtual_private_cloud_id.as_ref())
             )
         );
         let mut req = self.http_client.post(request_url);
-        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5034,12 +5088,14 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<EnableVirtualPrivateCloudIpv6ApiError>;
+            let typed: Option<DisassociateVirtualPrivateCloudIpv6CidrBlockApiError>;
             let parse_error: Option<String>;
             match status_code {
                 409u16 => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(EnableVirtualPrivateCloudIpv6ApiError::Status409(v));
+                        typed = Some(
+                            DisassociateVirtualPrivateCloudIpv6CidrBlockApiError::Status409(v),
+                        );
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5049,7 +5105,8 @@ impl HttpClient {
                 },
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(EnableVirtualPrivateCloudIpv6ApiError::Default(v));
+                        typed =
+                            Some(DisassociateVirtualPrivateCloudIpv6CidrBlockApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5236,7 +5293,7 @@ impl HttpClient {
     }
     /// Retrieve the association of an elastic IP
     ///
-    /// The private address of a network interface this elastic IP currently points at. Returns the stored state; it does not query the cloud.
+    /// The private address of a network interface this elastic IP currently points at.
     ///
     /// An elastic IP that points at nothing has no association: the request is refused with 404 `ELASTIC_IP_NOT_ASSOCIATED`.
     ///
@@ -5320,93 +5377,9 @@ impl HttpClient {
             }))
         }
     }
-    /// Get an elastic IP line
-    ///
-    /// Includes lines off sale that existing elastic IPs are on. No inventory or gateway facts are returned.
-    ///
-    /// `GET /api/v2/elastic-ip-lines/{elasticIpLineId}`
-    pub async fn get_elastic_ip_line(
-        &self,
-        elastic_ip_line_id: impl AsRef<str>,
-    ) -> Result<ElasticIpLine, ApiOpError<GetElasticIpLineApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v2/elastic-ip-lines/{}",
-                __pct_encode_path_segment(elastic_ip_line_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetElasticIpLineApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetElasticIpLineApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Retrieve an instance
     ///
-    /// Returns the stored state of the instance; it does not query the cloud. Use it to poll creation progress.
+    /// Returns the instance. Use it to poll creation progress.
     ///
     /// `GET /api/v2/instances/{instanceId}`
     pub async fn get_instance(
@@ -5574,7 +5547,7 @@ impl HttpClient {
     }
     /// Get an instance type
     ///
-    /// Returns an instance type on sale or sold out, under the same access rules as listing. Off-sale, retired or absent types return 404.
+    /// Returns an instance type, including retired types (`sale_status` is `off_sale`) that existing instances still run. Retired types cannot be ordered for new instances or resizes.
     ///
     /// `GET /api/v2/instance-types/{instanceTypeId}`
     pub async fn get_instance_type(
@@ -5638,6 +5611,90 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetInstanceTypeApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get an internet line
+    ///
+    /// Includes lines off sale that existing elastic IPs or virtual private clouds are on.
+    ///
+    /// `GET /api/v2/internet-lines/{internetLineId}`
+    pub async fn get_internet_line(
+        &self,
+        internet_line_id: impl AsRef<str>,
+    ) -> Result<InternetLine, ApiOpError<GetInternetLineApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/internet-lines/{}",
+                __pct_encode_path_segment(internet_line_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetInternetLineApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetInternetLineApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5824,7 +5881,7 @@ impl HttpClient {
     }
     /// Retrieve a network interface
     ///
-    /// Returns the stored state of the network interface; it does not query the cloud.
+    /// Returns the network interface.
     ///
     /// `GET /api/v2/network-interfaces/{networkInterfaceId}`
     pub async fn get_network_interface(
@@ -5908,7 +5965,7 @@ impl HttpClient {
     }
     /// Retrieve an operation log entry
     ///
-    /// Returns one entry of the project's operation log. Like the listing, it never discloses the individual operator of an operation performed by the platform.
+    /// Returns one entry of the project's operation log.
     ///
     /// `GET /api/v2/operation-logs/{operationLogId}`
     pub async fn get_operation_log(
@@ -5992,7 +6049,7 @@ impl HttpClient {
     }
     /// Retrieve a private image
     ///
-    /// Returns a private image of this project; any other image, public images included, is reported as not found. Use this endpoint to poll capture progress. When `status` is `failed`, `failure` describes the outcome.
+    /// Returns a private image of this project; any other image, public images included, is reported as not found. Use this endpoint to poll capture progress. When `status` is `failed`, `failure_reason` describes the outcome.
     ///
     /// `GET /api/v2/private-images/{privateImageId}`
     pub async fn get_private_image(
@@ -6924,7 +6981,7 @@ impl HttpClient {
     }
     /// Retrieve a volume
     ///
-    /// Returns the stored state of the volume; it does not query the cloud.
+    /// Returns the volume.
     ///
     /// `GET /api/v2/volumes/{volumeId}`
     pub async fn get_volume(
@@ -7008,7 +7065,7 @@ impl HttpClient {
     }
     /// Retrieve a volume backup
     ///
-    /// Returns the stored state of the backup; it does not query the cloud. Use it to poll creation progress.
+    /// Returns the backup. Use it to poll creation progress.
     ///
     /// `GET /api/v2/volume-backups/{volumeBackupId}`
     pub async fn get_volume_backup(
@@ -7350,109 +7407,11 @@ impl HttpClient {
             }))
         }
     }
-    /// List and search elastic IP lines
-    ///
-    /// Lists the lines on sale. A line is the network an elastic IP is bought on, with the bandwidth that can be chosen and the two Billing Plans its elastic IPs are paid under. Region is optional. Prices, commercial terms and checkout are read directly from Billing. `q` searches the names and descriptions of the lines on sale; filters combine with AND, and pagination is independent of them.
-    ///
-    /// `GET /api/v2/elastic-ip-lines`
-    pub async fn list_elastic_ip_lines(
-        &self,
-        region_id: Option<impl AsRef<str>>,
-        q: Option<impl AsRef<str>>,
-        page: Option<i64>,
-        page_size: Option<i64>,
-    ) -> Result<ElasticIpLineListResponseBody, ApiOpError<ListElasticIpLinesApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v2/elastic-ip-lines");
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = region_id {
-                query_params.push(("region_id".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = q {
-                query_params.push(("q".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = page {
-                query_params.push(("page".to_string(), v.to_string()));
-            }
-            if let Some(v) = page_size {
-                query_params.push(("page_size".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListElasticIpLinesApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListElasticIpLinesApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// List the traffic an elastic IP sent
     ///
-    /// The bytes and packets the elastic IP's address sent upstream while the elastic IP held it, summed by hour or by day in UTC over `[start_time, end_time)`. Only intervals with traffic are listed. Inbound traffic is not measured.
+    /// The bytes and packets the elastic IP's address sent to the internet while the elastic IP held it, summed by hour or by day in UTC over `[start_time, end_time)`. Only intervals with traffic are listed. Inbound traffic is not measured.
     ///
-    /// Traffic is reported by the region's collectors and appears some minutes after it is sent. Every elastic IP's traffic is shown, whatever it is billed by; only one billed by traffic is charged for it. A span longer than 31 days by hour, or 366 days by day, is refused with `TRAFFIC_USAGE_QUERY_INVALID`.
+    /// Traffic appears some minutes after it is sent. Every elastic IP's traffic is shown, whatever it is billed by; only one billed by traffic is charged for it. A span longer than 31 days by hour, or 366 days by day, is refused with `TRAFFIC_USAGE_QUERY_INVALID`.
     ///
     /// `GET /api/v2/elastic-ips/{elasticIpId}/traffic-usage`
     pub async fn list_elastic_ip_traffic_usage(
@@ -8035,7 +7994,7 @@ impl HttpClient {
     }
     /// List instances
     ///
-    /// Every instance in the project, newest first, in their stored state.
+    /// Every instance in the project, newest first.
     ///
     /// `GET /api/v2/instances`
     pub async fn list_instances(
@@ -8109,6 +8068,104 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListInstancesApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List and search internet lines
+    ///
+    /// Lists the lines on sale. A line is the network that elastic IPs and the IPv6 CIDR blocks of virtual private clouds are bought on, with the bandwidth that can be chosen and the Billing Plans they are paid under. Region is optional. Prices, commercial terms and checkout are read directly from Billing. `q` searches the names and descriptions of the lines on sale; filters combine with AND, and pagination is independent of them.
+    ///
+    /// `GET /api/v2/internet-lines`
+    pub async fn list_internet_lines(
+        &self,
+        region_id: Option<impl AsRef<str>>,
+        q: Option<impl AsRef<str>>,
+        page: Option<i64>,
+        page_size: Option<i64>,
+    ) -> Result<InternetLineListResponseBody, ApiOpError<ListInternetLinesApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v2/internet-lines");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = region_id {
+                query_params.push(("region_id".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = q {
+                query_params.push(("q".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = page {
+                query_params.push(("page".to_string(), v.to_string()));
+            }
+            if let Some(v) = page_size {
+                query_params.push(("page_size".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListInternetLinesApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListInternetLinesApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -8410,7 +8467,7 @@ impl HttpClient {
     ///
     /// Records every write operation in the project: who performed it, when, on what, and its outcome. Read operations are not recorded.
     ///
-    /// **Operations performed by the platform are included, but the individual operator is not disclosed** and `actor_type` is `platform`. Suspension for non-payment and bans for abuse are examples: the time at which an instance was stopped by the platform is needed, whereas the operator is internal information.
+    /// Operations performed by the platform have `actor_type` set to `platform`, with `user_id` and `user_name` set to null.
     ///
     /// Fields such as passwords are replaced with a placeholder as the record is written and never appear in `payload`.
     ///
@@ -9083,6 +9140,117 @@ impl HttpClient {
             }))
         }
     }
+    /// List the IPv6 traffic a virtual private cloud sent
+    ///
+    /// The bytes and packets the IPv6 addresses of the virtual private cloud sent to the internet, summed by hour or by day in UTC over `[start_time, end_time)`. Only intervals with traffic are listed. Inbound traffic is not measured.
+    ///
+    /// Traffic appears some minutes after it is sent. A span longer than 31 days by hour, or 366 days by day, is refused with `TRAFFIC_USAGE_QUERY_INVALID`.
+    ///
+    /// `GET /api/v2/virtual-private-clouds/{virtualPrivateCloudId}/ipv6-traffic-usage`
+    pub async fn list_virtual_private_cloud_ipv6_traffic_usage(
+        &self,
+        virtual_private_cloud_id: impl AsRef<str>,
+        interval: Option<ListVirtualPrivateCloudIpv6TrafficUsageInterval>,
+        start_time: impl AsRef<str>,
+        end_time: impl AsRef<str>,
+        page: Option<i64>,
+        page_size: Option<i64>,
+    ) -> Result<
+        TrafficUsageListResponseBody,
+        ApiOpError<ListVirtualPrivateCloudIpv6TrafficUsageApiError>,
+    > {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/virtual-private-clouds/{}/ipv6-traffic-usage",
+                __pct_encode_path_segment(virtual_private_cloud_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = interval {
+                query_params.push(("interval".to_string(), v.to_string()));
+            }
+            query_params.push(("start_time".to_string(), start_time.as_ref().to_string()));
+            query_params.push(("end_time".to_string(), end_time.as_ref().to_string()));
+            if let Some(v) = page {
+                query_params.push(("page".to_string(), v.to_string()));
+            }
+            if let Some(v) = page_size {
+                query_params.push(("page_size".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListVirtualPrivateCloudIpv6TrafficUsageApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListVirtualPrivateCloudIpv6TrafficUsageApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// List peerings
     ///
     /// `GET /api/v2/virtual-private-cloud-peerings`
@@ -9280,7 +9448,7 @@ impl HttpClient {
     }
     /// List subnets
     ///
-    /// The subnets of the virtual private cloud, or with `-` those of every virtual private cloud of the project. A subnet is dual-stack once IPv6 is enabled on its virtual private cloud, which gives every subnet a /64 of the cloud's /56.
+    /// The subnets of the virtual private cloud, or with `-` those of every virtual private cloud of the project. A subnet is dual-stack once an IPv6 CIDR block is associated with its virtual private cloud, which gives every subnet a /64 of the block.
     ///
     /// `GET /api/v2/virtual-private-clouds/{virtualPrivateCloudId}/subnets`
     pub async fn list_virtual_private_cloud_subnets(
@@ -9962,7 +10130,7 @@ impl HttpClient {
     ///
     /// **All data on the boot volume is erased and cannot be recovered.** Attached data volumes are unaffected.
     ///
-    /// The instance has to be running or stopped. An instance stopped by the legacy stop, which released its host, is refused with 409 `INSTANCE_SHELVED`; start it once first, which works even when its operating system no longer boots.
+    /// The instance has to be running or stopped. If refused with 409 `INSTANCE_SHELVED`, start the instance once first, which works even when its operating system no longer boots.
     ///
     /// The image this instance already runs is accepted even after the platform has withdrawn it, since rebuilding is the only way back into an instance broken from the inside. Any *other* withdrawn image is rejected with `IMAGE_RETIRED`, which is a change of image and therefore a new order.
     ///
@@ -10066,7 +10234,7 @@ impl HttpClient {
     }
     /// Reject a peering
     ///
-    /// Ends the peering with its `acceptance` `rejected` and its `status` `deleted`; no connectivity is ever created. Only the accepter project may decide; the requester project is refused, because a peering would otherwise be accepted by the party who asked for it. The decision is made once: a peering whose `acceptance` is no longer `pending` refuses both methods.
+    /// Ends the peering with its `acceptance` `rejected` and its `status` `deleted`; no connectivity is ever created. Only the accepter project may accept or reject the peering. The decision is made once: a peering whose `acceptance` is no longer `pending` refuses both methods.
     ///
     /// `POST /api/v2/virtual-private-cloud-peerings/{virtualPrivateCloudPeeringId}:reject`
     pub async fn reject_virtual_private_cloud_peering(
@@ -10467,7 +10635,7 @@ impl HttpClient {
     }
     /// Resize an instance
     ///
-    /// Changes the instance's type **cold**, through a change of its subscription item purchased in Billing: the instance has to be stopped, and is refused with 409 `INSTANCE_RESIZE_REQUIRES_STOP` otherwise. Its operating system is not booted for the change, and it is still stopped once the change is applied; start it when you are ready. An instance stopped by the legacy stop, which released its host, is refused with 409 `INSTANCE_SHELVED`; start it once and stop it again. A target type that cannot hold what the instance already uses is refused before anything is ordered: fewer network interfaces than are attached with 409 `INSTANCE_RESIZE_NETWORK_INTERFACES_EXCEED`, fewer elastic IPs than are associated with 409 `INSTANCE_RESIZE_ELASTIC_IPS_EXCEED`, and less purchasable bandwidth than an associated elastic IP has with 409 `INSTANCE_BANDWIDTH_CEILING` naming it in `meta.elastic_ip_id`. The request returns 202 with the instance and the Checkout Session for the change, including for metered terms. The instance keeps its usage type and period, priced with the target type's matching option; a target type without that option is refused with 409 `BILLING_OPTION_UNAVAILABLE`. During a free trial that began with a trial grant, the subscription has to stay within the plans and quantities of the trial offer, otherwise Billing refuses with 422 `BILLING_TRIAL_OFFER_EXCEEDED`. The resize starts once Billing accepts the order. Do not submit the change again after paying. After an uncertain response, look the Checkout Session up in Billing before submitting again.
+    /// Changes the instance's type **cold**, through a change of its subscription item purchased in Billing: the instance has to be stopped, and is refused with 409 `INSTANCE_RESIZE_REQUIRES_STOP` otherwise. Its operating system is not booted for the change, and it is still stopped once the change is applied; start it when you are ready. If refused with 409 `INSTANCE_SHELVED`, start the instance once and stop it again. A target type that cannot hold what the instance already uses is refused before anything is ordered: fewer network interfaces than are attached with 409 `INSTANCE_RESIZE_NETWORK_INTERFACES_EXCEED`, fewer elastic IPs than are associated with 409 `INSTANCE_RESIZE_ELASTIC_IPS_EXCEED`, and less purchasable bandwidth than an associated elastic IP has with 409 `INSTANCE_BANDWIDTH_CEILING` naming it in `meta.elastic_ip_id`. The request returns 202 with the instance and the Checkout Session for the change, including for metered terms. The instance keeps its usage type and period, priced with the target type's matching option; a target type without that option is refused with 409 `BILLING_OPTION_UNAVAILABLE`. During a free trial that began with a trial grant, the subscription has to stay within the plans and quantities of the trial offer, otherwise Billing refuses with 422 `BILLING_TRIAL_OFFER_EXCEEDED`. The resize starts once Billing accepts the order. Do not submit the change again after paying. After an uncertain response, look the Checkout Session up in Billing before submitting again.
     ///
     /// The instance is `resizing` until the resize is applied, its Checkout Session expires or its order is canceled, so other operations and a second resize are refused with `COMPUTE_RESOURCE_BUSY` meanwhile. It keeps its current type until the resize is applied; the new type takes effect, and is billed from then on, when `instance_type_id` shows it. If checkout is not completed, the order is not accepted or the resize fails, the instance keeps its current type and Billing shows the outcome. A completed resize is final and cannot be reverted; to return to the previous type, submit another resize.
     ///
@@ -10667,7 +10835,7 @@ impl HttpClient {
     }
     /// Change the type of a volume
     ///
-    /// Moves the volume to another volume type at the same capacity, priced as that type, through a change of its subscription item purchased in Billing, and returns 202 with the volume and the Checkout Session for the change, which keeps the volume's usage type and period. The volume has to be detached (409 `VOLUME_RETYPE_ATTACHED`), so a boot volume cannot change its type. The target has to be on sale (`VOLUME_TYPE_OFF_SALE`), in the volume's region (422 `VOLUME_RETYPE_OTHER_REGION`), of the volume's availability zone (422 `VOLUME_TYPE_OTHER_AVAILABILITY_ZONE`) with room for the volume (409 `VOLUME_TYPE_SOLD_OUT`, `VOLUME_TYPE_CAPACITY_REACHED`, `VOLUME_TYPE_NO_POOL_ROOM`), admit the volume's capacity (422 `VOLUME_SIZE_OUT_OF_RANGE`, `VOLUME_SIZE_NOT_ON_STEP`) and differ from the current one (422 `VOLUME_RETYPE_SAME_TYPE`). The volume is `retyping` until the change is applied, its Checkout Session expires or its order is canceled. A target on the same storage backend takes effect at once; one on another backend copies the volume's data there first, which takes longer the larger the volume is. The volume keeps its type until `volume_type_id` shows the new one, and its `performance` follows from then on; a change that did not take effect leaves the volume as it was and is refunded. During a free trial that began with a trial grant, the subscription has to stay within the plans and quantities of the trial offer, otherwise Billing refuses with 422 `BILLING_TRIAL_OFFER_EXCEEDED`.
+    /// Moves the volume to another volume type at the same capacity, priced as that type, through a change of its subscription item purchased in Billing, and returns 202 with the volume and the Checkout Session for the change, which keeps the volume's usage type and period. The volume has to be detached (409 `VOLUME_RETYPE_ATTACHED`), so a boot volume cannot change its type. The target has to be on sale (`VOLUME_TYPE_OFF_SALE`), in the volume's region (422 `VOLUME_RETYPE_OTHER_REGION`), of the volume's availability zone (422 `VOLUME_TYPE_OTHER_AVAILABILITY_ZONE`) with room for the volume (409 `VOLUME_TYPE_SOLD_OUT`, `VOLUME_TYPE_CAPACITY_REACHED`, `VOLUME_TYPE_NO_POOL_ROOM`), admit the volume's capacity (422 `VOLUME_SIZE_OUT_OF_RANGE`, `VOLUME_SIZE_NOT_ON_STEP`) and differ from the current one (422 `VOLUME_RETYPE_SAME_TYPE`). The volume is `retyping` until the change is applied, its Checkout Session expires or its order is canceled. Some changes take effect at once; others copy the volume's data first, which takes longer the larger the volume is. The volume keeps its type until `volume_type_id` shows the new one, and its `performance` follows from then on; a change that did not take effect leaves the volume as it was and is refunded. During a free trial that began with a trial grant, the subscription has to stay within the plans and quantities of the trial offer, otherwise Billing refuses with 422 `BILLING_TRIAL_OFFER_EXCEEDED`.
     ///
     /// `POST /api/v2/volumes/{volumeId}:retype`
     pub async fn retype_volume(
@@ -10975,7 +11143,7 @@ impl HttpClient {
     ///
     /// Boots the stopped instance on the host it kept; outstanding restrictions can prevent starting. It is `starting` until it is running or the start has failed. Starting a running instance changes nothing.
     ///
-    /// When its boot volume grew since it was last connected, the start connects its volumes afresh so that the boot volume runs at the performance of its new size: the instance is taken off its host for that moment and placed again. Only then can the start find no room in the zone; it is refused with 409 `INSTANCE_START_NO_HOST_ROOM`, or ends with the instance still stopped, and can be tried again later. An instance stopped by the legacy stop, which released its host, is placed again the same way.
+    /// When its boot volume grew since it was last connected, the start connects its volumes afresh so that the boot volume runs at the performance of its new size: the instance is taken off its host for that moment and placed again. Only then can the start find no room in the zone; it is refused with 409 `INSTANCE_START_NO_HOST_ROOM`, or ends with the instance still stopped, and can be tried again later.
     ///
     /// `POST /api/v2/instances/{instanceId}:start`
     pub async fn start_instance(
@@ -11070,7 +11238,7 @@ impl HttpClient {
     }
     /// Stop an instance
     ///
-    /// Shuts the instance down **on its host**, as Alibaba Cloud's ordinary stop does: it keeps its volumes, network interfaces, addresses and quota, and the vCPU and memory of its host stay reserved for it, so it starts again without asking for room. **A metered instance keeps being charged for compute while stopped**; its volumes and elastic IPs are charged as always. An instance stopped by a suspension, for non-payment or by the platform, is not charged for compute while the suspension lasts. It is `stopping` until it is stopped. Stopping a stopped instance changes nothing.
+    /// Shuts the instance down **on its host**. It keeps its volumes, network interfaces, addresses and quota, and the vCPU and memory of its host stay reserved for it, so it starts again without asking for room. **A metered instance keeps being charged for compute while stopped**; its volumes and elastic IPs are charged as always. An instance stopped by a suspension, for non-payment or by the platform, is not charged for compute while the suspension lasts. It is `stopping` until it is stopped. Stopping a stopped instance changes nothing.
     ///
     /// Resizing is done on a stopped instance and only then. A stopped instance can also be rebuilt and have network interfaces and volumes attached and detached; rescuing it needs it running.
     ///
@@ -11265,8 +11433,8 @@ impl HttpClient {
     /// Changes the descriptive fields `name`, `labels` and `description`; all are optional and at least one is required. They are not operations and are accepted at any time, whatever the instance is doing. Changing the instance type is the `:resize` method; starting and stopping are `:start` and `:stop`.
     ///
     /// - `name` changes the display name only. The hostname inside the instance is unchanged; it equals the instance id.
-    /// - `labels` records what this instance is for, as key-value pairs. Nothing on the platform reads them. **The whole set is replaced**: whatever is absent from the request is removed, and an empty object clears them all. Do not put credentials here. Labels are visible to platform operators.
-    /// - `description` is a free-text note about this instance: what it runs, and what to be careful about before touching it. **The whole note is replaced**; send an empty string to clear it. Do not put credentials here. The note is visible to platform operators.
+    /// - `labels` records what this instance is for, as key-value pairs. Nothing on the platform reads them. **The whole set is replaced**: whatever is absent from the request is removed, and an empty object clears them all. Do not put credentials here.
+    /// - `description` is a free-text note about this instance: what it runs, and what to be careful about before touching it. **The whole note is replaced**; send an empty string to clear it. Do not put credentials here.
     ///
     /// `PATCH /api/v2/instances/{instanceId}`
     pub async fn update_instance(

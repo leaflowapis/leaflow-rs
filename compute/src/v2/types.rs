@@ -25,11 +25,11 @@ pub struct VolumeTypeResource {
     pub name: String,
     pub performance: VolumeTypePerformance,
     pub region_id: RegionId,
-    ///`sold_out` takes no new orders for now while the type stays listed; the volumes already of it keep working.
+    ///`on_sale` accepts new orders. `sold_out` takes no new orders for now while the type stays listed. `off_sale` means the type was withdrawn: it is hidden from listing and takes no new orders, while volumes already on it keep working and can still be resized.
     pub sale_status: VolumeTypeResourceSaleStatus,
     pub size_step_gib: i64,
 }
-///`sold_out` takes no new orders for now while the type stays listed; the volumes already of it keep working.
+///`on_sale` accepts new orders. `sold_out` takes no new orders for now while the type stays listed. `off_sale` means the type was withdrawn: it is hidden from listing and takes no new orders, while volumes already on it keep working and can still be resized.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum VolumeTypeResourceSaleStatus {
     #[default]
@@ -37,12 +37,15 @@ pub enum VolumeTypeResourceSaleStatus {
     OnSale,
     #[serde(rename = "sold_out")]
     SoldOut,
+    #[serde(rename = "off_sale")]
+    OffSale,
 }
 impl VolumeTypeResourceSaleStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::OnSale => "on_sale",
             Self::SoldOut => "sold_out",
+            Self::OffSale => "off_sale",
         }
     }
 }
@@ -85,7 +88,7 @@ impl AsRef<str> for VolumeTypeResourceMedium {
         self.as_str()
     }
 }
-/**How fast a volume of this type runs for its size. Alibaba Cloud's ESSD volumes have this shape: PL1 is IOPS `min(50000, 1800 + 50 × size_gib)`, and AutoPL's baseline adds a floor, `max(3000, min(50000, 1800 + 50 × size_gib))`.
+/**Performance limits for a volume of this type, calculated from its size. For example, a base of 1800 IOPS, an increase of 50 IOPS per GiB and a maximum of 50000 IOPS give `min(50000, 1800 + 50 × size_gib)`. A minimum of 3000 IOPS adds a floor: `max(3000, min(50000, 1800 + 50 × size_gib))`.
 
 A volume's own performance, computed from these for its size, is on the volume. Growing a volume raises it, and the new performance applies from the volume's next attachment or the next start of its stopped instance.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -103,12 +106,12 @@ pub struct PerformanceFormula {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeSnapshotListResponseBody {
-    pub items: Option<Vec<VolumeSnapshotResource>>,
+    pub items: Vec<VolumeSnapshotResource>,
     pub pagination: OffsetPagination,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeListResponseBody {
-    pub items: Option<Vec<VolumeResource>>,
+    pub items: Vec<VolumeResource>,
     pub pagination: OffsetPagination,
 }
 ///The volume and the Checkout Session for its resize or type change. The volume keeps its current size and type until the change is applied.
@@ -122,7 +125,7 @@ pub struct VolumeChangeResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VolumeBackupListResponseBody {
-    pub items: Option<Vec<VolumeBackupResource>>,
+    pub items: Vec<VolumeBackupResource>,
     pub pagination: OffsetPagination,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -143,7 +146,7 @@ pub struct VirtualPrivateCloudSubnet {
     pub ipv4_cidr: String,
     ///The IPv4 gateway address of the subnet.
     pub ipv4_gateway_address: Option<String>,
-    ///The subnet's /64, from the virtual private cloud's /56; null while IPv6 is not enabled on the virtual private cloud. A network interface created in the subnet takes an address of it that is never handed out again within the subnet.
+    ///The subnet's /64 allocated from the virtual private cloud's IPv6 CIDR block; null when no IPv6 range is configured. Existing and newly created subnets receive their range automatically. Each existing and newly created network interface receives one IPv6 address from this range, in addition to its IPv4 addresses. Disassociating the block removes this range and its network interface IPv6 addresses while preserving IPv4 configuration.
     pub ipv6_cidr: Option<String>,
     ///The IPv6 gateway address of the subnet, the first address of its /64; null without IPv6.
     pub ipv6_gateway_address: Option<String>,
@@ -298,60 +301,6 @@ pub struct VirtualPrivateCloudListResponseBody {
     pub items: Vec<VirtualPrivateCloud>,
     pub pagination: OffsetPagination,
 }
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct VirtualPrivateCloud {
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub id: VirtualPrivateCloudId,
-    pub ipv4_cidr: String,
-    ///The /56 routed to the virtual private cloud, from which each of its subnets takes a /64; null while IPv6 is not enabled.
-    pub ipv6_cidr: Option<String>,
-    ///The most recent operation started on the virtual private cloud; null when none has been recorded.
-    pub latest_operation: Option<LatestOperation>,
-    pub name: String,
-    pub region_id: RegionId,
-    ///`available` from creation: the network and router are created in the backend by the first member that needs them, so a virtual private cloud nothing uses holds no capacity there. `failed` means the cloud reports the network broken; instances cannot be created in it then and are refused with `VIRTUAL_PRIVATE_CLOUD_UNAVAILABLE`. `deleting` from the moment its deletion began until it is gone: subnets, security groups and routes in it can no longer be created, changed or deleted, and are refused with `VIRTUAL_PRIVATE_CLOUD_DELETING`. A deletion that stopped before the end leaves it `deleting`, and deleting it again resumes from where it stopped. `creating`, `enabling_ipv6` and `disabling_ipv6` name operations in progress; the network refuses another operation until they end.
-    pub status: VirtualPrivateCloudStatus,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
-}
-///`available` from creation: the network and router are created in the backend by the first member that needs them, so a virtual private cloud nothing uses holds no capacity there. `failed` means the cloud reports the network broken; instances cannot be created in it then and are refused with `VIRTUAL_PRIVATE_CLOUD_UNAVAILABLE`. `deleting` from the moment its deletion began until it is gone: subnets, security groups and routes in it can no longer be created, changed or deleted, and are refused with `VIRTUAL_PRIVATE_CLOUD_DELETING`. A deletion that stopped before the end leaves it `deleting`, and deleting it again resumes from where it stopped. `creating`, `enabling_ipv6` and `disabling_ipv6` name operations in progress; the network refuses another operation until they end.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum VirtualPrivateCloudStatus {
-    #[default]
-    #[serde(rename = "available")]
-    Available,
-    #[serde(rename = "deleting")]
-    Deleting,
-    #[serde(rename = "failed")]
-    Failed,
-    #[serde(rename = "creating")]
-    Creating,
-    #[serde(rename = "enabling_ipv6")]
-    EnablingIpv6,
-    #[serde(rename = "disabling_ipv6")]
-    DisablingIpv6,
-}
-impl VirtualPrivateCloudStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Available => "available",
-            Self::Deleting => "deleting",
-            Self::Failed => "failed",
-            Self::Creating => "creating",
-            Self::EnablingIpv6 => "enabling_ipv6",
-            Self::DisablingIpv6 => "disabling_ipv6",
-        }
-    }
-}
-impl ::std::fmt::Display for VirtualPrivateCloudStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for VirtualPrivateCloudStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
 ///The descriptive fields of an instance, all optional, at least one required.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct UpdateInstanceRequestBody {
@@ -379,7 +328,7 @@ pub struct TrafficUsageListResponseBody {
     pub items: Vec<TrafficUsage>,
     pub pagination: OffsetPagination,
 }
-///The traffic an elastic IP sent in one interval.
+///The traffic sent to the internet in one interval.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TrafficUsage {
     ///Constraint: minimum=0
@@ -618,7 +567,7 @@ pub struct ReplaceNetworkInterfaceSecurityGroupsRequestBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RegionListResponseBody {
-    pub items: Option<Vec<RegionResource>>,
+    pub items: Vec<RegionResource>,
     pub pagination: OffsetPagination,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -636,6 +585,9 @@ pub struct RegionResource {
     pub volume_backup_billing: BillingComponent,
     ///The line every snapshot in this region is, metered on the size it stores.
     pub volume_snapshot_billing: BillingComponent,
+    ///MTU values supported for new virtual private clouds in this region.
+    ///Constraint: minItems=1, maxItems=2, uniqueItems=true
+    pub vpc_mtu_options: Vec<i64>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RebuildInstanceResponseBody {
@@ -887,9 +839,7 @@ pub struct OperationLogResource {
     pub subject_type: String,
     ///The user who initiated the operation. Null when `actor_type` is `platform`
     pub user_id: Option<uuid::Uuid>,
-    /**The name this user went by at the time of the operation, recorded alongside the operation itself. It is not refreshed afterwards: the record states who acted then, and a name read today is a statement about a different moment.
-
-    Null on entries recorded before this field existed, and when `actor_type` is `platform`. An empty string means the account had no name recorded.*/
+    ///Display name of the user recorded when the operation occurred. Null when `actor_type` is `platform` or when no name was recorded; empty string when the account had no display name.
     pub user_name: Option<String>,
 }
 ///Path and query parameters of the request. Fields such as passwords are redacted
@@ -961,7 +911,7 @@ impl AsRef<str> for OperationLogResourceActorType {
 pub type OperationLogId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NetworkInterfaceListResponseBody {
-    pub items: Option<Vec<NetworkInterface>>,
+    pub items: Vec<NetworkInterface>,
     pub pagination: OffsetPagination,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -971,11 +921,11 @@ pub struct NetworkInterfaceAttachmentList {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NetworkInterface {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub addresses: Option<Vec<NetworkInterfaceAddress>>,
+    ///IPv4 and IPv6 addresses of this network interface. Each interface has one primary IPv4 address and may have secondary IPv4 addresses. When an IPv6 CIDR block is associated with its virtual private cloud, the interface also receives one primary IPv6 address automatically, including interfaces created before the association. Disassociating the block removes that IPv6 address without removing IPv4 addresses.
+    pub addresses: Vec<NetworkInterfaceAddress>,
     pub attachment: Option<NetworkInterfaceAttachment>,
     ///Elastic IPv4 addresses associated with this network interface; an empty array when none are associated
-    pub elastic_ip_addresses: Option<Vec<String>>,
+    pub elastic_ip_addresses: Vec<String>,
     pub id: NetworkInterfaceId,
     ///The most recent operation started on the network interface; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
@@ -983,11 +933,11 @@ pub struct NetworkInterface {
     pub name: String,
     ///The security groups the network interface holds.
     pub security_group_ids: Vec<SecurityGroupId>,
-    ///`pending` until the interface is created, then `available`. `error` means its creation failed or the cloud reports it broken; delete it and create another. A value naming an operation in progress (`attaching`, `detaching`, `associating_elastic_ip`, `updating_security_groups`, `adding_address`, `removing_address`, `deleting`) is shown while that operation runs; the interface refuses another operation until it ends.
+    ///`pending` until the interface is created, then `available`. `error` means its creation failed or it is broken; delete it and create another. A value naming an operation in progress (`attaching`, `detaching`, `associating_elastic_ip`, `updating_security_groups`, `adding_address`, `removing_address`, `deleting`) is shown while that operation runs; the interface refuses another operation until it ends.
     pub status: NetworkInterfaceStatus,
     pub virtual_private_cloud_id: VirtualPrivateCloudId,
 }
-///`pending` until the interface is created, then `available`. `error` means its creation failed or the cloud reports it broken; delete it and create another. A value naming an operation in progress (`attaching`, `detaching`, `associating_elastic_ip`, `updating_security_groups`, `adding_address`, `removing_address`, `deleting`) is shown while that operation runs; the interface refuses another operation until it ends.
+///`pending` until the interface is created, then `available`. `error` means its creation failed or it is broken; delete it and create another. A value naming an operation in progress (`attaching`, `detaching`, `associating_elastic_ip`, `updating_security_groups`, `adding_address`, `removing_address`, `deleting`) is shown while that operation runs; the interface refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum NetworkInterfaceStatus {
     #[default]
@@ -1135,14 +1085,17 @@ impl AsRef<str> for NetworkInterfaceAttachmentOnInstanceRelease {
 }
 ///Compute InstanceNetworkInterface TypeID. UUID text is not accepted.
 pub type InstanceNetworkInterfaceId = String;
+///An IPv4 or IPv6 address assigned to a network interface. Address roles are defined separately for each IP version.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NetworkInterfaceAddress {
     ///Constraint: minLength=1, maxLength=64
     pub address: String,
     pub assigned_at: Option<chrono::DateTime<chrono::Utc>>,
     pub id: NetworkInterfaceAddressId,
+    ///The IP version of the address.
+    pub ip_version: i64,
     pub released_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///`primary` is the interface's primary private address, which is the instance's network location; every other address of the interface is `secondary`.
+    ///`primary` identifies the primary address for its IP version. An interface has one primary IPv4 address and, when IPv6 is configured, one primary IPv6 address. `secondary` applies only to additional IPv4 addresses. The IPv6 address is managed through the virtual private cloud CIDR block association, not through the secondary IPv4 address operations.
     pub role: NetworkInterfaceAddressRole,
     pub state: NetworkInterfaceAddressState,
     pub subnet_id: SubnetId,
@@ -1176,7 +1129,7 @@ impl AsRef<str> for NetworkInterfaceAddressState {
         self.as_str()
     }
 }
-///`primary` is the interface's primary private address, which is the instance's network location; every other address of the interface is `secondary`.
+///`primary` identifies the primary address for its IP version. An interface has one primary IPv4 address and, when IPv6 is configured, one primary IPv6 address. `secondary` applies only to additional IPv4 addresses. The IPv6 address is managed through the virtual private cloud CIDR block association, not through the secondary IPv4 address operations.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum NetworkInterfaceAddressRole {
     #[default]
@@ -1214,6 +1167,91 @@ pub struct LaunchTemplateListResponseBody {
     pub pagination: OffsetPagination,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct InternetLineListResponseBody {
+    pub items: Vec<InternetLine>,
+    pub pagination: OffsetPagination,
+}
+///The network that elastic IPs and the IPv6 CIDR blocks of virtual private clouds are bought on: the bandwidth that can be chosen, and the Billing Plans they are paid under. An elastic IP is paid under both of its Plans in one order: the address item meters the address while it is associated with nothing, and the internet item pays the bandwidth, prepaid or used while associated, or the traffic sent. An IPv6 CIDR block of a virtual private cloud is paid by the bytes its addresses send, under `ipv6_billing`.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct InternetLine {
+    ///The order line every elastic IP of this line has for its address. It is always metered, and meters the address while no network interface holds it.
+    pub address_billing: BillingComponent,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    ///Constraint: minLength=0, maxLength=255
+    pub description: String,
+    pub id: InternetLineId,
+    ///The order line that pays an elastic IP of this line by its `internet_charge_type`, the bandwidth prepaid or metered while associated, or the traffic. Metered, its quantity is 1 and its meters read the bandwidth or the traffic.
+    pub internet_billing: BillingComponent,
+    ///The order line of an IPv6 CIDR block of this line, always metered by the bytes its addresses send to the internet; null when the line supplies no IPv6.
+    pub ipv6_billing: Option<BillingComponent>,
+    ///The most bandwidth that can be bought on this line, in Mbps, at most 1000. An elastic IP associated with an instance is also held to the instance type's `max_bandwidth_mbps`.
+    pub max_bandwidth_mbps: i64,
+    ///The least bandwidth that can be bought on this line, in Mbps.
+    pub min_bandwidth_mbps: i64,
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
+    pub region_id: RegionId,
+    ///`on_sale` accepts new elastic IPs and IPv6 CIDR blocks; `off_sale` accepts none, while what is already on the line keeps working.
+    pub sale_status: InternetLineSaleStatus,
+    ///Whether an elastic IP of this line can be bought with `internet_charge_type` `traffic`, billed by the bytes it sends. `off_sale` refuses it with `INTERNET_LINE_TRAFFIC_UNAVAILABLE`.
+    pub traffic_sale_status: InternetLineTrafficSaleStatus,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+///Whether an elastic IP of this line can be bought with `internet_charge_type` `traffic`, billed by the bytes it sends. `off_sale` refuses it with `INTERNET_LINE_TRAFFIC_UNAVAILABLE`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum InternetLineTrafficSaleStatus {
+    #[default]
+    #[serde(rename = "on_sale")]
+    OnSale,
+    #[serde(rename = "off_sale")]
+    OffSale,
+}
+impl InternetLineTrafficSaleStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::OnSale => "on_sale",
+            Self::OffSale => "off_sale",
+        }
+    }
+}
+impl ::std::fmt::Display for InternetLineTrafficSaleStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for InternetLineTrafficSaleStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///`on_sale` accepts new elastic IPs and IPv6 CIDR blocks; `off_sale` accepts none, while what is already on the line keeps working.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum InternetLineSaleStatus {
+    #[default]
+    #[serde(rename = "on_sale")]
+    OnSale,
+    #[serde(rename = "off_sale")]
+    OffSale,
+}
+impl InternetLineSaleStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::OnSale => "on_sale",
+            Self::OffSale => "off_sale",
+        }
+    }
+}
+impl ::std::fmt::Display for InternetLineSaleStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for InternetLineSaleStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InstanceTypeListResponseBody {
     pub items: Vec<InstanceType>,
     pub pagination: OffsetPagination,
@@ -1221,7 +1259,7 @@ pub struct InstanceTypeListResponseBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InstanceType {
     pub availability_zone_id: AvailabilityZoneId,
-    ///The line an instance of this type is. The boot volume and data volumes bought with it are lines of their volume types, and a new elastic IP the two lines of its elastic IP line.
+    ///The order line an instance of this type is. The boot volume and data volumes bought with it are order lines of their volume types, and a new elastic IP is the two order lines of its internet line.
     pub billing: BillingComponent,
     pub id: InstanceTypeId,
     pub instance_family_id: InstanceFamilyId,
@@ -1230,15 +1268,17 @@ pub struct InstanceType {
     An elastic IP associated with the machine cannot be bought faster than this rate; asking for more is refused with `INSTANCE_BANDWIDTH_CEILING`.*/
     pub max_bandwidth_mbps: i64,
     pub max_elastic_ips: i64,
+    ///Maximum IPv4 addresses (primary and secondary) each attached network interface may hold.
+    pub max_ipv4_per_network_interface: i64,
     pub max_network_interfaces: i64,
     pub memory_mib: i64,
     pub name: String,
     pub region_id: RegionId,
-    ///`sold_out` takes no new orders for now while the type stays listed; the instances already of it keep working.
+    ///`on_sale` accepts new orders. `sold_out` takes no new orders for now while the type stays listed. `off_sale` means the type was withdrawn: it is hidden from listing and takes no new orders, while instances already running it keep working.
     pub sale_status: InstanceTypeSaleStatus,
     pub vcpus: i64,
 }
-///`sold_out` takes no new orders for now while the type stays listed; the instances already of it keep working.
+///`on_sale` accepts new orders. `sold_out` takes no new orders for now while the type stays listed. `off_sale` means the type was withdrawn: it is hidden from listing and takes no new orders, while instances already running it keep working.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum InstanceTypeSaleStatus {
     #[default]
@@ -1246,12 +1286,15 @@ pub enum InstanceTypeSaleStatus {
     OnSale,
     #[serde(rename = "sold_out")]
     SoldOut,
+    #[serde(rename = "off_sale")]
+    OffSale,
 }
 impl InstanceTypeSaleStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::OnSale => "on_sale",
             Self::SoldOut => "sold_out",
+            Self::OffSale => "off_sale",
         }
     }
 }
@@ -1435,91 +1478,8 @@ pub struct FieldViolation {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ElasticIpListResponseBody {
-    pub items: Option<Vec<ElasticIp>>,
+    pub items: Vec<ElasticIp>,
     pub pagination: OffsetPagination,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ElasticIpLineListResponseBody {
-    pub items: Vec<ElasticIpLine>,
-    pub pagination: OffsetPagination,
-}
-///The network an elastic IP is bought on: the bandwidth that can be chosen, and the two Billing Plans every elastic IP of the line is paid under in one order. The address item is always used and meters the address while it is held idle, associated with nothing; the network item pays the bandwidth, prepaid or used while associated, or the traffic sent. Contains no supply ranges, gateways or backend execution state.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ElasticIpLine {
-    ///The address line every elastic IP of this line has. It is always metered, and meters the address while no network interface holds it.
-    pub address_billing: BillingComponent,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    ///Constraint: minLength=0, maxLength=255
-    pub description: String,
-    pub id: ElasticIpLineId,
-    ///The network line every elastic IP of this line has, which pays its bandwidth, prepaid or used while associated, or its traffic. Metered, the line's quantity is 1 and the bandwidth or the traffic is what its meters read, by the elastic IP's `internet_charge_type`.
-    pub internet_billing: BillingComponent,
-    ///The most bandwidth an elastic IP of this line can be bought with, in Mbps, at most 1000. An elastic IP associated with an instance is also held to the instance type's `max_bandwidth_mbps`.
-    pub max_bandwidth_mbps: i64,
-    ///The least bandwidth an elastic IP of this line can be bought with, in Mbps.
-    pub min_bandwidth_mbps: i64,
-    ///Constraint: minLength=1, maxLength=128
-    pub name: String,
-    pub region_id: RegionId,
-    ///`on_sale` is offered for new elastic IPs; `off_sale` takes none, while the elastic IPs already on it keep working.
-    pub sale_status: ElasticIpLineSaleStatus,
-    ///Whether an elastic IP of this line can be bought with `internet_charge_type` `traffic`, billed by the bytes it sends. `off_sale` refuses that with `ELASTIC_IP_TRAFFIC_UNAVAILABLE`.
-    pub traffic_sale_status: ElasticIpLineTrafficSaleStatus,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
-}
-///Whether an elastic IP of this line can be bought with `internet_charge_type` `traffic`, billed by the bytes it sends. `off_sale` refuses that with `ELASTIC_IP_TRAFFIC_UNAVAILABLE`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIpLineTrafficSaleStatus {
-    #[default]
-    #[serde(rename = "on_sale")]
-    OnSale,
-    #[serde(rename = "off_sale")]
-    OffSale,
-}
-impl ElasticIpLineTrafficSaleStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::OnSale => "on_sale",
-            Self::OffSale => "off_sale",
-        }
-    }
-}
-impl ::std::fmt::Display for ElasticIpLineTrafficSaleStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ElasticIpLineTrafficSaleStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///`on_sale` is offered for new elastic IPs; `off_sale` takes none, while the elastic IPs already on it keep working.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ElasticIpLineSaleStatus {
-    #[default]
-    #[serde(rename = "on_sale")]
-    OnSale,
-    #[serde(rename = "off_sale")]
-    OffSale,
-}
-impl ElasticIpLineSaleStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::OnSale => "on_sale",
-            Self::OffSale => "off_sale",
-        }
-    }
-}
-impl ::std::fmt::Display for ElasticIpLineSaleStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ElasticIpLineSaleStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
 }
 ///The elastic IP and, for a prepaid network item, the Checkout Session for its bandwidth change. The elastic IP is still at its current bandwidth until the change is applied.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -1529,6 +1489,10 @@ pub struct ElasticIpChangeResponseBody {
     pub elastic_ip: ElasticIp,
     ///The order created when checkout completes, at once for automatic checkout; null until then and without checkout.
     pub order_id: Option<uuid::Uuid>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct DisassociateIpv6CidrBlockRequestBody {
+    pub ipv6_cidr_block_id: VirtualPrivateCloudIpv6CidrBlockId,
 }
 ///The snapshot as it is when the deletion is accepted, and the Billing cancellation that releases it when subscription items pay for it.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -1603,7 +1567,7 @@ pub struct VolumeSnapshotResource {
     pub release_set: Vec<ReleaseSetItem>,
     ///Capacity of the source volume when the snapshot was created. A volume restored from it cannot be smaller
     pub size_gib: i64,
-    ///`pending` once a quota slot is reserved and until the snapshot is taken; then `available`. `failed` means the snapshot was not created; its slot is released once no snapshot data remains. `error` means the cloud reports the snapshot broken. A value naming an operation in progress (`restoring`, `deleting`) is shown while that operation runs; the snapshot refuses another operation until it ends.
+    ///`pending` once a quota slot is reserved and until the snapshot is taken; then `available`. `failed` means the snapshot was not created; its slot is released once no snapshot data remains. `error` means the snapshot is broken. A value naming an operation in progress (`restoring`, `deleting`) is shown while that operation runs; the snapshot refuses another operation until it ends.
     pub status: VolumeSnapshotResourceStatus,
     ///The Billing subscription of this resource; its presence alone does not imply delivery.
     pub subscription_id: Option<uuid::Uuid>,
@@ -1611,7 +1575,7 @@ pub struct VolumeSnapshotResource {
     pub subscription_item_id: Option<uuid::Uuid>,
     pub volume_id: VolumeId,
 }
-///`pending` once a quota slot is reserved and until the snapshot is taken; then `available`. `failed` means the snapshot was not created; its slot is released once no snapshot data remains. `error` means the cloud reports the snapshot broken. A value naming an operation in progress (`restoring`, `deleting`) is shown while that operation runs; the snapshot refuses another operation until it ends.
+///`pending` once a quota slot is reserved and until the snapshot is taken; then `available`. `failed` means the snapshot was not created; its slot is released once no snapshot data remains. `error` means the snapshot is broken. A value naming an operation in progress (`restoring`, `deleting`) is shown while that operation runs; the snapshot refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum VolumeSnapshotResourceStatus {
     #[default]
@@ -1771,7 +1735,7 @@ pub struct VolumeResource {
     ///The subscription items a cancellation through Billing has to cover to release this volume: its own, each with the resource it pays for, so that each line of a cancellation can name what it releases. Snapshots have no individual items. A boot volume is released only with its instance, so for a boot volume the set is that of the instance. Items that have ended are not listed, and the set is empty when no item pays for any of them.
     pub release_set: Vec<ReleaseSetItem>,
     pub size_gib: i64,
-    ///`pending` until the volume is created, with no storage allocated before the order is accepted; then `available`, or `in_use` once attached. `failed` means the volume was not created; `failure_reason` states why. `error` means the cloud reports the volume broken. A value naming an operation in progress (`resizing`, `retyping`, `reverting`, `attaching`, `detaching`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the volume refuses another operation until it ends.
+    ///`pending` until the volume is created, with no storage allocated before the order is accepted; then `available`, or `in_use` once attached. `failed` means the volume was not created; `failure_reason` states why. `error` means the volume is broken. A value naming an operation in progress (`resizing`, `retyping`, `reverting`, `attaching`, `detaching`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the volume refuses another operation until it ends.
     pub status: VolumeResourceStatus,
     /**The Billing subscription the resource renews under: its own, or the instance's when it was bought with or
     for one. Read it in Billing for the term end, automatic renewal and renewal. It may still be pending; its
@@ -1781,7 +1745,7 @@ pub struct VolumeResource {
     pub subscription_item_id: Option<uuid::Uuid>,
     pub volume_type_id: VolumeTypeId,
 }
-///`pending` until the volume is created, with no storage allocated before the order is accepted; then `available`, or `in_use` once attached. `failed` means the volume was not created; `failure_reason` states why. `error` means the cloud reports the volume broken. A value naming an operation in progress (`resizing`, `retyping`, `reverting`, `attaching`, `detaching`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the volume refuses another operation until it ends.
+///`pending` until the volume is created, with no storage allocated before the order is accepted; then `available`, or `in_use` once attached. `failed` means the volume was not created; `failure_reason` states why. `error` means the volume is broken. A value naming an operation in progress (`resizing`, `retyping`, `reverting`, `attaching`, `detaching`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the volume refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum VolumeResourceStatus {
     #[default]
@@ -2287,9 +2251,55 @@ pub struct CreateVirtualPrivateCloudRequestBody {
     ///An RFC 1918 private CIDR with a prefix length between /8 and /24, for example `10.0.0.0/16`.
     ///Constraint: minLength=1, maxLength=32
     pub ipv4_cidr: String,
+    ///Network MTU. Defaults to 1500; 9000 requires regional Jumbo Frame support.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mtu: Option<i64>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     pub region_id: RegionId,
+}
+impl CreateVirtualPrivateCloudRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(ipv4_cidr: String, name: String, region_id: RegionId) -> Self {
+        Self {
+            ipv4_cidr,
+            name,
+            region_id,
+            mtu: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(
+        ipv4_cidr: String,
+        name: String,
+        region_id: RegionId,
+    ) -> CreateVirtualPrivateCloudRequestBodyBuilder {
+        CreateVirtualPrivateCloudRequestBodyBuilder::new(ipv4_cidr, name, region_id)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct CreateVirtualPrivateCloudRequestBodyBuilder {
+    value: CreateVirtualPrivateCloudRequestBody,
+}
+impl CreateVirtualPrivateCloudRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(ipv4_cidr: String, name: String, region_id: RegionId) -> Self {
+        Self {
+            value: CreateVirtualPrivateCloudRequestBody::new(ipv4_cidr, name, region_id),
+        }
+    }
+    #[doc = concat!("Set the optional `", "mtu", "` request field.")]
+    #[must_use]
+    pub fn mtu(mut self, mtu: i64) -> Self {
+        self.value.mtu = Some(mtu);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> CreateVirtualPrivateCloudRequestBody {
+        self.value
+    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateVirtualPrivateCloudPeeringRequestBody {
@@ -2484,8 +2494,6 @@ pub struct PrivateImageResource {
     ///The Billing Checkout Session that bought this resource; `order_id` and `order_item_id` stay null until its checkout completes. Null when the resource was not bought through one.
     pub checkout_session_id: Option<uuid::Uuid>,
     pub created_at: chrono::DateTime<chrono::Utc>,
-    ///Details of why the capture failed; non-empty only when `status` is `failed`
-    pub failure: Option<String>,
     ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this image is refunded.
     pub failure_reason: Option<PrivateImageResourceFailureReason>,
     pub id: ImageId,
@@ -2511,7 +2519,7 @@ pub struct PrivateImageResource {
     ///Storage occupied by the project image, in bytes. Zero until the capture reports its size. It does not change what the image costs.
     pub size_bytes: i64,
     pub source_instance_id: InstanceId,
-    ///Only available images can install instances. A capture is pending until it finishes, then becomes available. Failed means no usable image was produced; failure describes the outcome. Error means the image service broke the image or no longer holds it, and nothing can be installed from it. A value naming an operation in progress (`suspending`, `resuming`, `deleting`) is shown while that operation runs.
+    ///Only available images can install instances. A capture is pending until it finishes, then becomes available. Failed means no usable image was produced; `failure_reason` states why. Error means the image is corrupted or unavailable and cannot be used to create instances. A value naming an operation in progress (`suspending`, `resuming`, `deleting`) is shown while that operation runs.
     pub status: PrivateImageResourceStatus,
     ///The Billing subscription of this resource; its presence alone does not imply delivery.
     pub subscription_id: Option<uuid::Uuid>,
@@ -2522,7 +2530,7 @@ pub struct PrivateImageResource {
     ///False means a new password can only be set by rebuilding an instance created from this image
     pub supports_password_reset: bool,
 }
-///Only available images can install instances. A capture is pending until it finishes, then becomes available. Failed means no usable image was produced; failure describes the outcome. Error means the image service broke the image or no longer holds it, and nothing can be installed from it. A value naming an operation in progress (`suspending`, `resuming`, `deleting`) is shown while that operation runs.
+///Only available images can install instances. A capture is pending until it finishes, then becomes available. Failed means no usable image was produced; `failure_reason` states why. Error means the image is corrupted or unavailable and cannot be used to create instances. A value naming an operation in progress (`suspending`, `resuming`, `deleting`) is shown while that operation runs.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum PrivateImageResourceStatus {
     #[default]
@@ -2655,21 +2663,21 @@ impl CreatePrivateImageRequestBodyBuilder {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateNetworkInterfaceRequestBody {
-    ///The private address to assign. Allocated automatically when omitted
+    ///The primary private IPv4 address to assign. Allocated automatically when omitted. IPv6 addresses are assigned automatically and cannot be specified here.
     ///Constraint: maxLength=64
     #[serde(skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
     ///Constraint: maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    ///At least one, and all must belong to the same virtual private cloud
-    ///Constraint: minItems=1
-    pub security_group_ids: Option<Vec<SecurityGroupId>>,
+    ///One to five security groups of the subnet's virtual private cloud.
+    ///Constraint: minItems=1, maxItems=5
+    pub security_group_ids: Vec<SecurityGroupId>,
     pub subnet_id: SubnetId,
 }
 impl CreateNetworkInterfaceRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(security_group_ids: Option<Vec<SecurityGroupId>>, subnet_id: SubnetId) -> Self {
+    pub fn new(security_group_ids: Vec<SecurityGroupId>, subnet_id: SubnetId) -> Self {
         Self {
             security_group_ids,
             subnet_id,
@@ -2679,7 +2687,7 @@ impl CreateNetworkInterfaceRequestBody {
     }
     /// Start a dependency-free builder with every required wire field.
     pub fn builder(
-        security_group_ids: Option<Vec<SecurityGroupId>>,
+        security_group_ids: Vec<SecurityGroupId>,
         subnet_id: SubnetId,
     ) -> CreateNetworkInterfaceRequestBodyBuilder {
         CreateNetworkInterfaceRequestBodyBuilder::new(security_group_ids, subnet_id)
@@ -2693,7 +2701,7 @@ pub struct CreateNetworkInterfaceRequestBodyBuilder {
 }
 impl CreateNetworkInterfaceRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(security_group_ids: Option<Vec<SecurityGroupId>>, subnet_id: SubnetId) -> Self {
+    pub fn new(security_group_ids: Vec<SecurityGroupId>, subnet_id: SubnetId) -> Self {
         Self {
             value: CreateNetworkInterfaceRequestBody::new(security_group_ids, subnet_id),
         }
@@ -2861,7 +2869,7 @@ pub struct LaunchTemplateElasticIp {
     pub bandwidth_mbps: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub internet_charge_type: Option<InternetChargeType>,
-    pub line_id: ElasticIpLineId,
+    pub line_id: InternetLineId,
 }
 ///An empty data volume created with each instance.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -2959,7 +2967,7 @@ pub struct Instance {
     ///Constraint: maxLength=4096
     pub description: String,
     ///Elastic IPv4 addresses associated with the primary network interface; an empty array when none are associated
-    pub elastic_ip_addresses: Option<Vec<String>>,
+    pub elastic_ip_addresses: Vec<String>,
     ///Why creation failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means creation failed after the order was accepted, and the charge for this instance is refunded.
     pub failure_reason: Option<InstanceFailureReason>,
     ///The identifier of the Leaflow Fleet machine reserved for this instance. The instance enrolls as this machine on its first boot after creation or a rebuild, and its enrollment status is available from Fleet. Null if the instance is not configured to join Fleet, if its operating system does not support Fleet, or if Fleet was unavailable when the instance was created or last rebuilt.
@@ -2972,7 +2980,7 @@ pub struct Instance {
     ///Which collection `image_id` belongs to. `public` means `/public-images`, `private` means `/private-images`. Null when the instance boots from a volume and therefore has no image
     pub image_type: Option<InstanceImageType>,
     pub instance_type_id: InstanceTypeId,
-    ///IPv6 address of the primary network interface. Assigned automatically once IPv6 is enabled on the virtual private cloud
+    ///IPv6 address of the primary network interface; null when no IPv6 address is assigned. Assigned automatically to both existing and newly created interfaces when an IPv6 CIDR block is associated with the virtual private cloud. Disassociating the block removes this address and preserves the IPv4 configuration. The guest operating system must support IPv6 automatic configuration to use it.
     pub ipv6_address: Option<String>,
     ///Whether the instance is configured to join Leaflow Fleet. The value is set at creation and retained across rebuilds unless a rebuild specifies a new value.
     pub join_fleet: bool,
@@ -2999,7 +3007,7 @@ pub struct Instance {
     pub restrictions: Vec<InstanceRestriction>,
     ///Non-empty when the instance was created from a volume you already had, instead of from an image
     pub source_volume_id: Option<VolumeId>,
-    ///`pending` until the instance is created: before the order is accepted no instance exists and addresses are null. Then `running`. `failed` means the instance was not created; `failure_reason` states why. The other values are the state of the instance in the cloud. A value naming an operation in progress (`starting`, `stopping`, `rebooting`, `rebuilding`, `rescuing`, `unrescuing`, `resizing`, `resetting_password`, `attaching_volume`, `detaching_volume`, `attaching_network_interface`, `detaching_network_interface`, `associating_elastic_ip`, `disassociating_elastic_ip`, `capturing_image`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the instance refuses another operation until it ends.
+    ///`pending` until the instance is created: before the order is accepted no instance exists and addresses are null. Then `running`. `failed` means the instance was not created; `failure_reason` states why. The other values are the current state of the instance. A value naming an operation in progress (`starting`, `stopping`, `rebooting`, `rebuilding`, `rescuing`, `unrescuing`, `resizing`, `resetting_password`, `attaching_volume`, `detaching_volume`, `attaching_network_interface`, `detaching_network_interface`, `associating_elastic_ip`, `disassociating_elastic_ip`, `capturing_image`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the instance refuses another operation until it ends.
     pub status: InstanceStatus,
     pub subnet_id: Option<SubnetId>,
     /**The Billing subscription the instance renews under, with the volumes and elastic IP bought with it or for it.
@@ -3013,9 +3021,7 @@ pub struct Instance {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub virtual_private_cloud_id: Option<VirtualPrivateCloudId>,
 }
-///The public vpc resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
-pub type VirtualPrivateCloudId = String;
-///`pending` until the instance is created: before the order is accepted no instance exists and addresses are null. Then `running`. `failed` means the instance was not created; `failure_reason` states why. The other values are the state of the instance in the cloud. A value naming an operation in progress (`starting`, `stopping`, `rebooting`, `rebuilding`, `rescuing`, `unrescuing`, `resizing`, `resetting_password`, `attaching_volume`, `detaching_volume`, `attaching_network_interface`, `detaching_network_interface`, `associating_elastic_ip`, `disassociating_elastic_ip`, `capturing_image`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the instance refuses another operation until it ends.
+///`pending` until the instance is created: before the order is accepted no instance exists and addresses are null. Then `running`. `failed` means the instance was not created; `failure_reason` states why. The other values are the current state of the instance. A value naming an operation in progress (`starting`, `stopping`, `rebooting`, `rebuilding`, `rescuing`, `unrescuing`, `resizing`, `resetting_password`, `attaching_volume`, `detaching_volume`, `attaching_network_interface`, `detaching_network_interface`, `associating_elastic_ip`, `disassociating_elastic_ip`, `capturing_image`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the instance refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum InstanceStatus {
     #[default]
@@ -4150,13 +4156,13 @@ impl<'de> serde::Deserialize<'de> for InstanceElasticIp {
 ///One IPv4 elastic IP created with this bandwidth configuration in the instance's order.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NewElasticIp {
-    ///Any whole number of Mbps within the line's `min_bandwidth_mbps` and `max_bandwidth_mbps`, otherwise refused with `ELASTIC_IP_BANDWIDTH_RANGE`.
+    ///The ceiling on the traffic the address sends, in Mbit/s. Any whole number of Mbps within the line's `min_bandwidth_mbps` and `max_bandwidth_mbps`, otherwise refused with `INTERNET_LINE_BANDWIDTH_RANGE`.
     ///Constraint: minimum=1, maximum=1000
     pub bandwidth_mbps: i64,
     pub billing: BillingChoice,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub internet_charge_type: Option<InternetChargeType>,
-    pub line_id: ElasticIpLineId,
+    pub line_id: InternetLineId,
     pub r#type: NewElasticIpType,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -4220,24 +4226,24 @@ pub struct CreateElasticIpResponseBody {
     ///The order created when checkout completes, at once for automatic checkout; null until then.
     pub order_id: Option<uuid::Uuid>,
 }
-/**One public IP resource, including its bandwidth configuration. Bandwidth has no separate Compute resource ID.
-Two items of one Billing subscription pay for it: the address item, always pay-as-you-go, charges for the
+/**A public IPv4 address with its bandwidth. Two items of one Billing subscription pay for it: the address item, always pay-as-you-go, charges for the
 address while it is not associated with anything, and the network item, on the terms chosen at purchase,
 charges for the bandwidth or the traffic. The subscription is the elastic IP's own, or the instance's when it
 was bought with or for one. Changing bandwidth updates this same resource, not another allocation.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ElasticIp {
     pub access_state: Option<ElasticIpAccessState>,
-    ///The held IPv4 address; null before actual claim. Holding identity is not exposed.
+    ///The IPv4 address; null until it is allocated.
     pub address: Option<Ipv4HostAddress>,
     ///The Billing order item of the address, always pay-as-you-go.
     pub address_order_item_id: Option<uuid::Uuid>,
     ///The subscription item of the address, always pay-as-you-go.
     pub address_subscription_item_id: Option<uuid::Uuid>,
-    ///The actual address holding start time; null before actual claim.
+    ///When the address was allocated; null until then.
     pub allocated_at: Option<chrono::DateTime<chrono::Utc>>,
     pub association: Option<ElasticIpAssociation>,
-    pub bandwidth_mbps: Option<i64>,
+    ///The ceiling on the traffic the address sends, in Mbit/s.
+    pub bandwidth_mbps: i64,
     ///The Billing Checkout Session that bought this resource; `order_id` and the order items stay null until its checkout completes. Null when the resource was not bought through one.
     pub checkout_session_id: Option<uuid::Uuid>,
     pub created_at: chrono::DateTime<chrono::Utc>,
@@ -4251,12 +4257,12 @@ pub struct ElasticIp {
     pub internet_subscription_item_id: Option<uuid::Uuid>,
     ///The most recent operation started on the elastic IP; null when none has been recorded.
     pub latest_operation: Option<LatestOperation>,
-    pub line_id: ElasticIpLineId,
+    pub line_id: InternetLineId,
     pub order_id: Option<uuid::Uuid>,
     pub region_id: RegionId,
     ///The subscription items a cancellation through Billing has to cover to release this elastic IP, both the address's and the network's, each with the resource it pays for, so that each line of a cancellation can name what it releases. An item that has ended is not listed, and the set is empty when no item pays for the elastic IP.
     pub release_set: Vec<ReleaseSetItem>,
-    ///The confirmed holding release time; null while held or before actual claim.
+    ///When the address was released; null while it is held.
     pub released_at: Option<chrono::DateTime<chrono::Utc>>,
     ///`pending` until the address is created, with no address allocated before the order is accepted; then `available`. `failed` means no address was allocated; `failure_reason` states why. A value naming an operation in progress (`associating`, `disassociating`, `updating_bandwidth`, `updating_internet_charge_type`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the elastic IP refuses another operation until it ends.
     pub status: ElasticIpStatus,
@@ -5317,45 +5323,6 @@ impl AsRef<str> for ElasticIpReleaseResourceType {
         self.as_str()
     }
 }
-///The most recent operation started on a resource and how it stands. It is replaced when the next operation starts.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct LatestOperation {
-    ///The operation, named as the request that started it, for example `resize` or `attach_volume`. While `state` is `operating`, the resource's `status` names the same operation in progress.
-    pub name: String,
-    pub started_at: chrono::DateTime<chrono::Utc>,
-    ///`operating` while the operation runs; `succeeded` or `failed` once it has ended.
-    pub state: LatestOperationState,
-}
-///`operating` while the operation runs; `succeeded` or `failed` once it has ended.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum LatestOperationState {
-    #[default]
-    #[serde(rename = "operating")]
-    Operating,
-    #[serde(rename = "succeeded")]
-    Succeeded,
-    #[serde(rename = "failed")]
-    Failed,
-}
-impl LatestOperationState {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Operating => "operating",
-            Self::Succeeded => "succeeded",
-            Self::Failed => "failed",
-        }
-    }
-}
-impl ::std::fmt::Display for LatestOperationState {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for LatestOperationState {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
 ///`pending` until the address is created, with no address allocated before the order is accepted; then `available`. `failed` means no address was allocated; `failure_reason` states why. A value naming an operation in progress (`associating`, `disassociating`, `updating_bandwidth`, `updating_internet_charge_type`, `suspending`, `resuming`, `deleting`) is shown while that operation runs; the elastic IP refuses another operation until it ends.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ElasticIpStatus {
@@ -5469,15 +5436,21 @@ pub type ElasticIpId = String;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ElasticIpAssociationState {
     #[default]
+    #[serde(rename = "reserved")]
+    Reserved,
     #[serde(rename = "associated")]
     Associated,
+    #[serde(rename = "disassociating")]
+    Disassociating,
     #[serde(rename = "released")]
     Released,
 }
 impl ElasticIpAssociationState {
     pub fn as_str(&self) -> &'static str {
         match self {
+            Self::Reserved => "reserved",
             Self::Associated => "associated",
+            Self::Disassociating => "disassociating",
             Self::Released => "released",
         }
     }
@@ -5533,15 +5506,7 @@ impl AsRef<str> for ElasticIpAccessState {
 pub struct CreateElasticIpRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub address: Option<Ipv4HostAddress>,
-    /**The bandwidth ceiling of this address, in Mbit/s, applied to both directions.
-
-    Required, and there is no "unlimited": an address with no ceiling runs at line rate and is
-    charged nothing for the traffic, while the address itself bills normally — so the invoice
-    looks correct and nothing anywhere reports it.
-
-    Any whole number of Mbps within the line's `min_bandwidth_mbps` and `max_bandwidth_mbps`, otherwise the
-    request is refused with `ELASTIC_IP_BANDWIDTH_RANGE`. Changing it
-    later updates the same elastic IP through `change-elastic-ip-bandwidth`, not an independent bandwidth resource.*/
+    ///The ceiling on the traffic the address sends, in Mbit/s. Any whole number of Mbps within the line's `min_bandwidth_mbps` and `max_bandwidth_mbps`, otherwise the request is refused with `INTERNET_LINE_BANDWIDTH_RANGE`. Change it later with `change-elastic-ip-bandwidth`.
     ///Constraint: minimum=1, maximum=1000
     pub bandwidth_mbps: i64,
     pub billing: BillingChoice,
@@ -5551,11 +5516,11 @@ pub struct CreateElasticIpRequestBody {
     pub instance_id: Option<InstanceId>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub internet_charge_type: Option<InternetChargeType>,
-    pub line_id: ElasticIpLineId,
+    pub line_id: InternetLineId,
 }
 impl CreateElasticIpRequestBody {
     /// Construct this request with every required wire field.
-    pub fn new(bandwidth_mbps: i64, billing: BillingChoice, line_id: ElasticIpLineId) -> Self {
+    pub fn new(bandwidth_mbps: i64, billing: BillingChoice, line_id: InternetLineId) -> Self {
         Self {
             bandwidth_mbps,
             billing,
@@ -5570,7 +5535,7 @@ impl CreateElasticIpRequestBody {
     pub fn builder(
         bandwidth_mbps: i64,
         billing: BillingChoice,
-        line_id: ElasticIpLineId,
+        line_id: InternetLineId,
     ) -> CreateElasticIpRequestBodyBuilder {
         CreateElasticIpRequestBodyBuilder::new(bandwidth_mbps, billing, line_id)
     }
@@ -5583,7 +5548,7 @@ pub struct CreateElasticIpRequestBodyBuilder {
 }
 impl CreateElasticIpRequestBodyBuilder {
     /// Start a builder with every required wire field.
-    pub fn new(bandwidth_mbps: i64, billing: BillingChoice, line_id: ElasticIpLineId) -> Self {
+    pub fn new(bandwidth_mbps: i64, billing: BillingChoice, line_id: InternetLineId) -> Self {
         Self {
             value: CreateElasticIpRequestBody::new(bandwidth_mbps, billing, line_id),
         }
@@ -5618,13 +5583,11 @@ impl CreateElasticIpRequestBodyBuilder {
     }
 }
 pub type Ipv4HostAddress = String;
-///Compute ElasticIpLine TypeID. UUID text is not accepted.
-pub type ElasticIpLineId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ChangeElasticIpChargeTypeRequestBody {
     pub internet_charge_type: InternetChargeType,
 }
-///What the network item of an elastic IP charges for. `bandwidth` charges for the bandwidth ceiling, prepaid for a period or by the Mbit/s-second while the address is associated. `traffic` charges for the bytes the address sends upstream, pay-as-you-go only, while the bandwidth is only a ceiling; it is refused with `ELASTIC_IP_TRAFFIC_UNAVAILABLE` on a line whose `traffic_sale_status` is `off_sale`. Inbound traffic is never charged. Prices are set per currency, so a pay-as-you-go purchase whose account currency has no rate on the line for the chosen type is refused before any order with HTTP 403 `ELASTIC_IP_CHARGE_TYPE_NOT_OFFERED`, whether the elastic IP is bought alone or with an instance. A pay-as-you-go elastic IP can move between the two with `update-elastic-ip`.
+///What the internet item of an elastic IP charges for. `bandwidth` charges for the bandwidth ceiling, prepaid for a period or by the Mbit/s-second while the address is associated. `traffic` charges for the bytes sent to the internet, pay-as-you-go only, while the bandwidth is only a ceiling. Inbound traffic is never charged.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum InternetChargeType {
     #[default]
@@ -5653,7 +5616,7 @@ impl AsRef<str> for InternetChargeType {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ChangeElasticIpBandwidthRequestBody {
-    ///The new ceiling in Mbit/s, applied to both directions.
+    ///The new ceiling on the traffic the address sends, in Mbit/s.
     ///Constraint: minimum=1
     pub bandwidth_mbps: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -5704,83 +5667,6 @@ impl ChangeElasticIpBandwidthRequestBodyBuilder {
     /// Finish building the request model.
     pub fn build(self) -> ChangeElasticIpBandwidthRequestBody {
         self.value
-    }
-}
-/**Shared checkout choices for a product purchase. The service may set them or forward its client's
-choices unchanged; it does not need to read them, and Billing validates them. Omitting this object or
-mode selects automatic checkout. Each purchase creates its own Checkout Session. Promotion codes are supplied
-only to Billing. A service may retain a failed creation record when Billing refuses a purchase; no
-infrastructure is created for that refusal.*/
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct CheckoutOptions {
-    /**Turns on automatic renewal of every subscription with licensed items that the purchase opens. Off
-    when omitted. It must be the customer's own choice. For a free trial, it converts the trial to paid
-    when the trial ends.*/
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub auto_renew: Option<bool>,
-    /**Expected invoice total after discounts and tax, before applying credit grants or balance.
-    A different total fails with BILLING_AMOUNT_CHANGED without charging or reserving a discount.
-    Accepted only in automatic mode; with deferred it is refused with HTTP 400. For deferred
-    checkout, give the expected amount when completing it through Billing.*/
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub expected_amount: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mode: Option<CheckoutMode>,
-    /**Where the client goes after the customer finishes a deferred checkout. Any absolute URI with a
-    scheme, including mobile and desktop application schemes. Billing stores it without checking the
-    target; each client validates its own.*/
-    ///Constraint: maxLength=2048
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub return_url: Option<url::Url>,
-    /**A free trial grant of the paying billing account that the customer chose to use. The first new
-    subscription of the purchase whose lines are all of plans the grant's offer lists, within each plan's
-    max_quantity, and that has a licensed line and no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
-    HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
-    BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub trial_grant_id: Option<uuid::Uuid>,
-}
-/**A decimal string, in the currency stated alongside it.
-
-**The currency is not part of this type.** It is carried by a `currency` field next to the
-amount, or by the account the amount belongs to. Reading an amount without that field is
-reading a number with no unit.
-
-It is a string rather than a JSON number because a JSON number is a float in most parsers,
-and a float loses precision on the first arithmetic. Nothing on this platform puts an amount
-through a float.*/
-pub type Money = String;
-/**automatic completes checkout with the purchase: the best applicable account discount is applied, and the
-order is created with its invoice issued and paid from eligible credit grants and available balance.
-Insufficient funds fail the purchase with HTTP 422 BILLING_INSUFFICIENT_FUNDS; no Billing order, charge or
-discount redemption is committed.
-deferred creates an open Billing Checkout Session and charges nothing, even for a zero total. The customer
-completes it through Billing, where a promotion code can be applied, and then pays the issued invoice; a
-session not completed by its deadline expires.*/
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum CheckoutMode {
-    #[default]
-    #[serde(rename = "automatic")]
-    Automatic,
-    #[serde(rename = "deferred")]
-    Deferred,
-}
-impl CheckoutMode {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Automatic => "automatic",
-            Self::Deferred => "deferred",
-        }
-    }
-}
-impl ::std::fmt::Display for CheckoutMode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for CheckoutMode {
-    fn as_ref(&self) -> &str {
-        self.as_str()
     }
 }
 ///Create a boot volume from an image, or use a prepared volume already held by this project. Using an existing volume does not buy it again and always keeps it when the instance is released.
@@ -6018,12 +5904,6 @@ impl AsRef<str> for NewBootVolumeOnInstanceRelease {
 }
 ///Compute Image TypeID. UUID text is not accepted.
 pub type ImageId = String;
-///The Billing price selected for this component's plan. Billing validates the price, currency, availability, cancellation terms and subscription period. Each newly purchased component selects its own price; a price cannot be inherited from a different component's plan.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct BillingChoice {
-    ///The ID of a recurring price returned by Billing for this component's plan.
-    pub price_id: uuid::Uuid,
-}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ExistingBootVolume {
     ///The existing account used to log in to this volume's operating system.
@@ -6198,7 +6078,7 @@ impl AsRef<str> for CancellationMode {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AvailabilityZoneListResponseBody {
-    pub items: Option<Vec<AvailabilityZoneResource>>,
+    pub items: Vec<AvailabilityZoneResource>,
     pub pagination: OffsetPagination,
 }
 ///Pagination metadata for stable numbered pages. total_count is returned only when the operation can determine it without an unbounded scan.
@@ -6221,8 +6101,6 @@ pub struct AvailabilityZoneResource {
     pub name: String,
     pub region_id: RegionId,
 }
-///Compute Region TypeID. UUID text is not accepted.
-pub type RegionId = String;
 ///Compute AvailabilityZone TypeID. UUID text is not accepted.
 pub type AvailabilityZoneId = String;
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -6237,6 +6115,379 @@ pub struct AttachNetworkInterfaceRequestBody {
 }
 ///The public eni resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
 pub type NetworkInterfaceId = String;
+///The virtual private cloud with the new block, and the Checkout Session that buys it.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AssociateIpv6CidrBlockResponseBody {
+    ///The Billing Checkout Session of the purchase. With deferred checkout, the customer completes it in Billing.
+    pub checkout_session_id: uuid::Uuid,
+    pub ipv6_cidr_block_id: VirtualPrivateCloudIpv6CidrBlockId,
+    ///The order created when checkout completes, at once for automatic checkout; null until then.
+    pub order_id: Option<uuid::Uuid>,
+    pub virtual_private_cloud: VirtualPrivateCloud,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VirtualPrivateCloud {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub id: VirtualPrivateCloudId,
+    pub ipv4_cidr: String,
+    ///The IPv6 CIDR block associations, including pending and failed associations. Empty when no associations remain.
+    pub ipv6_cidr_blocks: Vec<VirtualPrivateCloudIpv6CidrBlock>,
+    ///The most recent operation started on the virtual private cloud; null when none has been recorded.
+    pub latest_operation: Option<LatestOperation>,
+    ///Network MTU of the virtual private cloud.
+    ///Constraint: minimum=1280, maximum=9000
+    pub mtu: i64,
+    pub name: String,
+    pub region_id: RegionId,
+    ///`available` from creation. `failed` means the network is broken; instances cannot be created in it then and are refused with `VIRTUAL_PRIVATE_CLOUD_UNAVAILABLE`. `deleting` from the moment its deletion began until it is gone: subnets, security groups and routes in it can no longer be created, changed or deleted, and are refused with `VIRTUAL_PRIVATE_CLOUD_DELETING`. A deletion that stopped before the end leaves it `deleting`, and deleting it again resumes from where it stopped. `creating` names the operation in progress. Associating and disassociating an IPv6 CIDR block are shown in that block's `state`.
+    pub status: VirtualPrivateCloudStatus,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+///`available` from creation. `failed` means the network is broken; instances cannot be created in it then and are refused with `VIRTUAL_PRIVATE_CLOUD_UNAVAILABLE`. `deleting` from the moment its deletion began until it is gone: subnets, security groups and routes in it can no longer be created, changed or deleted, and are refused with `VIRTUAL_PRIVATE_CLOUD_DELETING`. A deletion that stopped before the end leaves it `deleting`, and deleting it again resumes from where it stopped. `creating` names the operation in progress. Associating and disassociating an IPv6 CIDR block are shown in that block's `state`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum VirtualPrivateCloudStatus {
+    #[default]
+    #[serde(rename = "available")]
+    Available,
+    #[serde(rename = "deleting")]
+    Deleting,
+    #[serde(rename = "failed")]
+    Failed,
+    #[serde(rename = "creating")]
+    Creating,
+}
+impl VirtualPrivateCloudStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Available => "available",
+            Self::Deleting => "deleting",
+            Self::Failed => "failed",
+            Self::Creating => "creating",
+        }
+    }
+}
+impl ::std::fmt::Display for VirtualPrivateCloudStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for VirtualPrivateCloudStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///An IPv6 CIDR block associated with a virtual private cloud. Its addresses reach the internet, and the bytes they send there are billed by one metered item of a Billing subscription of its own.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VirtualPrivateCloudIpv6CidrBlock {
+    ///`pending` while initial internet access is not yet enabled. `enabled` when IPv6 internet access is available under the traffic subscription. `suspended` when billing restrictions disable internet access; assigned IPv6 addresses and communication within the virtual private cloud are preserved, subject to security group rules. Resolving the billing restriction restores internet access without reallocating addresses. `reclaimed` when the subscription requires permanent release; the block is then disassociated, removing its network interface addresses and subnet IPv6 ranges while preserving IPv4 configuration. Null when no access entitlement exists.
+    pub access_state: Option<VirtualPrivateCloudIpv6CidrBlockAccessState>,
+    ///The Billing Checkout Session that bought the block.
+    pub checkout_session_id: Option<uuid::Uuid>,
+    ///The /56, from which each subnet takes a /64; null until the block is allocated.
+    pub cidr: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    ///Why the association failed; null unless `state` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means the association failed after the order was accepted, and its charge is refunded.
+    pub failure_reason: Option<VirtualPrivateCloudIpv6CidrBlockFailureReason>,
+    pub id: VirtualPrivateCloudIpv6CidrBlockId,
+    pub line_id: InternetLineId,
+    ///The order created when checkout completes; null until then.
+    pub order_id: Option<uuid::Uuid>,
+    ///`pending` until the order is accepted. `associating` while the block, subnet IPv6 ranges and network interface IPv6 addresses are being configured. `associated` after this configuration is complete. `disassociating` while the IPv6 configuration is being removed. `failed` after unsuccessful provisioning has been cleaned up; `failure_reason` identifies the cause. A failed association can be removed by disassociating it.
+    pub state: VirtualPrivateCloudIpv6CidrBlockState,
+    ///The Billing subscription of the block's traffic; null until the order is accepted.
+    pub subscription_id: Option<uuid::Uuid>,
+    ///The metered subscription item of the block's traffic; null until the order is accepted.
+    pub subscription_item_id: Option<uuid::Uuid>,
+}
+///`pending` until the order is accepted. `associating` while the block, subnet IPv6 ranges and network interface IPv6 addresses are being configured. `associated` after this configuration is complete. `disassociating` while the IPv6 configuration is being removed. `failed` after unsuccessful provisioning has been cleaned up; `failure_reason` identifies the cause. A failed association can be removed by disassociating it.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum VirtualPrivateCloudIpv6CidrBlockState {
+    #[default]
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "associating")]
+    Associating,
+    #[serde(rename = "associated")]
+    Associated,
+    #[serde(rename = "disassociating")]
+    Disassociating,
+    #[serde(rename = "failed")]
+    Failed,
+}
+impl VirtualPrivateCloudIpv6CidrBlockState {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Associating => "associating",
+            Self::Associated => "associated",
+            Self::Disassociating => "disassociating",
+            Self::Failed => "failed",
+        }
+    }
+}
+impl ::std::fmt::Display for VirtualPrivateCloudIpv6CidrBlockState {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for VirtualPrivateCloudIpv6CidrBlockState {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///Compute VirtualPrivateCloudIpv6CidrBlock TypeID. UUID text is not accepted.
+pub type VirtualPrivateCloudIpv6CidrBlockId = String;
+///Why the association failed; null unless `state` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired. `provisioning_failed` means the association failed after the order was accepted, and its charge is refunded.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum VirtualPrivateCloudIpv6CidrBlockFailureReason {
+    #[default]
+    #[serde(rename = "order_declined")]
+    OrderDeclined,
+    #[serde(rename = "order_canceled")]
+    OrderCanceled,
+    #[serde(rename = "order_expired")]
+    OrderExpired,
+    #[serde(rename = "checkout_expired")]
+    CheckoutExpired,
+    #[serde(rename = "provisioning_failed")]
+    ProvisioningFailed,
+    #[serde(rename = "null")]
+    NullValue,
+}
+impl VirtualPrivateCloudIpv6CidrBlockFailureReason {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::OrderDeclined => "order_declined",
+            Self::OrderCanceled => "order_canceled",
+            Self::OrderExpired => "order_expired",
+            Self::CheckoutExpired => "checkout_expired",
+            Self::ProvisioningFailed => "provisioning_failed",
+            Self::NullValue => "null",
+        }
+    }
+}
+impl ::std::fmt::Display for VirtualPrivateCloudIpv6CidrBlockFailureReason {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for VirtualPrivateCloudIpv6CidrBlockFailureReason {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///`pending` while initial internet access is not yet enabled. `enabled` when IPv6 internet access is available under the traffic subscription. `suspended` when billing restrictions disable internet access; assigned IPv6 addresses and communication within the virtual private cloud are preserved, subject to security group rules. Resolving the billing restriction restores internet access without reallocating addresses. `reclaimed` when the subscription requires permanent release; the block is then disassociated, removing its network interface addresses and subnet IPv6 ranges while preserving IPv4 configuration. Null when no access entitlement exists.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum VirtualPrivateCloudIpv6CidrBlockAccessState {
+    #[default]
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "enabled")]
+    Enabled,
+    #[serde(rename = "suspended")]
+    Suspended,
+    #[serde(rename = "reclaimed")]
+    Reclaimed,
+    #[serde(rename = "null")]
+    NullValue,
+}
+impl VirtualPrivateCloudIpv6CidrBlockAccessState {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Enabled => "enabled",
+            Self::Suspended => "suspended",
+            Self::Reclaimed => "reclaimed",
+            Self::NullValue => "null",
+        }
+    }
+}
+impl ::std::fmt::Display for VirtualPrivateCloudIpv6CidrBlockAccessState {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for VirtualPrivateCloudIpv6CidrBlockAccessState {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///The public vpc resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
+pub type VirtualPrivateCloudId = String;
+///Compute Region TypeID. UUID text is not accepted.
+pub type RegionId = String;
+///The most recent operation started on a resource and how it stands. It is replaced when the next operation starts.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LatestOperation {
+    ///The operation, named as the request that started it, for example `resize` or `attach_volume`. While `state` is `operating`, the resource's `status` names the same operation in progress.
+    pub name: String,
+    pub started_at: chrono::DateTime<chrono::Utc>,
+    ///`operating` while the operation runs; `succeeded` or `failed` once it has ended.
+    pub state: LatestOperationState,
+}
+///`operating` while the operation runs; `succeeded` or `failed` once it has ended.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum LatestOperationState {
+    #[default]
+    #[serde(rename = "operating")]
+    Operating,
+    #[serde(rename = "succeeded")]
+    Succeeded,
+    #[serde(rename = "failed")]
+    Failed,
+}
+impl LatestOperationState {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Operating => "operating",
+            Self::Succeeded => "succeeded",
+            Self::Failed => "failed",
+        }
+    }
+}
+impl ::std::fmt::Display for LatestOperationState {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for LatestOperationState {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AssociateIpv6CidrBlockRequestBody {
+    pub billing: BillingChoice,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub checkout: Option<CheckoutOptions>,
+    pub line_id: InternetLineId,
+}
+impl AssociateIpv6CidrBlockRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(billing: BillingChoice, line_id: InternetLineId) -> Self {
+        Self {
+            billing,
+            line_id,
+            checkout: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(
+        billing: BillingChoice,
+        line_id: InternetLineId,
+    ) -> AssociateIpv6CidrBlockRequestBodyBuilder {
+        AssociateIpv6CidrBlockRequestBodyBuilder::new(billing, line_id)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct AssociateIpv6CidrBlockRequestBodyBuilder {
+    value: AssociateIpv6CidrBlockRequestBody,
+}
+impl AssociateIpv6CidrBlockRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(billing: BillingChoice, line_id: InternetLineId) -> Self {
+        Self {
+            value: AssociateIpv6CidrBlockRequestBody::new(billing, line_id),
+        }
+    }
+    #[doc = concat!("Set the optional `", "checkout", "` request field.")]
+    #[must_use]
+    pub fn checkout(mut self, checkout: CheckoutOptions) -> Self {
+        self.value.checkout = Some(checkout);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> AssociateIpv6CidrBlockRequestBody {
+        self.value
+    }
+}
+///Compute InternetLine TypeID. UUID text is not accepted.
+pub type InternetLineId = String;
+/**Shared checkout choices for a product purchase. The service may set them or forward its client's
+choices unchanged; it does not need to read them, and Billing validates them. Omitting this object or
+mode selects automatic checkout. Each purchase creates its own Checkout Session. Promotion codes are supplied
+only to Billing. A service may retain a failed creation record when Billing refuses a purchase; no
+infrastructure is created for that refusal.*/
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct CheckoutOptions {
+    /**Turns on automatic renewal of every subscription with licensed items that the purchase opens. Off
+    when omitted. It must be the customer's own choice. For a free trial, it converts the trial to paid
+    when the trial ends.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_renew: Option<bool>,
+    /**Expected invoice total after discounts and tax, before applying credit grants or balance.
+    A different total fails with BILLING_AMOUNT_CHANGED without charging or reserving a discount.
+    Accepted only in automatic mode; with deferred it is refused with HTTP 400. For deferred
+    checkout, give the expected amount when completing it through Billing.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_amount: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mode: Option<CheckoutMode>,
+    /**Where the client goes after the customer finishes a deferred checkout. Any absolute URI with a
+    scheme, including mobile and desktop application schemes. Billing stores it without checking the
+    target; each client validates its own.*/
+    ///Constraint: maxLength=2048
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub return_url: Option<url::Url>,
+    /**A free trial grant of the paying billing account that the customer chose to use. The first new
+    subscription of the purchase whose lines are all of plans the grant's offer lists, within each plan's
+    max_quantity, and that has a licensed line and no trial of its own, opens with the offer's free trial. Accepted only in automatic mode; with deferred it is refused with
+    HTTP 400, and the grant is chosen when completing the checkout through Billing. Refused with
+    BILLING_TRIAL_GRANT_INAPPLICABLE when no subscription qualifies or the grant cannot be used now.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trial_grant_id: Option<uuid::Uuid>,
+}
+/**A decimal string, in the currency stated alongside it.
+
+**The currency is not part of this type.** It is carried by a `currency` field next to the
+amount, or by the account the amount belongs to. Reading an amount without that field is
+reading a number with no unit.
+
+It is a string rather than a JSON number because a JSON number is a float in most parsers,
+and a float loses precision on the first arithmetic. Nothing on this platform puts an amount
+through a float.*/
+pub type Money = String;
+/**automatic completes checkout with the purchase: the best applicable account discount is applied, and the
+order is created with its invoice issued and paid from eligible credit grants and available balance.
+Insufficient funds fail the purchase with HTTP 422 BILLING_INSUFFICIENT_FUNDS; no Billing order, charge or
+discount redemption is committed.
+deferred creates an open Billing Checkout Session and charges nothing, even for a zero total. The customer
+completes it through Billing, where a promotion code can be applied, and then pays the issued invoice; a
+session not completed by its deadline expires.*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CheckoutMode {
+    #[default]
+    #[serde(rename = "automatic")]
+    Automatic,
+    #[serde(rename = "deferred")]
+    Deferred,
+}
+impl CheckoutMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Automatic => "automatic",
+            Self::Deferred => "deferred",
+        }
+    }
+}
+impl ::std::fmt::Display for CheckoutMode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CheckoutMode {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///The Billing price selected for this component's plan. Billing validates the price, currency, availability, cancellation terms and subscription period. Each newly purchased component selects its own price; a price cannot be inherited from a different component's plan.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct BillingChoice {
+    ///The ID of a recurring price returned by Billing for this component's plan.
+    pub price_id: uuid::Uuid,
+}
 ///The target an elastic IP points at. Exactly one of the two forms.
 #[derive(Debug, Clone)]
 pub enum AssociateElasticIpRequestBody {

@@ -8,6 +8,79 @@
 #![allow(clippy::let_unit_value)]
 #![allow(unreachable_patterns)]
 use serde::{Deserialize, Serialize};
+/// A multipart file part: its content, with the filename and
+/// content type to send it under. Each defaults to none, and a
+/// content type declared by the document's `encoding` applies when
+/// this one is unset.
+///
+/// It converts from its content, so `MultipartFile::from(content)`
+/// or `content.into()` sends a part without either. In a JSON
+/// document it's the content alone.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct MultipartFile {
+    pub content: bytes::Bytes,
+    pub file_name: Option<String>,
+    pub content_type: Option<String>,
+}
+impl MultipartFile {
+    /// A part with this content, and no filename or content type.
+    pub fn new(content: impl Into<bytes::Bytes>) -> Self {
+        Self {
+            content: content.into(),
+            file_name: None,
+            content_type: None,
+        }
+    }
+    /// Send the part under this filename.
+    #[must_use]
+    pub fn with_file_name(mut self, file_name: impl Into<String>) -> Self {
+        self.file_name = Some(file_name.into());
+        self
+    }
+    /// Send the part with this `Content-Type`.
+    #[must_use]
+    pub fn with_content_type(mut self, content_type: impl Into<String>) -> Self {
+        self.content_type = Some(content_type.into());
+        self
+    }
+}
+impl From<bytes::Bytes> for MultipartFile {
+    fn from(content: bytes::Bytes) -> Self {
+        Self::new(content)
+    }
+}
+impl From<Vec<u8>> for MultipartFile {
+    fn from(content: Vec<u8>) -> Self {
+        Self::new(content)
+    }
+}
+impl From<&'static [u8]> for MultipartFile {
+    fn from(content: &'static [u8]) -> Self {
+        Self::new(content)
+    }
+}
+impl From<String> for MultipartFile {
+    fn from(content: String) -> Self {
+        Self::new(content)
+    }
+}
+impl From<&'static str> for MultipartFile {
+    fn from(content: &'static str) -> Self {
+        Self::new(content)
+    }
+}
+impl Serialize for MultipartFile {
+    fn serialize<S: serde::Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        let content =
+            std::str::from_utf8(self.content.as_ref()).map_err(serde::ser::Error::custom)?;
+        ser.serialize_str(content)
+    }
+}
+impl<'de> Deserialize<'de> for MultipartFile {
+    fn deserialize<D: serde::Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        String::deserialize(de).map(Self::new)
+    }
+}
 /// Serde normally maps both a missing `Option<T>` field and an
 /// explicit JSON null to `None`. Wrapping the decoded value in
 /// `Some` retains the field-presence bit for `Option<Option<T>>`.
@@ -381,6 +454,128 @@ pub struct UpdateAPIKeyRequestBody {
     pub restrict_models: Option<Option<bool>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TranscriptionRequest {
+    ///The audio file to process.
+    pub file: MultipartFile,
+    ///The input language as an ISO 639-1 code.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
+    ///Constraint: minLength=1
+    pub model: String,
+    ///Optional context to guide recognition.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt: Option<String>,
+    ///A response format from capabilities.audio.response_formats. Omit for the model default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<String>,
+    ///Sampling temperature, where supported by the selected model.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f64>,
+    ///Timestamp granularities, where supported by the model and response format.
+    #[serde(
+        rename = "timestamp_granularities[]",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub timestamp_granularities: Option<Vec<TranscriptionRequestTimestampGranularitiesItem>>,
+}
+impl TranscriptionRequest {
+    /// Construct this request with every required wire field.
+    pub fn new(file: MultipartFile, model: String) -> Self {
+        Self {
+            file,
+            model,
+            language: None,
+            prompt: None,
+            response_format: None,
+            temperature: None,
+            timestamp_granularities: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(file: MultipartFile, model: String) -> TranscriptionRequestBuilder {
+        TranscriptionRequestBuilder::new(file, model)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct TranscriptionRequestBuilder {
+    value: TranscriptionRequest,
+}
+impl TranscriptionRequestBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(file: MultipartFile, model: String) -> Self {
+        Self {
+            value: TranscriptionRequest::new(file, model),
+        }
+    }
+    #[doc = concat!("Set the optional `", "language", "` request field.")]
+    #[must_use]
+    pub fn language(mut self, language: String) -> Self {
+        self.value.language = Some(language);
+        self
+    }
+    #[doc = concat!("Set the optional `", "prompt", "` request field.")]
+    #[must_use]
+    pub fn prompt(mut self, prompt: String) -> Self {
+        self.value.prompt = Some(prompt);
+        self
+    }
+    #[doc = concat!("Set the optional `", "response_format", "` request field.")]
+    #[must_use]
+    pub fn response_format(mut self, response_format: String) -> Self {
+        self.value.response_format = Some(response_format);
+        self
+    }
+    #[doc = concat!("Set the optional `", "temperature", "` request field.")]
+    #[must_use]
+    pub fn temperature(mut self, temperature: f64) -> Self {
+        self.value.temperature = Some(temperature);
+        self
+    }
+    #[doc = concat!(
+        "Set the optional `", "timestamp_granularities[]", "` request field."
+    )]
+    #[must_use]
+    pub fn timestamp_granularities(
+        mut self,
+        timestamp_granularities: Vec<TranscriptionRequestTimestampGranularitiesItem>,
+    ) -> Self {
+        self.value.timestamp_granularities = Some(timestamp_granularities);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> TranscriptionRequest {
+        self.value
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum TranscriptionRequestTimestampGranularitiesItem {
+    #[default]
+    #[serde(rename = "word")]
+    Word,
+    #[serde(rename = "segment")]
+    Segment,
+}
+impl TranscriptionRequestTimestampGranularitiesItem {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Word => "word",
+            Self::Segment => "segment",
+        }
+    }
+}
+impl ::std::fmt::Display for TranscriptionRequestTimestampGranularitiesItem {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for TranscriptionRequestTimestampGranularitiesItem {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TotalsResource {
     ///Null when this range has no token usage.
     pub cache_read_tokens: Option<i64>,
@@ -400,6 +595,129 @@ pub struct TotalsResource {
     ///Null when this range has no token usage.
     pub reasoning_tokens: Option<i64>,
     pub requests: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SpeechRequest {
+    ///Text to synthesize. Input limits depend on the selected model.
+    ///Constraint: minLength=1
+    pub input: String,
+    ///Voice instructions, where supported by the selected model.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instructions: Option<String>,
+    ///Constraint: minLength=1
+    pub model: String,
+    ///An audio format from capabilities.audio.formats. Omit to use the model default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<String>,
+    ///Speaking speed, where supported by the selected model.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speed: Option<f64>,
+    ///Audio bytes or server-sent events. Omit for audio bytes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stream_format: Option<SpeechRequestStreamFormat>,
+    ///A voice identifier from the selected model's capabilities.audio.voices.
+    ///Constraint: minLength=1
+    pub voice: String,
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+impl SpeechRequest {
+    /// Construct this request with every required wire field.
+    pub fn new(input: String, model: String, voice: String) -> Self {
+        Self {
+            input,
+            model,
+            voice,
+            instructions: None,
+            response_format: None,
+            speed: None,
+            stream_format: None,
+            additional_properties: ::std::collections::BTreeMap::new(),
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(input: String, model: String, voice: String) -> SpeechRequestBuilder {
+        SpeechRequestBuilder::new(input, model, voice)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct SpeechRequestBuilder {
+    value: SpeechRequest,
+}
+impl SpeechRequestBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(input: String, model: String, voice: String) -> Self {
+        Self {
+            value: SpeechRequest::new(input, model, voice),
+        }
+    }
+    #[doc = concat!("Set the optional `", "instructions", "` request field.")]
+    #[must_use]
+    pub fn instructions(mut self, instructions: String) -> Self {
+        self.value.instructions = Some(instructions);
+        self
+    }
+    #[doc = concat!("Set the optional `", "response_format", "` request field.")]
+    #[must_use]
+    pub fn response_format(mut self, response_format: String) -> Self {
+        self.value.response_format = Some(response_format);
+        self
+    }
+    #[doc = concat!("Set the optional `", "speed", "` request field.")]
+    #[must_use]
+    pub fn speed(mut self, speed: f64) -> Self {
+        self.value.speed = Some(speed);
+        self
+    }
+    #[doc = concat!("Set the optional `", "stream_format", "` request field.")]
+    #[must_use]
+    pub fn stream_format(mut self, stream_format: SpeechRequestStreamFormat) -> Self {
+        self.value.stream_format = Some(stream_format);
+        self
+    }
+    /// Replace the request's additional properties.
+    #[must_use]
+    pub fn additional_properties(
+        mut self,
+        additional_properties: ::std::collections::BTreeMap<String, serde_json::Value>,
+    ) -> Self {
+        self.value.additional_properties = additional_properties;
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> SpeechRequest {
+        self.value
+    }
+}
+///Audio bytes or server-sent events. Omit for audio bytes.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum SpeechRequestStreamFormat {
+    #[default]
+    #[serde(rename = "audio")]
+    Audio,
+    #[serde(rename = "sse")]
+    Sse,
+}
+impl SpeechRequestStreamFormat {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Audio => "audio",
+            Self::Sse => "sse",
+        }
+    }
+}
+impl ::std::fmt::Display for SpeechRequestStreamFormat {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for SpeechRequestStreamFormat {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 ///Native Responses request. Only caller-executed function and custom tools are supported. background, conversation and WebSocket-only fields are rejected over HTTP.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
@@ -1860,6 +2178,74 @@ impl AsRef<str> for APIKeyResourceStatus {
         self.as_str()
     }
 }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AudioTranslationRequest {
+    ///The audio file to process.
+    pub file: MultipartFile,
+    ///Constraint: minLength=1
+    pub model: String,
+    ///Optional context to guide recognition.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt: Option<String>,
+    ///A response format from capabilities.audio.response_formats. Omit for the model default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<String>,
+    ///Sampling temperature, where supported by the selected model.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f64>,
+}
+impl AudioTranslationRequest {
+    /// Construct this request with every required wire field.
+    pub fn new(file: MultipartFile, model: String) -> Self {
+        Self {
+            file,
+            model,
+            prompt: None,
+            response_format: None,
+            temperature: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(file: MultipartFile, model: String) -> AudioTranslationRequestBuilder {
+        AudioTranslationRequestBuilder::new(file, model)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct AudioTranslationRequestBuilder {
+    value: AudioTranslationRequest,
+}
+impl AudioTranslationRequestBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(file: MultipartFile, model: String) -> Self {
+        Self {
+            value: AudioTranslationRequest::new(file, model),
+        }
+    }
+    #[doc = concat!("Set the optional `", "prompt", "` request field.")]
+    #[must_use]
+    pub fn prompt(mut self, prompt: String) -> Self {
+        self.value.prompt = Some(prompt);
+        self
+    }
+    #[doc = concat!("Set the optional `", "response_format", "` request field.")]
+    #[must_use]
+    pub fn response_format(mut self, response_format: String) -> Self {
+        self.value.response_format = Some(response_format);
+        self
+    }
+    #[doc = concat!("Set the optional `", "temperature", "` request field.")]
+    #[must_use]
+    pub fn temperature(mut self, temperature: f64) -> Self {
+        self.value.temperature = Some(temperature);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> AudioTranslationRequest {
+        self.value
+    }
+}
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct ChatCompletion {
     /// Additional properties not explicitly defined in the schema
@@ -1889,6 +2275,13 @@ pub struct NativeResponse {
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct ResponseResource {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Transcription {
+    pub text: String,
     /// Additional properties not explicitly defined in the schema
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,

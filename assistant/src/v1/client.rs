@@ -3881,8 +3881,7 @@ impl HttpClient {
     /// Get settings
     ///
     /// The caller's assistant settings in this project. `defaultModel` is what a new conversation uses
-    /// when it names no model: the caller's choice, or the first model in the Canopy catalogue that can
-    /// run an agent.
+    /// when it names no model: the caller's choice, the platform default, or the first available model that supports tool calling.
     ///
     /// `GET /api/v1/settings`
     pub async fn get_settings(&self) -> Result<SettingsResource, ApiOpError<GetSettingsApiError>> {
@@ -8038,7 +8037,7 @@ impl HttpClient {
     }
     /// Update settings
     ///
-    /// Omitted fields stay as they are; null clears a choice so the catalogue default applies again.
+    /// Omitted fields stay as they are; null clears a choice so the platform default or catalogue fallback applies again.
     /// Existing conversations keep their models.
     ///
     /// Fails with 422 and code MODEL_UNAVAILABLE when the model cannot run an agent, and with 422 and
