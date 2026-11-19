@@ -655,6 +655,12 @@ pub enum CreateDecisionApiError {
 pub enum CreateEmbeddingsApiError {
     Default(InferenceError),
 }
+///Typed error responses for `create-enablement`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateEnablementApiError {
+    Status409(Error),
+    Default(Error),
+}
 ///Typed error responses for `create-image`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CreateImageApiError {
@@ -674,12 +680,6 @@ pub enum CreateMessageApiError {
 #[derive(Debug, Clone)]
 pub enum CreateResponseApiError {
     Default(InferenceError),
-}
-///Typed error responses for `create-service`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum CreateServiceApiError {
-    Status409(Error),
-    Default(Error),
 }
 ///Typed error responses for `create-speech`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
@@ -721,6 +721,11 @@ pub enum GenerateContentApiError {
 pub enum GetApiKeyApiError {
     Default(Error),
 }
+///Typed error responses for `get-enablement`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetEnablementApiError {
+    Default(Error),
+}
 ///Typed error responses for `get-inference-model`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetInferenceModelApiError {
@@ -739,11 +744,6 @@ pub enum GetRateLimitApiError {
 ///Typed error responses for `get-request`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetRequestApiError {
-    Default(Error),
-}
-///Typed error responses for `get-service`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetServiceApiError {
     Default(Error),
 }
 ///Typed error responses for `get-usage-summary`. One variant per declared non-2xx response.
@@ -1951,6 +1951,98 @@ impl HttpClient {
             }))
         }
     }
+    /// Enable the model platform service
+    ///
+    /// Purchases the model platform enablement for this project. The enablement itself has no charge; requests are metered under it by the tokens they use. It takes no billing choice. Returns the enablement as `pending` with its Checkout Session; it becomes `active` once the order is accepted, which with automatic checkout and nothing to pay happens without further action.
+    ///
+    /// Refused with 409 `SERVICE_ALREADY_ENABLED` while an enablement is pending or active. A refusal of the order by Billing is returned with Billing's code, such as `BILLING_PRICE_UNAVAILABLE` when the service has no price in the currency of the project's billing account.
+    ///
+    /// `POST /api/v1/enablement`
+    pub async fn create_enablement(
+        &self,
+        request: CreateEnablementRequestBody,
+    ) -> Result<CreateEnablementResponseBody, ApiOpError<CreateEnablementApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/enablement");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 202u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "202",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateEnablementApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateEnablementApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateEnablementApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Generate images from a prompt
     ///
     /// Generates one or more images from a text prompt. Unified multimodal image models (such as
@@ -2769,98 +2861,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<InferenceError>(&body_text) {
                     Ok(v) => {
                         typed = Some(CreateResponseApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Enable the model platform service
-    ///
-    /// Purchases the model platform service for this project. The service itself has no charge; requests are metered under it by the tokens they use. It takes no billing choice. Returns the service as `pending` with its Checkout Session; it becomes `active` once the order is accepted, which with automatic checkout and nothing to pay happens without further action.
-    ///
-    /// Refused with 409 `SERVICE_ALREADY_ENABLED` while an enablement is pending or the service is active. A refusal of the order by Billing is returned with Billing's code, such as `BILLING_PRICE_UNAVAILABLE` when the service has no price in the currency of the project's billing account.
-    ///
-    /// `POST /api/v1/service`
-    pub async fn create_service(
-        &self,
-        request: CreateServiceRequestBody,
-    ) -> Result<CreateServiceResponseBody, ApiOpError<CreateServiceApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/service");
-        let mut req = self.http_client.post(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 202u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "202",
-                )),
-            }))
-        } else {
-            let typed: Option<CreateServiceApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                409u16 => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(CreateServiceApiError::Status409(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(CreateServiceApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -6633,6 +6633,84 @@ impl HttpClient {
             }))
         }
     }
+    /// Get the model platform enablement
+    ///
+    /// The model platform enablement of the authenticated project. The forwarding endpoints accept its requests only while `status` is `active`; each request is then billed under `subscription_id`, per token, at the rates Billing holds for each model's `billing`.
+    ///
+    /// When the project is deleted, its API keys are revoked and the subscription is canceled; the enablement then reads `inactive` with `ended_at` set.
+    ///
+    /// `GET /api/v1/enablement`
+    pub async fn get_enablement(
+        &self,
+    ) -> Result<EnablementResource, ApiOpError<GetEnablementApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/enablement");
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetEnablementApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetEnablementApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Get a callable model with capabilities and parameter limits
     ///
     /// `GET /v1/models/{model}`
@@ -6946,82 +7024,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetRequestApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Get the model platform service
-    ///
-    /// The model platform service of the authenticated project. The forwarding endpoints accept its requests only while `status` is `active`; each request is then billed under `subscription_id`, per token, at the rates Billing holds for each model's `billing`.
-    ///
-    /// When the project is deleted, its API keys are revoked and the subscription is canceled; the service then reads `inactive` with `ended_at` set.
-    ///
-    /// `GET /api/v1/service`
-    pub async fn get_service(&self) -> Result<ServiceResource, ApiOpError<GetServiceApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/service");
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetServiceApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetServiceApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
