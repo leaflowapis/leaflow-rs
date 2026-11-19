@@ -865,11 +865,12 @@ pub struct SubscriptionItemCancellation {
     pub failure_code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
-    pub forfeit_remaining_value: bool,
     pub id: uuid::Uuid,
     pub mode: CancellationMode,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refund_policy: Option<CancellationRefundPolicy>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub release_started_at: Option<chrono::DateTime<chrono::Utc>>,
     pub requested_at: chrono::DateTime<chrono::Utc>,
@@ -2501,7 +2502,7 @@ pub struct MonthlyStatementList {
     pub items: Vec<MonthlyStatement>,
     pub pagination: OffsetPagination,
 }
-///One billing account's usage billing for one UTC calendar month, summed over its statements. Not payable itself; each statement's invoice is collected on its own.
+///One billing account's Statement of Account for one UTC calendar month, combining order invoices issued in the month, closed usage statements of the month, credit notes issued in the month and their payment state. Not a separate tax invoice or demand for payment; each underlying invoice is collected on its own.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MonthlyStatement {
     pub amount_due: Money,
@@ -2512,16 +2513,20 @@ pub struct MonthlyStatement {
     pub credit_applied: Money,
     pub credited_amount: Money,
     pub currency: String,
-    ///True after the period's final closing, which applies the month's minimum charges. Usage priced later is billed in supplement statements and added here.
+    ///True after the month's final usage closing, which applies the month's minimum charges, or after the month ends when it had no usage. Usage priced later is billed in supplement statements and added here.
     pub finalized: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub finalized_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub order_billed: StatementAmounts,
+    ///Non-usage invoices finalized during the month.
+    pub order_invoice_count: i32,
     pub period_end: chrono::DateTime<chrono::Utc>,
     pub period_start: chrono::DateTime<chrono::Utc>,
-    ///Statements of the period, including the open one.
+    ///Usage statements of the period, including the open one.
     pub statement_count: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unbilled: Option<StatementAmounts>,
+    pub usage_billed: StatementAmounts,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StatementAmounts {
@@ -2689,6 +2694,12 @@ pub struct Invoice {
     pub discount_amount: Option<Money>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub due_at: Option<chrono::DateTime<chrono::Utc>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub finalized_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
     pub id: uuid::Uuid,
     ///Numbered per account and per month.
     pub number: String,
@@ -2717,12 +2728,33 @@ pub struct Invoice {
     pub pre_payment_credit_notes_amount: Money,
     ///Added to total to round the amount payable to the currency's minor unit; negative when rounded down. The rounding of a usage invoice carries over to the next invoice of the same billing period.
     pub rounding_amount: Money,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<InvoiceSource>,
     pub status: InvoiceStatus,
     /**Sum of the line amounts before discounts. Where prices include tax, the tax contained in
     each line's discounted amount is taken out here, so that total = subtotal -
     discount_amount + tax_amount always holds.*/
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subtotal: Option<Money>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_address_city: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_address_country: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_address_line1: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_address_line2: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_address_postal_code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_address_state: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_email: Option<String>,
+    ///The supplier legal name recorded when the invoice was issued.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplier_tax_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tax_amount: Option<Money>,
     pub tax_items: Vec<TaxItem>,
@@ -2745,6 +2777,33 @@ pub struct TaxItem {
     pub state: Option<String>,
     pub tax_amount: String,
     pub taxable_amount: String,
+}
+///`usage` for invoices issued at a statement closing; `order` for purchase, renewal, subscription-change and custom fee invoices.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum InvoiceSource {
+    #[default]
+    #[serde(rename = "order")]
+    Order,
+    #[serde(rename = "usage")]
+    Usage,
+}
+impl InvoiceSource {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Order => "order",
+            Self::Usage => "usage",
+        }
+    }
+}
+impl ::std::fmt::Display for InvoiceSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for InvoiceSource {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 ///How tax applied to the customer when the invoice was issued; `reverse` means no tax was charged under the reverse-charge mechanism.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -2825,6 +2884,152 @@ impl AsRef<str> for FeatureGrantStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExportList {
+    pub items: Vec<Export>,
+    pub pagination: OffsetPagination,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExportCreate {
+    ///Constraint: minimum=1
+    pub billing_account_id: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filter: Option<ExportFilter>,
+    ///Output file format; defaults to `csv`.
+    ///Constraint: minLength=1, maxLength=32
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub format: Option<String>,
+    ///`invoice_items` exports issued invoice lines with discounts, tax, rounding and credited amounts; `usage_charges` exports priced usage windows with gross, allowance-deducted and net quantities.
+    ///Constraint: minLength=1, maxLength=64
+    pub r#type: String,
+}
+impl ExportCreate {
+    /// Construct this request with every required wire field.
+    pub fn new(billing_account_id: i64, r#type: String) -> Self {
+        Self {
+            billing_account_id,
+            r#type,
+            filter: None,
+            format: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(billing_account_id: i64, r#type: String) -> ExportCreateBuilder {
+        ExportCreateBuilder::new(billing_account_id, r#type)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct ExportCreateBuilder {
+    value: ExportCreate,
+}
+impl ExportCreateBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(billing_account_id: i64, r#type: String) -> Self {
+        Self {
+            value: ExportCreate::new(billing_account_id, r#type),
+        }
+    }
+    #[doc = concat!("Set the optional `", "filter", "` request field.")]
+    #[must_use]
+    pub fn filter(mut self, filter: ExportFilter) -> Self {
+        self.value.filter = Some(filter);
+        self
+    }
+    #[doc = concat!("Set the optional `", "format", "` request field.")]
+    #[must_use]
+    pub fn format(mut self, format: String) -> Self {
+        self.value.format = Some(format);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> ExportCreate {
+        self.value
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Export {
+    pub billing_account_id: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub content_type: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_by: String,
+    ///Stable machine error code recorded when `status` is `failed`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub filename: String,
+    pub filter: ExportFilter,
+    pub format: String,
+    pub id: uuid::Uuid,
+    pub row_count: i64,
+    pub size_bytes: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub status: ExportStatus,
+    pub r#type: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ExportStatus {
+    #[default]
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "succeeded")]
+    Succeeded,
+    #[serde(rename = "failed")]
+    Failed,
+    #[serde(rename = "expired")]
+    Expired,
+}
+impl ExportStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Running => "running",
+            Self::Succeeded => "succeeded",
+            Self::Failed => "failed",
+            Self::Expired => "expired",
+        }
+    }
+}
+impl ::std::fmt::Display for ExportStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ExportStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ExportFilter {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<chrono::DateTime<chrono::Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub invoice_item_id: Option<uuid::Uuid>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meter_id: Option<uuid::Uuid>,
+    ///Constraint: maxLength=64
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub product_id: Option<String>,
+    ///Constraint: maxItems=100, uniqueItems=true
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project_ids: Option<Vec<String>>,
+    ///Constraint: maxLength=255
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub statement_id: Option<uuid::Uuid>,
+    ///Exclusive.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to: Option<chrono::DateTime<chrono::Utc>>,
 }
 /**A failed request. The envelope follows the Google REST error format: `code` is the HTTP
 status, `status` is its canonical name, and `reason` is the stable machine-readable code
@@ -3092,7 +3297,11 @@ pub struct CreditNote {
     pub currency: String,
     pub id: uuid::Uuid,
     pub invoice_id: uuid::Uuid,
+    ///Number of the original invoice reduced by this credit note.
+    pub invoice_number: String,
     pub issued_at: chrono::DateTime<chrono::Utc>,
+    ///Original invoice number followed by `-CN` and a sequence counted per original invoice without gaps, such as `INV-10023-000001-CN001`.
+    pub number: String,
     ///The credited part of payments already received; its refund may not have completed.
     pub post_payment_amount: Money,
     ///The reduction of unpaid receivables. A void note no longer reduces what is due.
@@ -5117,6 +5326,8 @@ pub struct CancellationPreviewRequest {
 - `credit_amount`: the part restored to the credit grants that paid.
 - `tax_amount`: the tax included in `refundable_amount`.
 - `forfeited_amount`: before tax, the part of `unused_amount` the refund terms do not return.
+- `refund_quota`: the billing account's monthly refund quota and what this cancellation would cost of it;
+  absent when refunds are not limited.
 
 Metered and one-time items show zero; their usage until release is charged as usual.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -5130,6 +5341,8 @@ pub struct CancellationPreview {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
     pub refund_amount: Money,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refund_quota: Option<RefundQuota>,
     pub refundable_amount: Money,
     ///For `period_end`, when release begins, the end of the subscriptions' current terms.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -5137,6 +5350,24 @@ pub struct CancellationPreview {
     pub short_rate_surcharge_amount: Money,
     pub tax_amount: Money,
     pub unused_amount: Money,
+}
+///How many subscriptions the billing account may end early with a refund in the current UTC calendar month, and what the previewed cancellation would cost of it.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RefundQuota {
+    ///What creating the previewed cancellation would use, one for every subscription with a refund above zero. Zero for `period_end` and when nothing is refunded; creating it is refused when greater than `remaining`.
+    ///Constraint: minimum=0
+    pub cost: i64,
+    ///The quota for the month.
+    ///Constraint: minimum=1
+    pub limit: i64,
+    ///Left this month before the previewed cancellation; `limit` minus `used`, never below zero.
+    ///Constraint: minimum=0
+    pub remaining: i64,
+    ///When the next month begins and `used` starts again from zero.
+    pub reset_at: chrono::DateTime<chrono::Utc>,
+    ///Used so far this month, without the previewed cancellation.
+    ///Constraint: minimum=0
+    pub used: i64,
 }
 ///One subscription item of the previewed cancellation.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -5295,6 +5526,8 @@ pub struct Cancellation {
     ///For `immediate`, the second the refund is computed as of.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refund_policy: Option<CancellationRefundPolicy>,
     pub requested_at: chrono::DateTime<chrono::Utc>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scheduled_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -5334,6 +5567,31 @@ impl ::std::fmt::Display for CancellationStatus {
     }
 }
 impl AsRef<str> for CancellationStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**The refund policy applied to the cancellation in place of each item's own. none returns nothing of the unused
+value. Absent when every item is refunded under its own refund policy.*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CancellationRefundPolicy {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+}
+impl CancellationRefundPolicy {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+        }
+    }
+}
+impl ::std::fmt::Display for CancellationRefundPolicy {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CancellationRefundPolicy {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -5502,8 +5760,9 @@ impl CancelSubscriptionRequestBuilder {
 }
 /**When subscriptions end. immediate ends them now and refunds the unused value under their refund terms; period_end
 ends them at the end of their paid period. The cancellation terms fixed when a subscription was bought decide which
-modes it allows: a pay-as-you-go subscription ends only immediately, and a prepaid one whose terms allow only the
-end of its paid period ends only then. Billing refuses a mode the terms do not allow with HTTP 422
+modes it allows: a prepaid one whose terms allow only the end of its paid period ends only then. Pay-as-you-go
+items have no paid period: they end only immediately on their own, and at the end of the paid period when canceled
+together with prepaid items. Billing refuses a mode that is not allowed with HTTP 422
 BILLING_CANCELLATION_MODE_FIXED.*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum CancellationMode {
@@ -6400,6 +6659,36 @@ pub struct ContactUpdate {
     ///Constraint: maxLength=64
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tax_id: Option<String>,
+}
+///Language for rendered PDF headings and labels; party names and recorded line descriptions stay unchanged.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum DocumentLocale {
+    #[default]
+    #[serde(rename = "zh-Hans")]
+    ZhHans,
+    #[serde(rename = "zh-Hant-HK")]
+    ZhHantHk,
+    #[serde(rename = "en")]
+    En,
+}
+impl DocumentLocale {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::ZhHans => "zh-Hans",
+            Self::ZhHantHk => "zh-Hant-HK",
+            Self::En => "en",
+        }
+    }
+}
+impl ::std::fmt::Display for DocumentLocale {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for DocumentLocale {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct OrderCancel {

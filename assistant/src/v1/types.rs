@@ -360,6 +360,9 @@ pub struct ToolCallResource {
     pub presentation: Option<PresentationResource>,
     ///The questions of an `ask` call. Null for other calls.
     pub questions: Option<Vec<QuestionResource>>,
+    ///When execution of the current attempt started. Null until execution starts; excludes argument generation, approval and queueing. Preserves subsecond precision.
+    #[serde(rename = "startedAt")]
+    pub started_at: Option<chrono::DateTime<chrono::Utc>>,
     ///What the call acts on, for display, such as a file path or an instance name.
     pub target: Option<String>,
     pub tool: String,

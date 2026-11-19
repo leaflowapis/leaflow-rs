@@ -638,7 +638,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-account"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -652,7 +652,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-assistant"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -668,8 +668,9 @@ dependencies = [
 
 [[package]]
 name = "leaflow-billing"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
+ "bytes",
  "chrono",
  "futures-util",
  "reqwest",
@@ -683,7 +684,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-canopy"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -699,7 +700,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-compute"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -714,7 +715,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-dns"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -728,7 +729,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-eventbus"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -742,7 +743,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-fleet"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -760,7 +761,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-iam"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -774,7 +775,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-membership"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -789,7 +790,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-monitoring"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -803,7 +804,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-notification"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -817,7 +818,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-support"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -832,7 +833,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-swas"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -846,7 +847,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-swas-legacy"
-version = "0.33.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "futures-util",

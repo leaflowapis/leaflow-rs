@@ -6047,8 +6047,9 @@ pub struct BillingCancellation {
 }
 /**When subscriptions end. immediate ends them now and refunds the unused value under their refund terms; period_end
 ends them at the end of their paid period. The cancellation terms fixed when a subscription was bought decide which
-modes it allows: a pay-as-you-go subscription ends only immediately, and a prepaid one whose terms allow only the
-end of its paid period ends only then. Billing refuses a mode the terms do not allow with HTTP 422
+modes it allows: a prepaid one whose terms allow only the end of its paid period ends only then. Pay-as-you-go
+items have no paid period: they end only immediately on their own, and at the end of the paid period when canceled
+together with prepaid items. Billing refuses a mode that is not allowed with HTTP 422
 BILLING_CANCELLATION_MODE_FIXED.*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum CancellationMode {
