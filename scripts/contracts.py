@@ -9,8 +9,10 @@ REF_FILE = ROOT / "CONTRACTS_REF"
 def fetch(remote: str, destination: pathlib.Path) -> str:
     ref = REF_FILE.read_text(encoding="utf-8").strip() if REF_FILE.exists() else "main"
     shutil.rmtree(destination, ignore_errors=True)
-    subprocess.run(["git", "clone", "--quiet", remote, str(destination)], check=True)
-    subprocess.run(["git", "-C", str(destination), "checkout", "--quiet", ref], check=True)
+    subprocess.run(["git", "init", "--quiet", str(destination)], check=True)
+    subprocess.run(["git", "-C", str(destination), "remote", "add", "origin", remote], check=True)
+    subprocess.run(["git", "-C", str(destination), "fetch", "--quiet", "--depth", "1", "origin", ref], check=True)
+    subprocess.run(["git", "-C", str(destination), "checkout", "--quiet", "--detach", "FETCH_HEAD"], check=True)
     got = subprocess.run(["git", "-C", str(destination), "rev-parse", "HEAD"],
                          check=True, capture_output=True, text=True).stdout.strip()
     print(f"leaflowapis {ref} -> {got[:12]}")
