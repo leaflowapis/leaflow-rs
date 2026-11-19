@@ -2816,38 +2816,38 @@ impl AsRef<str> for DecisionAnswerType {
         self.as_str()
     }
 }
-///The service, `pending` until its order is accepted, and its Checkout Session.
+///The enablement, `pending` until its order is accepted, and its Checkout Session.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CreateServiceResponseBody {
+pub struct CreateEnablementResponseBody {
     ///The Billing Checkout Session of this enablement. With deferred checkout, the customer completes it in Billing.
     pub checkout_session_id: uuid::Uuid,
+    pub enablement: EnablementResource,
     ///The order created when checkout completes, at once for automatic checkout; null until then.
     pub order_id: Option<uuid::Uuid>,
-    pub service: ServiceResource,
 }
-///The model platform service of a project.
+///The model platform enablement of a project.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ServiceResource {
-    ///When the service became active and billing began; null until then.
+pub struct EnablementResource {
+    ///When the enablement became active and billing began; null until then.
     pub activated_at: Option<chrono::DateTime<chrono::Utc>>,
     ///The Checkout Session of the latest enablement; null before any enablement.
     pub checkout_session_id: Option<uuid::Uuid>,
     ///When the subscription ended; null unless it has.
     pub ended_at: Option<chrono::DateTime<chrono::Utc>>,
     ///Why the enablement failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired; `order_declined` means Billing did not accept the order, for example because the billing account is suspended; `order_canceled` means the order was withdrawn; `order_expired` means it was not paid in time.
-    pub failure_reason: Option<ServiceResourceFailureReason>,
+    pub failure_reason: Option<EnablementResourceFailureReason>,
     ///The order that enabled the service, or that the latest enablement's checkout created; null before checkout completes.
     pub order_id: Option<uuid::Uuid>,
     ///The Billing plan the service is sold under; null where the service is not sold. Price enabling it with Billing's `preview-checkout-session`, giving this plan with the `recurring` price type, the `metered` usage type and a quantity of 1; token usage is priced per model, at the rates Billing holds for each model's `billing`.
     pub plan_id: Option<uuid::Uuid>,
-    ///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of its checkout and acceptance of its order; `active` accepts requests on the forwarding endpoints; `failed` means the enablement failed, as `failure_reason` states. An `inactive` or `failed` service can be enabled again.
-    pub status: ServiceResourceStatus,
+    ///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of its checkout and acceptance of its order; `active` accepts requests on the forwarding endpoints; `failed` means the enablement failed, as `failure_reason` states. An `inactive` or `failed` enablement can be enabled again.
+    pub status: EnablementResourceStatus,
     ///The Billing subscription that requests are billed under; null until an enablement's checkout completes.
     pub subscription_id: Option<uuid::Uuid>,
 }
-///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of its checkout and acceptance of its order; `active` accepts requests on the forwarding endpoints; `failed` means the enablement failed, as `failure_reason` states. An `inactive` or `failed` service can be enabled again.
+///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of its checkout and acceptance of its order; `active` accepts requests on the forwarding endpoints; `failed` means the enablement failed, as `failure_reason` states. An `inactive` or `failed` enablement can be enabled again.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ServiceResourceStatus {
+pub enum EnablementResourceStatus {
     #[default]
     #[serde(rename = "inactive")]
     Inactive,
@@ -2858,7 +2858,7 @@ pub enum ServiceResourceStatus {
     #[serde(rename = "failed")]
     Failed,
 }
-impl ServiceResourceStatus {
+impl EnablementResourceStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Inactive => "inactive",
@@ -2868,19 +2868,19 @@ impl ServiceResourceStatus {
         }
     }
 }
-impl ::std::fmt::Display for ServiceResourceStatus {
+impl ::std::fmt::Display for EnablementResourceStatus {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ServiceResourceStatus {
+impl AsRef<str> for EnablementResourceStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 ///Why the enablement failed; null unless `status` is `failed`. `checkout_expired` means checkout was not completed before its Checkout Session expired; `order_declined` means Billing did not accept the order, for example because the billing account is suspended; `order_canceled` means the order was withdrawn; `order_expired` means it was not paid in time.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ServiceResourceFailureReason {
+pub enum EnablementResourceFailureReason {
     #[default]
     #[serde(rename = "checkout_expired")]
     CheckoutExpired,
@@ -2893,7 +2893,7 @@ pub enum ServiceResourceFailureReason {
     #[serde(rename = "null")]
     NullValue,
 }
-impl ServiceResourceFailureReason {
+impl EnablementResourceFailureReason {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::CheckoutExpired => "checkout_expired",
@@ -2904,18 +2904,18 @@ impl ServiceResourceFailureReason {
         }
     }
 }
-impl ::std::fmt::Display for ServiceResourceFailureReason {
+impl ::std::fmt::Display for EnablementResourceFailureReason {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
-impl AsRef<str> for ServiceResourceFailureReason {
+impl AsRef<str> for EnablementResourceFailureReason {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct CreateServiceRequestBody {
+pub struct CreateEnablementRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checkout: Option<CheckoutOptions>,
 }
