@@ -6804,9 +6804,9 @@ impl HttpClient {
     ///
     /// A streaming request counts once. Responses WebSocket traffic counts each `response.create`; realtime traffic counts each session. Admitted attempts count even if the upstream fails. Gateway retries do not count again, and rate-limit rejections do not consume capacity.
     ///
-    /// `rpm` is the exact count of API-key arrivals that passed the project rate limiter in the last 60 seconds, including attempts rejected before model admission. Other calls are excluded. `tpm` sums normalized token-usage deltas observed in the most recent 60 one-second buckets; streaming usage may arrive late depending on the provider and may include estimates. TPM is observational, not enforced.
+    /// `rpm` is the exact count of project model-call arrivals that passed the project rate limiter in the last 60 seconds, including attempts rejected before model admission. `tps` is the output throughput in tokens per second across completed project requests with reported output or reasoning tokens in the last 60 seconds, computed as total reported output tokens divided by total end-to-end request duration. TPS is observational only and is not enforced.
     ///
-    /// Live metrics remain available when the limit is 0. If the live store is unavailable, `rpm` and `tpm` are null, not zero; the configured limit is still returned. Snapshots have one-second precision and are refreshed at least every two seconds; clients should poll every five seconds.
+    /// Live metrics remain available when the limit is 0. If the live store is unavailable, `rpm` and `tps` are null, not zero; the configured limit is still returned. When the live store is available and no eligible output requests completed in the last 60 seconds, `tps` is 0. Snapshots have one-second precision and are refreshed at least every two seconds; clients should poll every five seconds.
     ///
     /// An attempt exceeding a nonzero limit is rejected with 429 `RATE_LIMIT_EXCEEDED`. `Retry-After` gives the wait in seconds. Inference rate-limit headers are `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` (Unix seconds). If Redis cannot perform the rate-limit check, inference fails with 503 rather than bypassing the limit. Rate-limit edits take effect within 30 seconds.
     ///
