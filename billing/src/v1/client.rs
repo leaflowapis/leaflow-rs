@@ -403,6 +403,11 @@ pub enum CreateCheckoutSessionApiError {
 pub enum CreateContactApiError {
     Default(Error),
 }
+///Typed error responses for `create-export`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateExportApiError {
+    Default(Error),
+}
 ///Typed error responses for `create-payment-method-setup`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CreatePaymentMethodSetupApiError {
@@ -436,6 +441,28 @@ pub enum DeletePaymentMethodApiError {
 ///Typed error responses for `delete-subscription`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DeleteSubscriptionApiError {
+    Default(Error),
+}
+///Typed error responses for `download-credit-note-pdf`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DownloadCreditNotePdfApiError {
+    Default(Error),
+}
+///Typed error responses for `download-export`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DownloadExportApiError {
+    Status409(Error),
+    Status410(Error),
+    Default(Error),
+}
+///Typed error responses for `download-invoice-pdf`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DownloadInvoicePdfApiError {
+    Default(Error),
+}
+///Typed error responses for `download-monthly-statement-pdf`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DownloadMonthlyStatementPdfApiError {
     Default(Error),
 }
 ///Typed error responses for `estimate-usage`. One variant per declared non-2xx response.
@@ -482,6 +509,11 @@ pub enum GetContactApiError {
 ///Typed error responses for `get-credit-note`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetCreditNoteApiError {
+    Default(Error),
+}
+///Typed error responses for `get-export`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetExportApiError {
     Default(Error),
 }
 ///Typed error responses for `get-invoice`. One variant per declared non-2xx response.
@@ -602,6 +634,11 @@ pub enum ListCurrenciesApiError {
 ///Typed error responses for `list-entitlements`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListEntitlementsApiError {
+    Default(Error),
+}
+///Typed error responses for `list-exports`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListExportsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-feature-grants`. One variant per declared non-2xx response.
@@ -937,9 +974,10 @@ impl HttpClient {
     /// Cancel subscription
     ///
     /// Requests cancellation of every continuing item of the subscription on their agreed terms, with the same rules
-    /// as creating a cancellation. Give the `proration_date` and `refundable_amount` of preview-cancellation for these
-    /// items. Open to the owner of the subscription's current billing account and to members of its project with the
-    /// project permission `billing:finance.manage`.
+    /// as creating a cancellation, the monthly refund quota and its 422 `BILLING_CANCELLATION_REFUND_QUOTA_EXCEEDED`
+    /// included. Give the `proration_date` and `refundable_amount` of preview-cancellation for these items. Open to
+    /// the owner of the subscription's current billing account and to members of its project with the project
+    /// permission `billing:finance.manage`.
     ///
     /// Immediate cancellation asks the owning service to release the resources now; period-end cancellation keeps the
     /// subscription in service until its current term ends. The subscription becomes canceled when the service
@@ -1336,11 +1374,17 @@ impl HttpClient {
     /// `immediate` the refund is computed as of `proration_date` and is not reduced by service used during release.
     /// Metered usage is charged until release. A subscription whose continuing items all end is canceled.
     ///
-    /// `mode` must be allowed for every item. Metered and one-time items end only `immediate`. A licensed item ends
-    /// `period_end` while its subscription's paid term lasts, and `immediate` unless its terms allow only the end of
-    /// the paid term and that term has not ended. During a free trial a licensed item ends either way whatever its
-    /// terms, `period_end` meaning the end of the trial, and nothing is refunded. For `period_end` the paid terms of
-    /// all items must end at the same time.
+    /// `mode` must be allowed for every item. A licensed item ends `period_end` while its subscription's paid term
+    /// lasts, and `immediate` unless its terms allow only the end of the paid term and that term has not ended.
+    /// During a free trial a licensed item ends either way whatever its terms, `period_end` meaning the end of the
+    /// trial, and nothing is refunded. For `period_end` the paid terms of all licensed items must end at the same
+    /// time. Metered and one-time items have no paid term: with `period_end` they end together with the licensed
+    /// items of the same cancellation, and a cancellation without a licensed item ends only `immediate`.
+    ///
+    /// A billing account has a monthly refund quota: how many subscriptions it may end early with a refund in a UTC
+    /// calendar month. An `immediate` cancellation costs one for every subscription with a refund above zero, unless
+    /// it is withdrawn or fails. `period_end` cancellations, metered and one-time items, free trials and purchases
+    /// that cost nothing cost none. The preview shows the quota in `refund_quota`.
     ///
     /// Refused with:
     ///
@@ -1355,7 +1399,10 @@ impl HttpClient {
     ///   item has a paid change waiting to switch (`meta.order_id`);
     /// - 409 `BILLING_ORDER_PAYMENT_IN_FLIGHT` while an online renewal payment for one of their subscriptions is in
     ///   progress;
-    /// - 409 `BILLING_CANCELLATION_REFUND_CHANGED` when the refund no longer equals `expected_refundable_amount`.
+    /// - 409 `BILLING_CANCELLATION_REFUND_CHANGED` when the refund no longer equals `expected_refundable_amount`;
+    /// - 422 `BILLING_CANCELLATION_REFUND_QUOTA_EXCEEDED` when the cancellation costs more of the monthly refund
+    ///   quota than remains, with `meta.limit`, `meta.used`, `meta.remaining`, `meta.cost` and `meta.reset_at` as in
+    ///   the preview's `refund_quota`; `period_end` stays available where the items allow it.
     ///
     /// Repeating the request for the same items, mode and amount while the cancellation is open returns it with 200.
     /// When it covers every continuing item of a subscription, unpaid renewal orders of that subscription are
@@ -1607,6 +1654,86 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(CreateContactApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Create export
+    ///
+    /// Queues an asynchronous export for a billing account. `invoice_items` accepts a date range up to 92 days; `usage_charges` accepts a date range up to 31 days or a `statement_id` or `invoice_item_id`. Completed exports are kept for 7 days.
+    ///
+    /// `POST /api/v1/exports`
+    pub async fn create_export(
+        &self,
+        request: ExportCreate,
+    ) -> Result<Export, ApiOpError<CreateExportApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/exports");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 201u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "201",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateExportApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateExportApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -2155,6 +2282,1330 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(DeleteSubscriptionApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Download credit note PDF
+    ///
+    /// Renders a commercial credit note PDF referencing the original invoice number and frozen billing details. Requires authorization for the original invoice's billing account.
+    ///
+    /// `GET /api/v1/credit-notes/{creditNoteId}/pdf`
+    pub async fn download_credit_note_pdf(
+        &self,
+        credit_note_id: impl AsRef<str>,
+        locale: Option<DocumentLocale>,
+        inline: Option<bool>,
+    ) -> Result<bytes::Bytes, ApiOpError<DownloadCreditNotePdfApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/credit-notes/{}/pdf",
+                __pct_encode_path_segment(credit_note_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = locale {
+                query_params.push(("locale".to_string(), v.to_string()));
+            }
+            if let Some(v) = inline {
+                query_params.push(("inline".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/pdf");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<DownloadCreditNotePdfApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadCreditNotePdfApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Download credit note PDF
+    ///
+    /// Renders a commercial credit note PDF referencing the original invoice number and frozen billing details. Requires authorization for the original invoice's billing account.
+    ///
+    /// `GET /api/v1/credit-notes/{creditNoteId}/pdf`
+    ///Select `application/pdf` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn download_credit_note_pdf_binary_stream<__Param0: AsRef<str>>(
+        &self,
+        credit_note_id: __Param0,
+        locale: Option<DocumentLocale>,
+        inline: Option<bool>,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<__Param0>,
+        ApiOpError<DownloadCreditNotePdfApiError>,
+    > {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/credit-notes/{}/pdf",
+                __pct_encode_path_segment(credit_note_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = locale {
+                query_params.push(("locale".to_string(), v.to_string()));
+            }
+            if let Some(v) = inline {
+                query_params.push(("inline".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/pdf");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "application/pdf";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<DownloadCreditNotePdfApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<Error>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(DownloadCreditNotePdfApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<DownloadCreditNotePdfApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadCreditNotePdfApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Download export file
+    ///
+    /// Streams the generated export file when `status` is `succeeded`. Refused with 409 while pending, running or failed, and with 410 `BILLING_EXPORT_EXPIRED` once expired.
+    ///
+    /// `GET /api/v1/exports/{exportId}/content`
+    pub async fn download_export(
+        &self,
+        export_id: impl AsRef<str>,
+    ) -> Result<bytes::Bytes, ApiOpError<DownloadExportApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/exports/{}/content",
+                __pct_encode_path_segment(export_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "text/csv");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<DownloadExportApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadExportApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                410u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadExportApiError::Status410(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadExportApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Download export file
+    ///
+    /// Streams the generated export file when `status` is `succeeded`. Refused with 409 while pending, running or failed, and with 410 `BILLING_EXPORT_EXPIRED` once expired.
+    ///
+    /// `GET /api/v1/exports/{exportId}/content`
+    ///Select `text/csv` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn download_export_binary_stream<__Param0: AsRef<str>>(
+        &self,
+        export_id: __Param0,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<__Param0>,
+        ApiOpError<DownloadExportApiError>,
+    > {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/exports/{}/content",
+                __pct_encode_path_segment(export_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "text/csv");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "text/csv";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<DownloadExportApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    409u16 => match serde_json::from_str::<Error>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(DownloadExportApiError::Status409(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                    410u16 => match serde_json::from_str::<Error>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(DownloadExportApiError::Status410(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                    _ => match serde_json::from_str::<Error>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(DownloadExportApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<DownloadExportApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                409u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadExportApiError::Status409(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                410u16 => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadExportApiError::Status410(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadExportApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Download invoice PDF
+    ///
+    /// Renders a commercial invoice PDF for an issued invoice readable with get-invoice, using the supplier and customer details frozen at issuance. A missing or unissued invoice returns 404; any other invoice returns 403.
+    ///
+    /// `GET /api/v1/invoices/{invoiceId}/pdf`
+    pub async fn download_invoice_pdf(
+        &self,
+        invoice_id: impl AsRef<str>,
+        locale: Option<DocumentLocale>,
+        inline: Option<bool>,
+    ) -> Result<bytes::Bytes, ApiOpError<DownloadInvoicePdfApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/invoices/{}/pdf",
+                __pct_encode_path_segment(invoice_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = locale {
+                query_params.push(("locale".to_string(), v.to_string()));
+            }
+            if let Some(v) = inline {
+                query_params.push(("inline".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/pdf");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<DownloadInvoicePdfApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadInvoicePdfApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Download invoice PDF
+    ///
+    /// Renders a commercial invoice PDF for an issued invoice readable with get-invoice, using the supplier and customer details frozen at issuance. A missing or unissued invoice returns 404; any other invoice returns 403.
+    ///
+    /// `GET /api/v1/invoices/{invoiceId}/pdf`
+    ///Select `application/pdf` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn download_invoice_pdf_binary_stream<__Param0: AsRef<str>>(
+        &self,
+        invoice_id: __Param0,
+        locale: Option<DocumentLocale>,
+        inline: Option<bool>,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<__Param0>,
+        ApiOpError<DownloadInvoicePdfApiError>,
+    > {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/invoices/{}/pdf",
+                __pct_encode_path_segment(invoice_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = locale {
+                query_params.push(("locale".to_string(), v.to_string()));
+            }
+            if let Some(v) = inline {
+                query_params.push(("inline".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/pdf");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "application/pdf";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<DownloadInvoicePdfApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<Error>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(DownloadInvoicePdfApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<DownloadInvoicePdfApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadInvoicePdfApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Download monthly statement PDF
+    ///
+    /// Renders the statement of account of one finalized UTC calendar month from invoices, usage statements, credit notes and payments read at download time. Supplement statements, later credit notes and later payments are reflected in later downloads. Not a tax invoice or a demand for payment. A month that is not finalized returns 409 with `BILLING_STATEMENT_NOT_FINALIZED`.
+    ///
+    /// `GET /api/v1/monthly-statements/pdf`
+    pub async fn download_monthly_statement_pdf(
+        &self,
+        billing_account_id: i64,
+        period_start: impl AsRef<str>,
+        locale: Option<DocumentLocale>,
+        inline: Option<bool>,
+    ) -> Result<bytes::Bytes, ApiOpError<DownloadMonthlyStatementPdfApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/monthly-statements/pdf");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            query_params.push((
+                "billing_account_id".to_string(),
+                billing_account_id.to_string(),
+            ));
+            query_params.push((
+                "period_start".to_string(),
+                period_start.as_ref().to_string(),
+            ));
+            if let Some(v) = locale {
+                query_params.push(("locale".to_string(), v.to_string()));
+            }
+            if let Some(v) = inline {
+                query_params.push(("inline".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/pdf");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        if false || status_code == 200u16 {
+            Ok(bytes::Bytes::from(body_bytes))
+        } else {
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let typed: Option<DownloadMonthlyStatementPdfApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadMonthlyStatementPdfApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Download monthly statement PDF
+    ///
+    /// Renders the statement of account of one finalized UTC calendar month from invoices, usage statements, credit notes and payments read at download time. Supplement statements, later credit notes and later payments are reflected in later downloads. Not a tax invoice or a demand for payment. A month that is not finalized returns 409 with `BILLING_STATEMENT_NOT_FINALIZED`.
+    ///
+    /// `GET /api/v1/monthly-statements/pdf`
+    ///Select `application/pdf` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
+    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
+    pub async fn download_monthly_statement_pdf_binary_stream<__Param0: AsRef<str>>(
+        &self,
+        billing_account_id: i64,
+        period_start: __Param0,
+        locale: Option<DocumentLocale>,
+        inline: Option<bool>,
+    ) -> Result<
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<__Param0>,
+        ApiOpError<DownloadMonthlyStatementPdfApiError>,
+    > {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/monthly-statements/pdf");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            query_params.push((
+                "billing_account_id".to_string(),
+                billing_account_id.to_string(),
+            ));
+            query_params.push((
+                "period_start".to_string(),
+                period_start.as_ref().to_string(),
+            ));
+            if let Some(v) = locale {
+                query_params.push(("locale".to_string(), v.to_string()));
+            }
+            if let Some(v) = inline {
+                query_params.push(("inline".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/pdf");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        if false || status_code == 200u16 {
+            let actual = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            let expected = "application/pdf";
+            let parse_media = |value: &str| {
+                let mut parts = Vec::new();
+                let mut start = 0;
+                let mut quoted = false;
+                let mut escaped = false;
+                for (index, character) in value.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if character == '\\' && quoted {
+                        escaped = true;
+                        continue;
+                    }
+                    if character == '"' {
+                        quoted = !quoted;
+                    }
+                    if character == ';' && !quoted {
+                        parts.push(&value[start..index]);
+                        start = index + 1;
+                    }
+                }
+                if quoted || escaped {
+                    return None;
+                }
+                parts.push(&value[start..]);
+                let essence = parts
+                    .first()
+                    .copied()
+                    .unwrap_or("")
+                    .trim()
+                    .to_ascii_lowercase();
+                let mut parameters = std::collections::BTreeMap::new();
+                for part in parts.into_iter().skip(1) {
+                    let (name, value) = part.split_once('=')?;
+                    let name = name.trim().to_ascii_lowercase();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let value = value.trim();
+                    let value = if let Some(quoted) = value.strip_prefix('"') {
+                        let inner = quoted.strip_suffix('"')?;
+                        let mut decoded = String::new();
+                        let mut escaped = false;
+                        for character in inner.chars() {
+                            if escaped {
+                                decoded.push(character);
+                                escaped = false;
+                            } else if character == '\\' {
+                                escaped = true;
+                            } else if character == '"' {
+                                return None;
+                            } else {
+                                decoded.push(character);
+                            }
+                        }
+                        if escaped {
+                            return None;
+                        }
+                        decoded
+                    } else {
+                        if value.contains('"') {
+                            return None;
+                        }
+                        value.to_string()
+                    };
+                    if parameters.insert(name, value).is_some() {
+                        return None;
+                    }
+                }
+                Some((essence, parameters))
+            };
+            let matches = match (parse_media(&actual), parse_media(expected)) {
+                (
+                    Some((actual_essence, actual_parameters)),
+                    Some((expected_essence, expected_parameters)),
+                ) => {
+                    let essence_matches = if expected_essence == "*/*" {
+                        actual_essence.contains('/')
+                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
+                        actual_essence.split('/').next() == Some(prefix)
+                    } else {
+                        actual_essence == expected_essence
+                    };
+                    essence_matches
+                        && expected_parameters.iter().all(|(name, value)| {
+                            actual_parameters.get(name).is_some_and(|actual| {
+                                if name == "charset" {
+                                    actual.eq_ignore_ascii_case(value)
+                                } else {
+                                    actual == value
+                                }
+                            })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                let headers = response.headers().clone();
+                let raw_body = Vec::new();
+                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+                let typed: Option<DownloadMonthlyStatementPdfApiError>;
+                let parse_error: Option<String>;
+                match status_code {
+                    _ => match serde_json::from_str::<Error>(&body_text) {
+                        Ok(v) => {
+                            typed = Some(DownloadMonthlyStatementPdfApiError::Default(v));
+                            parse_error = None;
+                        }
+                        Err(e) => {
+                            typed = None;
+                            parse_error = Some(e.to_string());
+                        }
+                    },
+                }
+                let _ = parse_error;
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: body_text,
+                    raw_body,
+                    typed,
+                    parse_error: Some(format!(
+                        "unexpected response Content-Type `{}`; expected `{}`",
+                        actual, expected
+                    )),
+                }));
+            }
+        }
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        if false || status_code == 200u16 {
+            Ok(response.bytes_stream())
+        } else {
+            if status.is_success() {
+                return Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers,
+                    body: String::new(),
+                    raw_body: Vec::new(),
+                    typed: None,
+                    parse_error: Some(format!(
+                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
+                        status_code, "200",
+                    )),
+                }));
+            }
+            let body_bytes =
+                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+            let raw_body = body_bytes;
+            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+            let typed: Option<DownloadMonthlyStatementPdfApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DownloadMonthlyStatementPdfApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -2929,6 +4380,90 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetCreditNoteApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get export
+    ///
+    /// Status, filter, digest, row count and expiration time of an export belonging to your billing account.
+    ///
+    /// `GET /api/v1/exports/{exportId}`
+    pub async fn get_export(
+        &self,
+        export_id: impl AsRef<str>,
+    ) -> Result<Export, ApiOpError<GetExportApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/exports/{}",
+                __pct_encode_path_segment(export_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetExportApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetExportApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5480,6 +7015,128 @@ impl HttpClient {
             }))
         }
     }
+    /// List exports
+    ///
+    /// Asynchronous data exports for your billing accounts, newest first.
+    ///
+    /// `GET /api/v1/exports`
+    pub async fn list_exports(
+        &self,
+        page: Option<i64>,
+        page_size: Option<i64>,
+        billing_account_id: Option<i64>,
+        r#type: Option<impl AsRef<str>>,
+        status: Option<Vec<ExportStatus>>,
+    ) -> Result<ExportList, ApiOpError<ListExportsApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/exports");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = page {
+                query_params.push(("page".to_string(), v.to_string()));
+            }
+            if let Some(v) = page_size {
+                query_params.push(("page_size".to_string(), v.to_string()));
+            }
+            if let Some(v) = billing_account_id {
+                query_params.push(("billing_account_id".to_string(), v.to_string()));
+            }
+            if let Some(v) = r#type {
+                query_params.push(("type".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = status {
+                if v.is_empty() {
+                    query_params.push((format!("{}[]", "status"), String::new()));
+                } else {
+                    let mut parts = Vec::with_capacity(v.len());
+                    for item in &v {
+                        let item = item.to_string();
+                        if item.contains(',') {
+                            return Err(
+                                HttpError::serialization_error(
+                                        format!(
+                                            "query array `{}` contains a comma; use explode=true for lossless string values",
+                                            "status",
+                                        ),
+                                    )
+                                    .into(),
+                            );
+                        }
+                        parts.push(item);
+                    }
+                    query_params.push(("status".to_string(), parts.join(",")));
+                }
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListExportsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListExportsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// List feature grants
     ///
     /// Features held by a billing account for a period, for example through a membership. While a grant is active, every project whose current billing account holds it has the feature, in addition to its subscriptions' features.
@@ -5711,6 +7368,7 @@ impl HttpClient {
         page_size: Option<i64>,
         billing_account_id: Option<i64>,
         status: Option<Vec<InvoiceStatus>>,
+        source: Option<InvoiceSource>,
         subscription_id: Option<impl AsRef<str>>,
         from: Option<impl AsRef<str>>,
         to: Option<impl AsRef<str>>,
@@ -5750,6 +7408,9 @@ impl HttpClient {
                     }
                     query_params.push(("status".to_string(), parts.join(",")));
                 }
+            }
+            if let Some(v) = source {
+                query_params.push(("source".to_string(), v.to_string()));
             }
             if let Some(v) = subscription_id {
                 query_params.push(("subscription_id".to_string(), v.as_ref().to_string()));
@@ -5832,7 +7493,7 @@ impl HttpClient {
     }
     /// List monthly statements
     ///
-    /// Usage billing per UTC calendar month for your billing accounts, newest first. Each month combines its statements, the invoices they issued and how those were paid.
+    /// Monthly statements of account per UTC calendar month for your billing accounts, newest first. Each month summarizes order invoices issued in the month, closed usage statements of the month, credit notes issued in the month and payments recorded on those invoices.
     ///
     /// `GET /api/v1/monthly-statements`
     pub async fn list_monthly_statements(
@@ -8539,7 +10200,7 @@ impl HttpClient {
     }
     /// Preview a cancellation
     ///
-    /// What creating the cancellation now would return, per item and in total. Nothing is canceled, ended or refunded. Open to the owner of the items' current billing account and to members of their project; refused for the same states as creating it.
+    /// What creating the cancellation now would return, per item and in total. Nothing is canceled, ended or refunded. Open to the owner of the items' current billing account and to members of their project; refused for the same states as creating it, including 422 `BILLING_CANCELLATION_REFUND_QUOTA_EXCEEDED`.
     ///
     /// `QUERY /api/v1/cancellations:preview`
     pub async fn preview_cancellation(
