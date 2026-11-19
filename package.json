@@ -1,0 +1,8 @@
+{
+  "name": "leaflow-rs-tools",
+  "private": true,
+  "devDependencies": {
+    "@bufbuild/buf": "1.75.0",
+    "@redocly/cli": "2.47.0"
+  }
+}
