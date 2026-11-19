@@ -13,8 +13,20 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OPENAPI_TO_RUST = "0.23.0"
 BUF = "1.75.0"
 REDOCLY = "2.47.0"
-VERSION = "0.33.0"
+DEFAULT_VERSION = "0.33.0"
 PROTO_DEPENDENCIES = {"bytes": "1", "prost": "0.14", "prost-types": "0.14"}
+
+
+def resolve_version():
+    override = os.environ.get("SDK_VERSION", "").strip().lstrip("v")
+    if override:
+        return override
+    manifest = ROOT / "Cargo.toml"
+    if manifest.exists():
+        version = tomllib.loads(manifest.read_text(encoding="utf-8")).get("workspace", {}).get("package", {}).get("version")
+        if version:
+            return version
+    return DEFAULT_VERSION
 GOOGLE_RPC = ["google/rpc/status.proto", "google/rpc/code.proto", "google/rpc/error_details.proto"]
 
 
@@ -202,7 +214,7 @@ def write_library(crate):
     (ROOT / crate.directory / "src" / "lib.rs").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
-def write_workspace(crates):
+def write_workspace(crates, version):
     lines = [
         "[workspace]",
         'resolver = "3"',
@@ -211,7 +223,7 @@ def write_workspace(crates):
         "]",
         "",
         "[workspace.package]",
-        f'version = "{VERSION}"',
+        f'version = "{version}"',
         'edition = "2024"',
         'rust-version = "1.94"',
         'license = "MIT"',
@@ -221,6 +233,7 @@ def write_workspace(crates):
 
 
 def main():
+    version = resolve_version()
     ref = (ROOT / "CONTRACTS_REF").read_text().strip()
     source = os.environ.get("CONTRACTS_DIR")
     if source:
@@ -236,7 +249,7 @@ def main():
     for crate in crates.values():
         write_manifest(crate)
         write_library(crate)
-    write_workspace(crates)
+    write_workspace(crates, version)
     subprocess.run(["cargo", "metadata", "--format-version", "1"], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
     subprocess.run(["cargo", "fmt", "--all"], cwd=ROOT, check=True)
 
