@@ -396,6 +396,27 @@ pub struct UsageTimelineResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UsageBucketResource {
+    ///Cached audio input tokens served from upstream cache in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_cache_read_tokens: Option<Option<i64>>,
+    ///Uncached audio input tokens consumed in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_input_tokens: Option<Option<i64>>,
+    ///Audio output tokens synthesized in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_output_tokens: Option<Option<i64>>,
     ///Null when this range has no token usage.
     pub cache_read_tokens: Option<i64>,
     ///Null when this range has no token usage.
@@ -579,6 +600,27 @@ impl AsRef<str> for TranscriptionRequestTimestampGranularitiesItem {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TotalsResource {
+    ///Cached audio input tokens served from upstream cache in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_cache_read_tokens: Option<Option<i64>>,
+    ///Uncached audio input tokens consumed in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_input_tokens: Option<Option<i64>>,
+    ///Audio output tokens synthesized in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_output_tokens: Option<Option<i64>>,
     ///Null when this range has no token usage.
     pub cache_read_tokens: Option<i64>,
     ///Null when this range has no token usage.
@@ -1034,6 +1076,27 @@ pub struct SourceUsageListResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SourceUsageResource {
+    ///Cached audio input tokens served from upstream cache in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_cache_read_tokens: Option<Option<i64>>,
+    ///Uncached audio input tokens consumed in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_input_tokens: Option<Option<i64>>,
+    ///Audio output tokens synthesized in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_output_tokens: Option<Option<i64>>,
     ///Null when this range has no token usage.
     pub cache_read_tokens: Option<i64>,
     ///Null when this range has no token usage.
@@ -1060,6 +1123,27 @@ pub struct SourceUsageResource {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SourceUsageBucketResource {
+    ///Cached audio input tokens served from upstream cache in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_cache_read_tokens: Option<Option<i64>>,
+    ///Uncached audio input tokens consumed in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_input_tokens: Option<Option<i64>>,
+    ///Audio output tokens synthesized in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_output_tokens: Option<Option<i64>>,
     pub cache_read_tokens: Option<i64>,
     pub cache_write_tokens: Option<i64>,
     pub from: chrono::DateTime<chrono::Utc>,
@@ -1136,6 +1220,27 @@ pub struct RequestList {
 pub struct RequestResource {
     ///Null for a request that did not come through one of the project's API keys.
     pub api_key_id: Option<uuid::Uuid>,
+    ///Cached audio input tokens served from upstream cache in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_cache_read_tokens: Option<Option<i64>>,
+    ///Uncached audio input tokens consumed in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_input_tokens: Option<Option<i64>>,
+    ///Audio output tokens synthesized in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_output_tokens: Option<Option<i64>>,
     ///The portion served from the upstream prefix cache, which costs an order of magnitude less than ordinary input. Null on a request billed on a non-token meter.
     pub cache_read_tokens: Option<i64>,
     ///Tokens written to the provider's prompt cache. Null on a request billed on a non-token meter.
@@ -1306,6 +1411,27 @@ pub struct ModelUsageListResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ModelUsageResource {
+    ///Cached audio input tokens served from upstream cache in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_cache_read_tokens: Option<Option<i64>>,
+    ///Uncached audio input tokens consumed in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_input_tokens: Option<Option<i64>>,
+    ///Audio output tokens synthesized in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_output_tokens: Option<Option<i64>>,
     ///Null when this range has no token usage.
     pub cache_read_tokens: Option<i64>,
     ///Null when this range has no token usage.
@@ -1452,7 +1578,7 @@ impl AsRef<str> for ModelListObject {
 }
 /**How requests to a model are billed: under the service's subscription, on the Billing plan `plan_id`, one rate for each billable kind. Read the rates from Billing with `search-prices` for the plan, narrowing each price's `rates` with each meter's `dimensions`.
 
-Text is billed on the five token kinds. `input` excludes cached input, which is `cache_read`; `output` excludes reasoning the provider reports separately, which is `reasoning`. Media is billed on its own unit and never converted to tokens: `images` counts generated images, `audio_characters` counts the input characters of speech synthesis, `audio_seconds` counts the duration of a transcription, and `video_seconds` counts the duration of a generated video. A request is billed for each kind it used.
+Text is billed on the five token kinds. `input` excludes cached input, which is `cache_read`; `output` excludes reasoning the provider reports separately, which is `reasoning`. Realtime sessions also bill audio tokens on the `tokens` meter via `audio_input`, `audio_output`, and `audio_cache_read`. Media is billed on its own unit and never converted to tokens: `images` counts generated images, `audio_characters` counts the input characters of speech synthesis, `audio_seconds` counts the duration of a transcription, and `video_seconds` counts the duration of a generated video. A request is billed for each kind it used.
 
 Rates are set per currency, and a currency may not offer a model at all. A model is offered in the currency of the project's billing account when at least one of its billable kinds has a rate there; a kind without a rate in that currency is not charged. Requests to a model with no rate in that currency are refused with 403 `BILLING_MODEL_NOT_OFFERED`.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -1468,13 +1594,13 @@ pub struct ModelMeter {
     pub dimension_keys: Vec<String>,
     ///One set of dimension values of this kind, useful as a query template. A media kind may have other values on the same keys, such as another size or resolution.
     pub dimensions: ModelMeterDimensions,
-    ///The billable quantity this entry prices. Token kinds are `input`, `output`, `cache_read`, `cache_write` and `reasoning`; media kinds are `images`, `audio_characters`, `audio_seconds` and `video_seconds`.
+    ///The billable quantity this entry prices. Token kinds are `input`, `output`, `cache_read`, `cache_write`, `reasoning`, `audio_input`, `audio_output` and `audio_cache_read`; media kinds are `images`, `audio_characters`, `audio_seconds`, `video_seconds` and `rerank_units`.
     pub kind: ModelMeterKind,
     pub meter_lookup_key: String,
     ///The unit the meter counts in, such as token, image, character or second.
     pub unit: String,
 }
-///The billable quantity this entry prices. Token kinds are `input`, `output`, `cache_read`, `cache_write` and `reasoning`; media kinds are `images`, `audio_characters`, `audio_seconds` and `video_seconds`.
+///The billable quantity this entry prices. Token kinds are `input`, `output`, `cache_read`, `cache_write`, `reasoning`, `audio_input`, `audio_output` and `audio_cache_read`; media kinds are `images`, `audio_characters`, `audio_seconds`, `video_seconds` and `rerank_units`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ModelMeterKind {
     #[default]
@@ -1488,6 +1614,12 @@ pub enum ModelMeterKind {
     CacheWrite,
     #[serde(rename = "reasoning")]
     Reasoning,
+    #[serde(rename = "audio_input")]
+    AudioInput,
+    #[serde(rename = "audio_output")]
+    AudioOutput,
+    #[serde(rename = "audio_cache_read")]
+    AudioCacheRead,
     #[serde(rename = "images")]
     Images,
     #[serde(rename = "audio_characters")]
@@ -1507,6 +1639,9 @@ impl ModelMeterKind {
             Self::CacheRead => "cache_read",
             Self::CacheWrite => "cache_write",
             Self::Reasoning => "reasoning",
+            Self::AudioInput => "audio_input",
+            Self::AudioOutput => "audio_output",
+            Self::AudioCacheRead => "audio_cache_read",
             Self::Images => "images",
             Self::AudioCharacters => "audio_characters",
             Self::AudioSeconds => "audio_seconds",
@@ -3222,6 +3357,27 @@ pub struct APIKeyUsageListResponseBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct APIKeyUsageResource {
     pub api_key_id: uuid::Uuid,
+    ///Cached audio input tokens served from upstream cache in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_cache_read_tokens: Option<Option<i64>>,
+    ///Uncached audio input tokens consumed in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_input_tokens: Option<Option<i64>>,
+    ///Audio output tokens synthesized in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_output_tokens: Option<Option<i64>>,
     ///Null when this range has no token usage.
     pub cache_read_tokens: Option<i64>,
     ///Null when this range has no token usage.
@@ -3246,6 +3402,27 @@ pub struct APIKeyUsageResource {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct APIKeyUsageBucketResource {
     pub api_key_id: uuid::Uuid,
+    ///Cached audio input tokens served from upstream cache in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_cache_read_tokens: Option<Option<i64>>,
+    ///Uncached audio input tokens consumed in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_input_tokens: Option<Option<i64>>,
+    ///Audio output tokens synthesized in realtime sessions. Omitted or null when unused.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub audio_output_tokens: Option<Option<i64>>,
     pub cache_read_tokens: Option<i64>,
     pub cache_write_tokens: Option<i64>,
     pub from: chrono::DateTime<chrono::Utc>,
