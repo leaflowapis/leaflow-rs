@@ -7736,9 +7736,31 @@ impl HttpClient {
     /// `GET /v1/models`
     pub async fn list_inference_models(
         &self,
+        category: Option<ModelCategory>,
+        endpoint: Option<impl AsRef<str>>,
+        input_modality: Option<Modality>,
+        output_modality: Option<Modality>,
     ) -> Result<ModelList, ApiOpError<ListInferenceModelsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/v1/models");
         let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = category {
+                query_params.push(("category".to_string(), v.to_string()));
+            }
+            if let Some(v) = endpoint {
+                query_params.push(("endpoint".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = input_modality {
+                query_params.push(("input_modality".to_string(), v.to_string()));
+            }
+            if let Some(v) = output_modality {
+                query_params.push(("output_modality".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7818,9 +7840,31 @@ impl HttpClient {
     /// `GET /api/v1/models`
     pub async fn list_models(
         &self,
+        category: Option<ModelCategory>,
+        endpoint: Option<impl AsRef<str>>,
+        input_modality: Option<Modality>,
+        output_modality: Option<Modality>,
     ) -> Result<ModelListResponseBody, ApiOpError<ListModelsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/models");
         let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = category {
+                query_params.push(("category".to_string(), v.to_string()));
+            }
+            if let Some(v) = endpoint {
+                query_params.push(("endpoint".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = input_modality {
+                query_params.push(("input_modality".to_string(), v.to_string()));
+            }
+            if let Some(v) = output_modality {
+                query_params.push(("output_modality".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }

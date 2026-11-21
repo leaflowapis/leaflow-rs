@@ -1802,6 +1802,11 @@ pub struct Price {
     ///The smallest quantity that can be bought. Absent means no lower bound.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min_quantity: Option<String>,
+    /**Metered prices only. Minimum available funds (balance plus applicable credits) required to open a
+    metered-only subscription at this price. Absent uses the currency's minimum_top_up; `0` disables the
+    requirement.*/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub minimum_funds: Option<Money>,
     pub plan: ObjectIdentity,
     pub plan_id: uuid::Uuid,
     pub product: Product,

@@ -1488,6 +1488,9 @@ pub struct ModelResource {
     ///Produced output modalities. Image input does not imply image generation.
     pub output_modalities: Option<Vec<Modality>>,
     pub status: ModelResourceStatus,
+    ///Inference endpoints reachable on Canopy for this model, derived from its provider mappings.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supported_endpoints: Option<Vec<String>>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ModelResourceStatus {
@@ -3625,6 +3628,54 @@ pub struct ImageInputReferenceVariant2 {
     /// Additional properties not explicitly defined in the schema
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
+}
+///High-level capability category derived from a model's reachable inference endpoints.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ModelCategory {
+    #[default]
+    #[serde(rename = "chat")]
+    Chat,
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "video")]
+    Video,
+    #[serde(rename = "speech")]
+    Speech,
+    #[serde(rename = "transcription")]
+    Transcription,
+    #[serde(rename = "realtime")]
+    Realtime,
+    #[serde(rename = "embedding")]
+    Embedding,
+    #[serde(rename = "rerank")]
+    Rerank,
+    #[serde(rename = "decision")]
+    Decision,
+}
+impl ModelCategory {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Chat => "chat",
+            Self::Image => "image",
+            Self::Video => "video",
+            Self::Speech => "speech",
+            Self::Transcription => "transcription",
+            Self::Realtime => "realtime",
+            Self::Embedding => "embedding",
+            Self::Rerank => "rerank",
+            Self::Decision => "decision",
+        }
+    }
+}
+impl ::std::fmt::Display for ModelCategory {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ModelCategory {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 ///A request body in the endpoint's own protocol.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
