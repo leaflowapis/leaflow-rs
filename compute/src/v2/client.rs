@@ -596,6 +596,11 @@ pub enum DisassociateVirtualPrivateCloudIpv6CidrBlockApiError {
     Status409(Error),
     Default(Error),
 }
+///Typed error responses for `get-attack-incident`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetAttackIncidentApiError {
+    Default(Error),
+}
 ///Typed error responses for `get-availability-zone`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetAvailabilityZoneApiError {
@@ -726,9 +731,19 @@ pub enum GetVolumeSnapshotApiError {
 pub enum GetVolumeTypeApiError {
     Default(Error),
 }
+///Typed error responses for `list-attack-incidents`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListAttackIncidentsApiError {
+    Default(Error),
+}
 ///Typed error responses for `list-availability-zones`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListAvailabilityZonesApiError {
+    Default(Error),
+}
+///Typed error responses for `list-elastic-ip-attack-incidents`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListElasticIpAttackIncidentsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-elastic-ip-traffic-usage`. One variant per declared non-2xx response.
@@ -5125,6 +5140,88 @@ impl HttpClient {
             }))
         }
     }
+    /// Get an attack incident
+    ///
+    /// `GET /api/v2/attack-incidents/{attackIncidentId}`
+    pub async fn get_attack_incident(
+        &self,
+        attack_incident_id: impl AsRef<str>,
+    ) -> Result<AttackIncident, ApiOpError<GetAttackIncidentApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/attack-incidents/{}",
+                __pct_encode_path_segment(attack_incident_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetAttackIncidentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetAttackIncidentApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Retrieve an availability zone
     ///
     /// A volume and an instance must reside in the same availability zone to be attached.
@@ -7313,6 +7410,124 @@ impl HttpClient {
             }))
         }
     }
+    /// List attack incidents
+    ///
+    /// Lists DDoS attack and blackhole incidents recorded for public addresses held by this project, newest first. Filters are combined with AND. Results are paginated.
+    ///
+    /// `GET /api/v2/attack-incidents`
+    pub async fn list_attack_incidents(
+        &self,
+        region_id: Option<impl AsRef<str>>,
+        elastic_ip_id: Option<impl AsRef<str>>,
+        target_address: Option<impl AsRef<str>>,
+        status: Option<AttackIncidentStatus>,
+        mitigation_action: Option<AttackMitigationAction>,
+        started_from: Option<impl AsRef<str>>,
+        started_to: Option<impl AsRef<str>>,
+        page: Option<i64>,
+        page_size: Option<i64>,
+    ) -> Result<AttackIncidentListResponseBody, ApiOpError<ListAttackIncidentsApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v2/attack-incidents");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = region_id {
+                query_params.push(("region_id".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = elastic_ip_id {
+                query_params.push(("elastic_ip_id".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = target_address {
+                query_params.push(("target_address".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = status {
+                query_params.push(("status".to_string(), v.to_string()));
+            }
+            if let Some(v) = mitigation_action {
+                query_params.push(("mitigation_action".to_string(), v.to_string()));
+            }
+            if let Some(v) = started_from {
+                query_params.push(("started_from".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = started_to {
+                query_params.push(("started_to".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = page {
+                query_params.push(("page".to_string(), v.to_string()));
+            }
+            if let Some(v) = page_size {
+                query_params.push(("page_size".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListAttackIncidentsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListAttackIncidentsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// List availability zones
     ///
     /// A volume and an instance must reside in the same availability zone to be attached. Confirm the zone before creating either. Without `region_id`, the zones of every region are listed.
@@ -7389,6 +7604,121 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListAvailabilityZonesApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List attack incidents for an elastic IP
+    ///
+    /// Lists DDoS attack and blackhole incidents recorded for this elastic IP while held by this project, newest first. Results are paginated.
+    ///
+    /// `GET /api/v2/elastic-ips/{elasticIpId}/attack-incidents`
+    pub async fn list_elastic_ip_attack_incidents(
+        &self,
+        elastic_ip_id: impl AsRef<str>,
+        status: Option<AttackIncidentStatus>,
+        mitigation_action: Option<AttackMitigationAction>,
+        started_from: Option<impl AsRef<str>>,
+        started_to: Option<impl AsRef<str>>,
+        page: Option<i64>,
+        page_size: Option<i64>,
+    ) -> Result<AttackIncidentListResponseBody, ApiOpError<ListElasticIpAttackIncidentsApiError>>
+    {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v2/elastic-ips/{}/attack-incidents",
+                __pct_encode_path_segment(elastic_ip_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = status {
+                query_params.push(("status".to_string(), v.to_string()));
+            }
+            if let Some(v) = mitigation_action {
+                query_params.push(("mitigation_action".to_string(), v.to_string()));
+            }
+            if let Some(v) = started_from {
+                query_params.push(("started_from".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = started_to {
+                query_params.push(("started_to".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = page {
+                query_params.push(("page".to_string(), v.to_string()));
+            }
+            if let Some(v) = page_size {
+                query_params.push(("page_size".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListElasticIpAttackIncidentsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListElasticIpAttackIncidentsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

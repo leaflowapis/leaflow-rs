@@ -4233,6 +4233,8 @@ was bought with or for one. Changing bandwidth updates this same resource, not a
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ElasticIp {
     pub access_state: Option<ElasticIpAccessState>,
+    ///The active attack or blackhole mitigation affecting this address; null when no attack is active.
+    pub active_attack: Option<ActiveAttackSummary>,
     ///The IPv4 address; null until it is allocated.
     pub address: Option<Ipv4HostAddress>,
     ///The Billing order item of the address, always pay-as-you-go.
@@ -5431,8 +5433,6 @@ pub struct ElasticIpAssociation {
     pub released_at: Option<chrono::DateTime<chrono::Utc>>,
     pub state: ElasticIpAssociationState,
 }
-///The public eip resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
-pub type ElasticIpId = String;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ElasticIpAssociationState {
     #[default]
@@ -6082,17 +6082,6 @@ pub struct AvailabilityZoneListResponseBody {
     pub items: Vec<AvailabilityZoneResource>,
     pub pagination: OffsetPagination,
 }
-///Pagination metadata for stable numbered pages. total_count is returned only when the operation can determine it without an unbounded scan.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct OffsetPagination {
-    ///Constraint: minimum=1
-    pub page: i64,
-    ///Constraint: minimum=1
-    pub page_size: i64,
-    ///Constraint: minimum=0
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub total_count: Option<i64>,
-}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AvailabilityZoneResource {
     ///The zone's code within its region (hk-1-a). Stable and human-written; addressing is by id.
@@ -6104,6 +6093,142 @@ pub struct AvailabilityZoneResource {
 }
 ///Compute AvailabilityZone TypeID. UUID text is not accepted.
 pub type AvailabilityZoneId = String;
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AttackIncidentListResponseBody {
+    pub items: Vec<AttackIncident>,
+    pub pagination: OffsetPagination,
+}
+///Pagination metadata for stable numbered pages. total_count is returned only when the operation can determine it without an unbounded scan.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct OffsetPagination {
+    ///Constraint: minimum=1
+    pub page: i64,
+    ///Constraint: minimum=1
+    pub page_size: i64,
+    ///Constraint: minimum=0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<i64>,
+}
+///One DDoS attack or blackhole incident recorded for an address held by this project.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AttackIncident {
+    pub attack_types: Vec<String>,
+    pub blackholed_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub direction: AttackDirection,
+    pub elastic_ip_id: Option<ElasticIpId>,
+    pub end_source: Option<AttackIncidentEndSource>,
+    pub ended_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub expected_end_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub id: AttackIncidentId,
+    pub last_event_at: chrono::DateTime<chrono::Utc>,
+    pub mitigation_action: AttackMitigationAction,
+    ///Constraint: minimum=0
+    pub peak_attack_bps: Option<i64>,
+    ///Constraint: minimum=0
+    pub peak_attack_pps: Option<i64>,
+    pub region_id: RegionId,
+    pub started_at: chrono::DateTime<chrono::Utc>,
+    pub status: AttackIncidentStatus,
+    ///Target IP address or CIDR.
+    pub target_address: String,
+    pub target_ports: Vec<i64>,
+    ///Constraint: minimum=0
+    pub threshold_bps: Option<i64>,
+    ///Constraint: minimum=0
+    pub threshold_pps: Option<i64>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub virtual_private_cloud_id: Option<VirtualPrivateCloudId>,
+}
+///The public eip resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
+pub type ElasticIpId = String;
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AttackIncidentStatus {
+    #[default]
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "ended")]
+    Ended,
+}
+impl AttackIncidentStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "active",
+            Self::Ended => "ended",
+        }
+    }
+}
+impl ::std::fmt::Display for AttackIncidentStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AttackIncidentStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AttackIncidentEndSource {
+    #[default]
+    #[serde(rename = "reported")]
+    Reported,
+    #[serde(rename = "auto_expired")]
+    AutoExpired,
+    #[serde(rename = "timed_out")]
+    TimedOut,
+    #[serde(rename = "operator")]
+    Operator,
+    #[serde(rename = "null")]
+    NullValue,
+}
+impl AttackIncidentEndSource {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Reported => "reported",
+            Self::AutoExpired => "auto_expired",
+            Self::TimedOut => "timed_out",
+            Self::Operator => "operator",
+            Self::NullValue => "null",
+        }
+    }
+}
+impl ::std::fmt::Display for AttackIncidentEndSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AttackIncidentEndSource {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AttackDirection {
+    #[default]
+    #[serde(rename = "inbound")]
+    Inbound,
+    #[serde(rename = "outbound")]
+    Outbound,
+}
+impl AttackDirection {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Inbound => "inbound",
+            Self::Outbound => "outbound",
+        }
+    }
+}
+impl ::std::fmt::Display for AttackDirection {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AttackDirection {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AttachVolumeRequestBody {
     pub volume_id: VolumeId,
@@ -6662,6 +6787,85 @@ pub struct InstanceAssociationTarget {
 }
 ///The public ins resource identifier. Only this fixed TypeID prefix is accepted; UUID text is not an alternative representation.
 pub type InstanceId = String;
+///The active attack or blackhole mitigation currently affecting this elastic IP.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ActiveAttackSummary {
+    pub blackholed_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub expected_end_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub incident_id: AttackIncidentId,
+    pub mitigation_action: AttackMitigationAction,
+    ///Constraint: minimum=0
+    pub peak_attack_bps: Option<i64>,
+    ///Constraint: minimum=0
+    pub peak_attack_pps: Option<i64>,
+    pub started_at: chrono::DateTime<chrono::Utc>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AttackMitigationAction {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "scrubbing")]
+    Scrubbing,
+    #[serde(rename = "rate_limit")]
+    RateLimit,
+    #[serde(rename = "blackhole")]
+    Blackhole,
+}
+impl AttackMitigationAction {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Scrubbing => "scrubbing",
+            Self::RateLimit => "rate_limit",
+            Self::Blackhole => "blackhole",
+        }
+    }
+}
+impl ::std::fmt::Display for AttackMitigationAction {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AttackMitigationAction {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///Compute AttackIncident TypeID. UUID text is not accepted.
+pub type AttackIncidentId = String;
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AttackEndSource {
+    #[default]
+    #[serde(rename = "reported")]
+    Reported,
+    #[serde(rename = "auto_expired")]
+    AutoExpired,
+    #[serde(rename = "timed_out")]
+    TimedOut,
+    #[serde(rename = "operator")]
+    Operator,
+}
+impl AttackEndSource {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Reported => "reported",
+            Self::AutoExpired => "auto_expired",
+            Self::TimedOut => "timed_out",
+            Self::Operator => "operator",
+        }
+    }
+}
+impl ::std::fmt::Display for AttackEndSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AttackEndSource {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConsoleResponseBody {
     ///The WebSocket address a noVNC client connects to; single-use and expires within minutes
