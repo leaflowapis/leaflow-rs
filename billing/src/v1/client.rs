@@ -1378,7 +1378,8 @@ impl HttpClient {
     /// lasts, and `immediate` unless its terms allow only the end of the paid term and that term has not ended.
     /// During a free trial a licensed item ends either way whatever its terms, `period_end` meaning the end of the
     /// trial, and nothing is refunded. For `period_end` the paid terms of all licensed items must end at the same
-    /// time. Metered and one-time items have no paid term: with `period_end` they end together with the licensed
+    /// time. Creating the cancellation fixes that time in `scheduled_at`; later changes to subscription terms do
+    /// not move it. Metered and one-time items have no paid term: with `period_end` they end together with the licensed
     /// items of the same cancellation, and a cancellation without a licensed item ends only `immediate`.
     ///
     /// A billing account has a monthly refund quota: how many subscriptions it may end early with a refund in a UTC
