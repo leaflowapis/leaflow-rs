@@ -874,6 +874,7 @@ pub struct SubscriptionItemCancellation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub release_started_at: Option<chrono::DateTime<chrono::Utc>>,
     pub requested_at: chrono::DateTime<chrono::Utc>,
+    ///The release time fixed when this cancellation was created. Later changes to subscription terms do not move it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scheduled_at: Option<chrono::DateTime<chrono::Utc>>,
     pub status: SubscriptionItemCancellationStatus,
@@ -5349,7 +5350,7 @@ pub struct CancellationPreview {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub refund_quota: Option<RefundQuota>,
     pub refundable_amount: Money,
-    ///For `period_end`, when release begins, the end of the subscriptions' current terms.
+    ///For `period_end`, the release time if created now, resolved from the current terms. Creating the cancellation fixes its release time; later term changes do not move it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scheduled_at: Option<chrono::DateTime<chrono::Utc>>,
     pub short_rate_surcharge_amount: Money,
@@ -5534,6 +5535,7 @@ pub struct Cancellation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub refund_policy: Option<CancellationRefundPolicy>,
     pub requested_at: chrono::DateTime<chrono::Utc>,
+    ///The release time fixed when this cancellation was created. Later changes to subscription terms do not move it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scheduled_at: Option<chrono::DateTime<chrono::Utc>>,
     pub status: CancellationStatus,
