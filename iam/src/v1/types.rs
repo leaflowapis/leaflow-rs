@@ -167,6 +167,115 @@ pub struct MemberPermissionListResponseBody {
     pub items: Option<Vec<MemberPermissionResource>>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LengthAwarePageServiceAccountSSHKeyResource {
+    pub items: Vec<ServiceAccountSSHKeyResource>,
+    pub limit: i64,
+    pub offset: i64,
+    pub total: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ServiceAccountSSHKeyResource {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    ///The SHA-256 fingerprint, as `ssh-keygen -l` prints it
+    pub fingerprint: String,
+    pub id: uuid::Uuid,
+    ///The algorithm, such as `ssh-ed25519`
+    pub key_type: String,
+    pub name: String,
+    ///The key in OpenSSH format, without the comment it was added with
+    pub public_key: String,
+    pub status: ServiceAccountSSHKeyResourceStatus,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ServiceAccountSSHKeyResourceStatus {
+    #[default]
+    #[serde(rename = "ACTIVE")]
+    Active,
+    #[serde(rename = "REVOKED")]
+    Revoked,
+}
+impl ServiceAccountSSHKeyResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Revoked => "REVOKED",
+        }
+    }
+}
+impl ::std::fmt::Display for ServiceAccountSSHKeyResourceStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ServiceAccountSSHKeyResourceStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LengthAwarePageServiceAccountResource {
+    pub items: Vec<ServiceAccountResource>,
+    pub limit: i64,
+    pub offset: i64,
+    pub total: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ServiceAccountResource {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_by: Option<String>,
+    pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub description: String,
+    ///Optional email address; empty when not configured
+    pub email: String,
+    ///Platform user id of this service account
+    pub id: uuid::Uuid,
+    pub name: String,
+    pub project_id: uuid::Uuid,
+    ///Role codes currently assigned to this service account in the project
+    pub roles: Vec<String>,
+    pub status: ServiceAccountResourceStatus,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ServiceAccountResourceStatus {
+    #[default]
+    #[serde(rename = "ACTIVE")]
+    Active,
+    #[serde(rename = "SUSPENDED")]
+    Suspended,
+    #[serde(rename = "BANNED")]
+    Banned,
+    #[serde(rename = "DELETED")]
+    Deleted,
+}
+impl ServiceAccountResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Suspended => "SUSPENDED",
+            Self::Banned => "BANNED",
+            Self::Deleted => "DELETED",
+        }
+    }
+}
+impl ::std::fmt::Display for ServiceAccountResourceStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ServiceAccountResourceStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LengthAwarePageServiceAccountKeyResource {
+    pub items: Vec<ServiceAccountKeyResource>,
+    pub limit: i64,
+    pub offset: i64,
+    pub total: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LengthAwarePageSSHKeyResource {
     ///The items in this page
     pub items: Vec<SSHKeyResource>,
@@ -240,6 +349,8 @@ pub struct MemberResource {
     pub last_name: String,
     ///The permissions granted to this person directly, apart from their roles
     pub permissions: Option<Vec<MemberPermissionResource>>,
+    ///True when this member is a project-owned service account
+    pub service_account: bool,
     pub user_id: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -427,6 +538,185 @@ pub struct FieldViolation {
     pub reason: Option<String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateServiceAccountKeyResponseBody {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credentials: Option<ServiceAccountCredentialsResource>,
+    pub key: ServiceAccountKeyResource,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ServiceAccountKeyResource {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_by: Option<String>,
+    pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///SHA-256 fingerprint of the public key (`SHA256:...`)
+    pub fingerprint: String,
+    ///Key identifier, also used as the JWT `kid` header
+    pub id: uuid::Uuid,
+    pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub name: String,
+    pub origin: ServiceAccountKeyResourceOrigin,
+    ///Ed25519 public key in PKIX PEM format
+    pub public_key: String,
+    pub revoked_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub revoked_by: Option<String>,
+    pub service_account_id: uuid::Uuid,
+    pub status: ServiceAccountKeyResourceStatus,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ServiceAccountKeyResourceStatus {
+    #[default]
+    #[serde(rename = "ACTIVE")]
+    Active,
+    #[serde(rename = "REVOKED")]
+    Revoked,
+}
+impl ServiceAccountKeyResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Revoked => "REVOKED",
+        }
+    }
+}
+impl ::std::fmt::Display for ServiceAccountKeyResourceStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ServiceAccountKeyResourceStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ServiceAccountKeyResourceOrigin {
+    #[default]
+    #[serde(rename = "GENERATED")]
+    Generated,
+    #[serde(rename = "UPLOADED")]
+    Uploaded,
+}
+impl ServiceAccountKeyResourceOrigin {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Generated => "GENERATED",
+            Self::Uploaded => "UPLOADED",
+        }
+    }
+}
+impl ::std::fmt::Display for ServiceAccountKeyResourceOrigin {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ServiceAccountKeyResourceOrigin {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///One-time credentials document returned only when creating a `GENERATED` key
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ServiceAccountCredentialsResource {
+    pub algorithm: String,
+    pub email: String,
+    pub key_id: uuid::Uuid,
+    pub name: String,
+    ///PKCS#8 PEM Ed25519 private key, returned once and never stored
+    pub private_key: String,
+    pub project_id: uuid::Uuid,
+    pub service_account_id: uuid::Uuid,
+    ///Token exchange endpoint URL and expected JWT `aud` claim
+    pub token_uri: String,
+    pub r#type: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateServiceAccountKeyRequestBody {
+    ///Optional expiry timestamp; cannot be extended after creation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
+    pub origin: CreateServiceAccountKeyRequestBodyOrigin,
+    ///Required for `UPLOADED` keys; must be a PKIX PEM Ed25519 public key. Must be omitted for `GENERATED` keys
+    ///Constraint: maxLength=2048
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_key: Option<String>,
+}
+impl CreateServiceAccountKeyRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(name: String, origin: CreateServiceAccountKeyRequestBodyOrigin) -> Self {
+        Self {
+            name,
+            origin,
+            expires_at: None,
+            public_key: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(
+        name: String,
+        origin: CreateServiceAccountKeyRequestBodyOrigin,
+    ) -> CreateServiceAccountKeyRequestBodyBuilder {
+        CreateServiceAccountKeyRequestBodyBuilder::new(name, origin)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct CreateServiceAccountKeyRequestBodyBuilder {
+    value: CreateServiceAccountKeyRequestBody,
+}
+impl CreateServiceAccountKeyRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(name: String, origin: CreateServiceAccountKeyRequestBodyOrigin) -> Self {
+        Self {
+            value: CreateServiceAccountKeyRequestBody::new(name, origin),
+        }
+    }
+    #[doc = concat!("Set the optional `", "expires_at", "` request field.")]
+    #[must_use]
+    pub fn expires_at(mut self, expires_at: chrono::DateTime<chrono::Utc>) -> Self {
+        self.value.expires_at = Some(expires_at);
+        self
+    }
+    #[doc = concat!("Set the optional `", "public_key", "` request field.")]
+    #[must_use]
+    pub fn public_key(mut self, public_key: String) -> Self {
+        self.value.public_key = Some(public_key);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> CreateServiceAccountKeyRequestBody {
+        self.value
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CreateServiceAccountKeyRequestBodyOrigin {
+    #[default]
+    #[serde(rename = "GENERATED")]
+    Generated,
+    #[serde(rename = "UPLOADED")]
+    Uploaded,
+}
+impl CreateServiceAccountKeyRequestBodyOrigin {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Generated => "GENERATED",
+            Self::Uploaded => "UPLOADED",
+        }
+    }
+}
+impl ::std::fmt::Display for CreateServiceAccountKeyRequestBodyOrigin {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CreateServiceAccountKeyRequestBodyOrigin {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateMemberPermissionRequestBody {
     pub effect: CreateMemberPermissionRequestBodyEffect,
     ///The code of the permission to grant
@@ -574,6 +864,8 @@ pub struct ResolvedMemberResource {
     pub last_name: String,
     ///True when this person is no longer a member of the project.
     pub left: bool,
+    ///True when this member is a project-owned service account rather than a personal account.
+    pub service_account: bool,
     pub user_id: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -802,6 +1094,80 @@ impl CreateSSHKeyRequestBodyBuilder {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateServiceAccountRequestBody {
+    ///Constraint: maxLength=500
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    ///Optional email address; omit or leave empty unless using an allowed domain
+    ///Constraint: maxLength=320
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
+    ///Optional initial role codes to assign at creation; `OWNER` is not accepted
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub roles: Option<Vec<String>>,
+}
+impl CreateServiceAccountRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            description: None,
+            email: None,
+            roles: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(name: String) -> CreateServiceAccountRequestBodyBuilder {
+        CreateServiceAccountRequestBodyBuilder::new(name)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct CreateServiceAccountRequestBodyBuilder {
+    value: CreateServiceAccountRequestBody,
+}
+impl CreateServiceAccountRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(name: String) -> Self {
+        Self {
+            value: CreateServiceAccountRequestBody::new(name),
+        }
+    }
+    #[doc = concat!("Set the optional `", "description", "` request field.")]
+    #[must_use]
+    pub fn description(mut self, description: String) -> Self {
+        self.value.description = Some(description);
+        self
+    }
+    #[doc = concat!("Set the optional `", "email", "` request field.")]
+    #[must_use]
+    pub fn email(mut self, email: String) -> Self {
+        self.value.email = Some(email);
+        self
+    }
+    #[doc = concat!("Set the optional `", "roles", "` request field.")]
+    #[must_use]
+    pub fn roles(mut self, roles: Vec<String>) -> Self {
+        self.value.roles = Some(roles);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> CreateServiceAccountRequestBody {
+        self.value
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateServiceAccountSSHKeyRequestBody {
+    ///Constraint: minLength=1, maxLength=128
+    pub name: String,
+    ///The public key in OpenSSH format. A certificate is refused
+    ///Constraint: minLength=1, maxLength=16384
+    pub public_key: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct IssueInvitationRequestBody {
     ///Constraint: maxLength=320
     pub email: String,
@@ -930,4 +1296,17 @@ impl UpdateRoleRequestBodyBuilder {
     pub fn build(self) -> UpdateRoleRequestBody {
         self.value
     }
+}
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct UpdateServiceAccountRequestBody {
+    ///Constraint: maxLength=500
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    ///Optional email address; pass an empty string to clear it
+    ///Constraint: maxLength=320
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    ///Constraint: minLength=1, maxLength=128
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 }
