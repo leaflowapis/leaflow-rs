@@ -1460,12 +1460,12 @@ pub struct ModelListResponseBody {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ModelResource {
-    /**Who can call the model. Every model is listed to every project.
+    /**Who can call the model. Every model is listed to every caller.
 
     - `public`: callable by every project.
     - `restricted`: callable only by projects holding a grant. A request from any other project fails with 403 `MODEL_ACCESS_REQUIRED`.*/
     pub access: ModelResourceAccess,
-    ///Whether the current project can call the model. Always true for a public model
+    ///Whether the caller can call the model. Always true for a public model; false for a restricted model when unauthenticated or when the project holds no grant.
     pub access_granted: bool,
     pub billing: ModelBilling,
     pub capabilities: ModelCapabilities,
@@ -1477,6 +1477,13 @@ pub struct ModelResource {
     pub display_name: String,
     ///Groups the models of one family together, such as claude, gpt or gemini
     pub family: String,
+    ///Public limits for keyless free inference when enabled on this model. Null when the model requires an API key or project token.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub free_access: Option<Option<ModelFreeAccess>>,
     ///The string to send in the `model` field of the request body
     pub id: String,
     ///Accepted input modalities. Null means unknown.
@@ -1521,7 +1528,7 @@ impl AsRef<str> for ModelResourceStatus {
         self.as_str()
     }
 }
-/**Who can call the model. Every model is listed to every project.
+/**Who can call the model. Every model is listed to every caller.
 
 - `public`: callable by every project.
 - `restricted`: callable only by projects holding a grant. A request from any other project fails with 403 `MODEL_ACCESS_REQUIRED`.*/
@@ -1680,6 +1687,13 @@ pub struct Model {
     ///The model developer; not the upstream provider or model family.
     pub developer: String,
     pub display_name: String,
+    ///Public limits for keyless free inference when enabled on this model. Null when the model requires an API key or project token.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub free_access: Option<Option<ModelFreeAccess>>,
     pub id: String,
     ///Accepted input modalities. Null means unknown.
     pub input_modalities: Option<Vec<Modality>>,
@@ -1717,6 +1731,16 @@ impl AsRef<str> for ModelObject {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
+}
+///Public limits for keyless free inference on a model.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ModelFreeAccess {
+    ///Maximum input context tokens accepted for keyless free requests.
+    ///Constraint: minimum=1
+    pub context_length: i64,
+    ///Maximum keyless free requests per minute per client IP.
+    ///Constraint: minimum=1
+    pub ip_rpm_limit: i32,
 }
 ///Verified capabilities of the model, the same whichever endpoint it is called through. Null values mean unknown. Current route availability is separate.
 #[derive(Debug, Clone, Deserialize, Serialize)]
