@@ -980,6 +980,15 @@ pub struct CreateSSHKeyRequestBody {
     ///Constraint: minLength=1, maxLength=16384
     pub public_key: String,
 }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExchangeServiceAccountTokenRequestBody {
+    ///Compact EdDSA JWS signed with an active key of the service account
+    ///Constraint: minLength=1, maxLength=8192
+    pub assertion: String,
+    ///Must be `urn:ietf:params:oauth:grant-type:jwt-bearer`
+    ///Constraint: minLength=1, maxLength=128
+    pub grant_type: String,
+}
 ///What an invitation states before it is accepted. It carries neither the invitation id nor the full recipient address; the invitations listed against the current account are returned by `list-my-invitations`
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InvitationPreviewResource {
@@ -991,6 +1000,17 @@ pub struct InvitationPreviewResource {
     pub project_name: String,
     ///The display names of the roles granted on acceptance
     pub role_names: Option<Vec<String>>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct OAuthTokenResponseBody {
+    ///The scoped token, to be sent as `Authorization: Bearer`
+    pub access_token: String,
+    ///When the token expires
+    pub expires_at: chrono::DateTime<chrono::Utc>,
+    ///Seconds remaining before expiry
+    pub expires_in: i64,
+    ///Always `Bearer`
+    pub token_type: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RenameSSHKeyRequestBody {

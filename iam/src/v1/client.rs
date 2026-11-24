@@ -300,6 +300,32 @@ fn __pct_encode_path_segment(s: &str) -> String {
 }
 ///Allowed values for the `status` query parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+pub enum ListServiceAccountSshKeysStatus {
+    #[serde(rename = "ACTIVE")]
+    Active,
+    #[serde(rename = "REVOKED")]
+    Revoked,
+}
+impl ListServiceAccountSshKeysStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Revoked => "REVOKED",
+        }
+    }
+}
+impl std::fmt::Display for ListServiceAccountSshKeysStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ListServiceAccountSshKeysStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///Allowed values for the `status` query parameter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum ListSshKeysStatus {
     #[serde(rename = "ACTIVE")]
     Active,
@@ -344,6 +370,21 @@ pub enum CreateMemberPermissionApiError {
 pub enum CreateRoleApiError {
     Default(Error),
 }
+///Typed error responses for `create-service-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateServiceAccountApiError {
+    Default(Error),
+}
+///Typed error responses for `create-service-account-key`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateServiceAccountKeyApiError {
+    Default(Error),
+}
+///Typed error responses for `create-service-account-ssh-key`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateServiceAccountSshKeyApiError {
+    Default(Error),
+}
 ///Typed error responses for `create-ssh-key`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CreateSshKeyApiError {
@@ -369,6 +410,21 @@ pub enum DeleteProjectApiError {
 pub enum DeleteRoleApiError {
     Default(Error),
 }
+///Typed error responses for `delete-service-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DeleteServiceAccountApiError {
+    Default(Error),
+}
+///Typed error responses for `disable-service-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DisableServiceAccountApiError {
+    Default(Error),
+}
+///Typed error responses for `enable-service-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum EnableServiceAccountApiError {
+    Default(Error),
+}
 ///Typed error responses for `get-application`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetApplicationApiError {
@@ -387,6 +443,11 @@ pub enum GetProjectMembershipApiError {
 ///Typed error responses for `get-role`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetRoleApiError {
+    Default(Error),
+}
+///Typed error responses for `get-service-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetServiceAccountApiError {
     Default(Error),
 }
 ///Typed error responses for `get-ssh-key`. One variant per declared non-2xx response.
@@ -434,6 +495,21 @@ pub enum ListQuotasApiError {
 pub enum ListRolesApiError {
     Default(Error),
 }
+///Typed error responses for `list-service-account-keys`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListServiceAccountKeysApiError {
+    Default(Error),
+}
+///Typed error responses for `list-service-account-ssh-keys`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListServiceAccountSshKeysApiError {
+    Default(Error),
+}
+///Typed error responses for `list-service-accounts`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListServiceAccountsApiError {
+    Default(Error),
+}
 ///Typed error responses for `list-ssh-keys`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListSshKeysApiError {
@@ -452,6 +528,16 @@ pub enum RenameSshKeyApiError {
 ///Typed error responses for `revoke-invitation`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum RevokeInvitationApiError {
+    Default(Error),
+}
+///Typed error responses for `revoke-service-account-key`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum RevokeServiceAccountKeyApiError {
+    Default(Error),
+}
+///Typed error responses for `revoke-service-account-ssh-key`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum RevokeServiceAccountSshKeyApiError {
     Default(Error),
 }
 ///Typed error responses for `revoke-ssh-key`. One variant per declared non-2xx response.
@@ -492,6 +578,11 @@ pub enum UpdateProjectApiError {
 ///Typed error responses for `update-role`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum UpdateRoleApiError {
+    Default(Error),
+}
+///Typed error responses for `update-service-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum UpdateServiceAccountApiError {
     Default(Error),
 }
 impl HttpClient {
@@ -825,6 +916,269 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(CreateRoleApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Create a service account
+    ///
+    /// Creates a project-owned service account and joins it to the current project as a member. Its `id` is also its member `user_id`; manage roles and direct permissions through `/api/v1/members/{userId}/roles` and `/api/v1/members/{userId}/permissions`.
+    ///
+    /// Requires `iam:service_accounts.manage`. When initial `roles` are supplied, `iam:members.manage` is also required, and granting `ADMIN` requires the caller to be a project owner or administrator.
+    ///
+    /// `POST /api/v1/service-accounts`
+    pub async fn create_service_account(
+        &self,
+        request: CreateServiceAccountRequestBody,
+    ) -> Result<ServiceAccountResource, ApiOpError<CreateServiceAccountApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/service-accounts");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 201u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "201",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateServiceAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateServiceAccountApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Create or upload a signing key for a service account
+    ///
+    /// Adds an Ed25519 signing key for RFC 7523 token exchange. A service account may hold at most 5 active unexpired keys at a time.
+    ///
+    /// With `origin` `GENERATED`, the platform generates an Ed25519 key pair, stores only the public key, and returns the private key once inside `credentials`. With `origin` `UPLOADED`, `public_key` carries a PKIX PEM Ed25519 public key and `credentials` is omitted.
+    ///
+    /// Requires `iam:service_accounts.manage`.
+    ///
+    /// `POST /api/v1/service-accounts/{serviceAccountId}/keys`
+    pub async fn create_service_account_key(
+        &self,
+        service_account_id: impl AsRef<str>,
+        request: CreateServiceAccountKeyRequestBody,
+    ) -> Result<CreateServiceAccountKeyResponseBody, ApiOpError<CreateServiceAccountKeyApiError>>
+    {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}/keys",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 201u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "201",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateServiceAccountKeyApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateServiceAccountKeyApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Add an SSH key to a service account
+    ///
+    /// Registers an OpenSSH public key on the service account. Requires `iam:service_accounts.manage`.
+    ///
+    /// `POST /api/v1/service-accounts/{serviceAccountId}/ssh-keys`
+    pub async fn create_service_account_ssh_key(
+        &self,
+        service_account_id: impl AsRef<str>,
+        request: CreateServiceAccountSSHKeyRequestBody,
+    ) -> Result<ServiceAccountSSHKeyResource, ApiOpError<CreateServiceAccountSshKeyApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}/ssh-keys",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 201u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "201",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateServiceAccountSshKeyApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateServiceAccountSshKeyApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -1233,6 +1587,262 @@ impl HttpClient {
             }))
         }
     }
+    /// Delete a service account
+    ///
+    /// Immediately retires the service account's membership, revokes all signing keys and SSH keys, clears its profile fields and records its deletion timestamp. Deleted service accounts cannot be restored, and their names may be reused.
+    ///
+    /// Requires `iam:service_accounts.manage`. Repeating the call on an already deleted service account returns it unchanged.
+    ///
+    /// `DELETE /api/v1/service-accounts/{serviceAccountId}`
+    pub async fn delete_service_account(
+        &self,
+        service_account_id: impl AsRef<str>,
+    ) -> Result<ServiceAccountResource, ApiOpError<DeleteServiceAccountApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<DeleteServiceAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DeleteServiceAccountApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Disable a service account
+    ///
+    /// Suspends the service account, preventing token exchanges and project writes while preserving its identity and resources for later reuse. Requires `iam:service_accounts.manage`.
+    ///
+    /// `POST /api/v1/service-accounts/{serviceAccountId}:disable`
+    pub async fn disable_service_account(
+        &self,
+        service_account_id: impl AsRef<str>,
+    ) -> Result<ServiceAccountResource, ApiOpError<DisableServiceAccountApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}:disable",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<DisableServiceAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DisableServiceAccountApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Enable a service account
+    ///
+    /// Returns a suspended service account to `ACTIVE`. Requires `iam:service_accounts.manage`.
+    ///
+    /// `POST /api/v1/service-accounts/{serviceAccountId}:enable`
+    pub async fn enable_service_account(
+        &self,
+        service_account_id: impl AsRef<str>,
+    ) -> Result<ServiceAccountResource, ApiOpError<EnableServiceAccountApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}:enable",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<EnableServiceAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(EnableServiceAccountApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Get an application
     ///
     /// An application that has been deleted is still returned, with `status` `ARCHIVED`.
@@ -1530,6 +2140,90 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetRoleApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get a service account
+    ///
+    /// A deleted service account remains readable with `status` `DELETED`. Visible to any project member.
+    ///
+    /// `GET /api/v1/service-accounts/{serviceAccountId}`
+    pub async fn get_service_account(
+        &self,
+        service_account_id: impl AsRef<str>,
+    ) -> Result<ServiceAccountResource, ApiOpError<GetServiceAccountApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetServiceAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetServiceAccountApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -1989,6 +2683,7 @@ impl HttpClient {
         limit: Option<i64>,
         offset: Option<i64>,
         keyword: Option<impl AsRef<str>>,
+        service_account: Option<bool>,
     ) -> Result<LengthAwarePageMemberResource, ApiOpError<ListMembersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/members");
         let mut req = self.http_client.get(request_url);
@@ -2002,6 +2697,9 @@ impl HttpClient {
             }
             if let Some(v) = keyword {
                 query_params.push(("keyword".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = service_account {
+                query_params.push(("service_account".to_string(), v.to_string()));
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -2279,6 +2977,313 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListRolesApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List the signing keys of a service account
+    ///
+    /// Never returns private keys. Revoked keys are omitted unless `include_revoked` is true. Visible to any project member.
+    ///
+    /// `GET /api/v1/service-accounts/{serviceAccountId}/keys`
+    pub async fn list_service_account_keys(
+        &self,
+        service_account_id: impl AsRef<str>,
+        limit: Option<i64>,
+        offset: Option<i64>,
+        include_revoked: Option<bool>,
+    ) -> Result<LengthAwarePageServiceAccountKeyResource, ApiOpError<ListServiceAccountKeysApiError>>
+    {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}/keys",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = limit {
+                query_params.push(("limit".to_string(), v.to_string()));
+            }
+            if let Some(v) = offset {
+                query_params.push(("offset".to_string(), v.to_string()));
+            }
+            if let Some(v) = include_revoked {
+                query_params.push(("include_revoked".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListServiceAccountKeysApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListServiceAccountKeysApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List the SSH keys of a service account
+    ///
+    /// Most recent first. Visible to any project member.
+    ///
+    /// `GET /api/v1/service-accounts/{serviceAccountId}/ssh-keys`
+    pub async fn list_service_account_ssh_keys(
+        &self,
+        service_account_id: impl AsRef<str>,
+        limit: Option<i64>,
+        offset: Option<i64>,
+        status: Option<ListServiceAccountSshKeysStatus>,
+    ) -> Result<
+        LengthAwarePageServiceAccountSSHKeyResource,
+        ApiOpError<ListServiceAccountSshKeysApiError>,
+    > {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}/ssh-keys",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = limit {
+                query_params.push(("limit".to_string(), v.to_string()));
+            }
+            if let Some(v) = offset {
+                query_params.push(("offset".to_string(), v.to_string()));
+            }
+            if let Some(v) = status {
+                query_params.push(("status".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListServiceAccountSshKeysApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListServiceAccountSshKeysApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List the service accounts of this project
+    ///
+    /// Suspended service accounts are included. Deleted service accounts are omitted unless `include_deleted` is true. Visible to any project member.
+    ///
+    /// `GET /api/v1/service-accounts`
+    pub async fn list_service_accounts(
+        &self,
+        limit: Option<i64>,
+        offset: Option<i64>,
+        keyword: Option<impl AsRef<str>>,
+        include_deleted: Option<bool>,
+    ) -> Result<LengthAwarePageServiceAccountResource, ApiOpError<ListServiceAccountsApiError>>
+    {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/service-accounts");
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = limit {
+                query_params.push(("limit".to_string(), v.to_string()));
+            }
+            if let Some(v) = offset {
+                query_params.push(("offset".to_string(), v.to_string()));
+            }
+            if let Some(v) = keyword {
+                query_params.push(("keyword".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = include_deleted {
+                query_params.push(("include_deleted".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListServiceAccountsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListServiceAccountsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -2611,6 +3616,178 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(RevokeInvitationApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Revoke a signing key of a service account
+    ///
+    /// Marks the key `REVOKED` and retains the row for audit. Repeating the call returns the revoked key. Requires `iam:service_accounts.manage`.
+    ///
+    /// `DELETE /api/v1/service-accounts/{serviceAccountId}/keys/{keyId}`
+    pub async fn revoke_service_account_key(
+        &self,
+        service_account_id: impl AsRef<str>,
+        key_id: impl AsRef<str>,
+    ) -> Result<ServiceAccountKeyResource, ApiOpError<RevokeServiceAccountKeyApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}/keys/{}",
+                __pct_encode_path_segment(service_account_id.as_ref()),
+                __pct_encode_path_segment(key_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<RevokeServiceAccountKeyApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(RevokeServiceAccountKeyApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Revoke an SSH key of a service account
+    ///
+    /// Marks the key `REVOKED` and retains the row for audit. Requires `iam:service_accounts.manage`.
+    ///
+    /// `DELETE /api/v1/service-accounts/{serviceAccountId}/ssh-keys/{keyId}`
+    pub async fn revoke_service_account_ssh_key(
+        &self,
+        service_account_id: impl AsRef<str>,
+        key_id: impl AsRef<str>,
+    ) -> Result<ServiceAccountSSHKeyResource, ApiOpError<RevokeServiceAccountSshKeyApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}/ssh-keys/{}",
+                __pct_encode_path_segment(service_account_id.as_ref()),
+                __pct_encode_path_segment(key_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<RevokeServiceAccountSshKeyApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(RevokeServiceAccountSshKeyApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -3294,6 +4471,94 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(UpdateRoleApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Update a service account
+    ///
+    /// Updates the display name, description or optional email address of an active or suspended service account. Requires `iam:service_accounts.manage`.
+    ///
+    /// `PATCH /api/v1/service-accounts/{serviceAccountId}`
+    pub async fn update_service_account(
+        &self,
+        service_account_id: impl AsRef<str>,
+        request: UpdateServiceAccountRequestBody,
+    ) -> Result<ServiceAccountResource, ApiOpError<UpdateServiceAccountApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/service-accounts/{}",
+                __pct_encode_path_segment(service_account_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.patch(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<UpdateServiceAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(UpdateServiceAccountApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
