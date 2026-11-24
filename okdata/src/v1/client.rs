@@ -4166,7 +4166,7 @@ impl HttpClient {
         window: Option<BatchGetDouyinUsersHistoryWindow>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountHistoryBatchResponse, ApiOpError<BatchGetDouyinUsersHistoryApiError>> {
         let request_url = format!(
             "{}{}",
@@ -4202,7 +4202,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -4281,7 +4283,7 @@ impl HttpClient {
         ids: Vec<String>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CreatorBatchResponse, ApiOpError<BatchGetDouyinXingtuCreatorsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -4314,7 +4316,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -4393,7 +4397,7 @@ impl HttpClient {
         ids: Vec<String>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountBatchResponse, ApiOpError<BatchGetXUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/x/users:batchGet");
         let mut req = self.http_client.get(request_url);
@@ -4423,7 +4427,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -4594,7 +4600,7 @@ impl HttpClient {
     pub async fn create_wechat_channels_video_share_link(
         &self,
         video_id: impl AsRef<str>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: CreateWechatChannelsVideoShareLinkRequest,
     ) -> Result<ChannelsShareLinkResponse, ApiOpError<CreateWechatChannelsVideoShareLinkApiError>>
     {
@@ -4610,7 +4616,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -4689,7 +4697,7 @@ impl HttpClient {
         product_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetAlibaba1688ProductApiError>> {
         let request_url = format!(
             "{}{}",
@@ -4718,7 +4726,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -4798,7 +4808,7 @@ impl HttpClient {
         country: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetAliexpressProductApiError>> {
         let request_url = format!(
             "{}{}",
@@ -4830,7 +4840,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -4910,7 +4922,7 @@ impl HttpClient {
         country: Option<GetAmazonProductCountry>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetAmazonProductApiError>> {
         let request_url = format!(
             "{}{}",
@@ -4942,7 +4954,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5022,7 +5036,7 @@ impl HttpClient {
         country: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetAppStoreAppApiError>> {
         let request_url = format!(
             "{}{}",
@@ -5054,7 +5068,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5133,7 +5149,7 @@ impl HttpClient {
         room_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetBilibiliLiveRoomApiError>> {
         let request_url = format!(
             "{}{}",
@@ -5162,7 +5178,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5241,7 +5259,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetBilibiliLiveUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -5270,7 +5288,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5349,7 +5369,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetBilibiliUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -5378,7 +5398,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5457,7 +5479,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetBilibiliVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -5486,7 +5508,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5565,7 +5589,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetBlueskyPostApiError>> {
         let request_url = format!(
             "{}{}",
@@ -5594,7 +5618,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5673,7 +5699,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetBlueskyUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -5702,7 +5728,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5867,7 +5895,7 @@ impl HttpClient {
         until: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<BrandHistoryResponse, ApiOpError<GetDouyinIndexBrandHistoryApiError>> {
         let request_url = format!(
             "{}{}",
@@ -5898,7 +5926,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -5979,7 +6009,7 @@ impl HttpClient {
         until: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<BrandMetricsResponse, ApiOpError<GetDouyinIndexBrandMetricsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6010,7 +6040,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6089,7 +6121,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AudienceResponse, ApiOpError<GetDouyinIndexCreatorAudienceApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6118,7 +6150,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6197,7 +6231,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<IndexCreatorMetricsResponse, ApiOpError<GetDouyinIndexCreatorMetricsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6226,7 +6260,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6307,7 +6343,7 @@ impl HttpClient {
         until: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<KeywordAudienceResponse, ApiOpError<GetDouyinIndexKeywordAudienceApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6338,7 +6374,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6414,7 +6452,7 @@ impl HttpClient {
     /// `QUERY /api/v1/douyin/index/keywords/history`
     pub async fn get_douyin_index_keywords_history(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: GetDouyinIndexKeywordsHistoryRequest,
     ) -> Result<KeywordHistoryListResponse, ApiOpError<GetDouyinIndexKeywordsHistoryApiError>> {
         let request_url = format!(
@@ -6428,7 +6466,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6507,7 +6547,7 @@ impl HttpClient {
         room_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetDouyinLiveRoomApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6536,7 +6576,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6617,7 +6659,7 @@ impl HttpClient {
         r#type: Option<GetDouyinLiveStreamerMetricsType>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveStreamerResponse, ApiOpError<GetDouyinLiveStreamerMetricsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6652,7 +6694,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6731,7 +6775,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetDouyinLiveUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6760,7 +6804,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6839,7 +6885,7 @@ impl HttpClient {
         product_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetDouyinShopProductApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6868,7 +6914,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -6947,7 +6995,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetDouyinUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -6976,7 +7024,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7055,7 +7105,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetDouyinVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -7084,7 +7134,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7163,7 +7215,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetDouyinVideoMetricsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -7192,7 +7244,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7271,7 +7325,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CreatorResponse, ApiOpError<GetDouyinXingtuCreatorApiError>> {
         let request_url = format!(
             "{}{}",
@@ -7300,7 +7354,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7379,7 +7435,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AudienceResponse, ApiOpError<GetDouyinXingtuCreatorAudienceApiError>> {
         let request_url = format!(
             "{}{}",
@@ -7408,7 +7464,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7487,7 +7545,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<XingtuCreatorContentMixResponse, ApiOpError<GetDouyinXingtuCreatorContentMixApiError>>
     {
         let request_url = format!(
@@ -7517,7 +7575,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7596,7 +7656,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<XingtuCreatorConversionResponse, ApiOpError<GetDouyinXingtuCreatorConversionApiError>>
     {
         let request_url = format!(
@@ -7626,7 +7686,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7705,7 +7767,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<XingtuCreatorKeywordsResponse, ApiOpError<GetDouyinXingtuCreatorKeywordsApiError>>
     {
         let request_url = format!(
@@ -7735,7 +7797,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7815,7 +7879,7 @@ impl HttpClient {
         window: Option<GetDouyinXingtuCreatorMetricsWindow>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<XingtuCreatorMetricsResponse, ApiOpError<GetDouyinXingtuCreatorMetricsApiError>>
     {
         let request_url = format!(
@@ -7848,7 +7912,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7927,7 +7993,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CreatorRateResponse, ApiOpError<GetDouyinXingtuCreatorRatesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -7956,7 +8022,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8035,7 +8103,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<XingtuCreatorScoresResponse, ApiOpError<GetDouyinXingtuCreatorScoresApiError>> {
         let request_url = format!(
             "{}{}",
@@ -8064,7 +8132,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8143,7 +8213,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetDouyinXingtuVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -8172,7 +8242,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8327,7 +8399,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetInstagramPostApiError>> {
         let request_url = format!(
             "{}{}",
@@ -8356,7 +8428,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8435,7 +8509,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TranscriptResponse, ApiOpError<GetInstagramPostTranscriptApiError>> {
         let request_url = format!(
             "{}{}",
@@ -8464,7 +8538,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8543,7 +8619,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetInstagramUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -8572,7 +8648,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8651,7 +8729,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetKuaishouLiveUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -8680,7 +8758,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8759,7 +8839,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetKuaishouUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -8788,7 +8868,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8867,7 +8949,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetKuaishouVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -8896,7 +8978,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -8975,7 +9059,7 @@ impl HttpClient {
         ad_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AdResponse, ApiOpError<GetMetaAdApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9004,7 +9088,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -9083,7 +9169,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetRedditPostApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9112,7 +9198,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -9191,7 +9279,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TranscriptResponse, ApiOpError<GetRedditPostTranscriptApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9220,7 +9308,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -9299,7 +9389,7 @@ impl HttpClient {
         subreddit_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetRedditSubredditApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9328,7 +9418,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -9407,7 +9499,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetRedditUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9436,7 +9528,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -9683,7 +9777,7 @@ impl HttpClient {
         product_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetTaobaoProductApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9712,7 +9806,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -9791,7 +9887,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetTelegramChannelApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9820,7 +9916,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -9900,7 +9998,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetTelegramMessageApiError>> {
         let request_url = format!(
             "{}{}",
@@ -9930,7 +10028,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10009,7 +10109,7 @@ impl HttpClient {
         ad_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AdResponse, ApiOpError<GetTiktokCreativeCenterAdApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10038,7 +10138,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10117,7 +10219,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetTiktokLiveUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10146,7 +10248,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10226,7 +10330,7 @@ impl HttpClient {
         country: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetTiktokShopProductApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10258,7 +10362,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10337,7 +10443,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetTiktokUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10366,7 +10472,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10445,7 +10553,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetTiktokVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10474,7 +10582,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10554,7 +10664,7 @@ impl HttpClient {
         lang: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TranscriptResponse, ApiOpError<GetTiktokVideoTranscriptApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10586,7 +10696,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10665,7 +10777,7 @@ impl HttpClient {
         article_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetToutiaoArticleApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10694,7 +10806,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10773,7 +10887,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetToutiaoUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10802,7 +10916,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10881,7 +10997,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetToutiaoVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -10910,7 +11026,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -10989,7 +11107,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetTwitchLiveUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11018,7 +11136,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11097,7 +11217,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetWechatChannelsBackupUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11126,7 +11246,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11206,7 +11328,7 @@ impl HttpClient {
         host_id: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetWechatChannelsLiveRoomApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11238,7 +11360,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11317,7 +11441,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<GetWechatChannelsLiveUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11346,7 +11470,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11425,7 +11551,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetWechatChannelsUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11454,7 +11580,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11533,7 +11661,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetWechatChannelsVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11562,7 +11690,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11641,7 +11771,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetWechatChannelsVideoMetricsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11670,7 +11800,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11749,7 +11881,7 @@ impl HttpClient {
         keyword: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<KeywordHistoryListResponse, ApiOpError<GetWechatIndexKeywordsHistoryApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11778,7 +11910,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11857,7 +11991,7 @@ impl HttpClient {
         account_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetWechatMpAccountApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11886,7 +12020,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -11965,7 +12101,7 @@ impl HttpClient {
         account_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountOwnerResponse, ApiOpError<GetWechatMpAccountOwnerApiError>> {
         let request_url = format!(
             "{}{}",
@@ -11994,7 +12130,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12073,7 +12211,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetWeiboPostApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12102,7 +12240,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12181,7 +12321,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetWeiboUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12210,7 +12350,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12289,7 +12431,7 @@ impl HttpClient {
         community_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommunityResponse, ApiOpError<GetXCommunityApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12318,7 +12460,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12397,7 +12541,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetXPostApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12426,7 +12570,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12505,7 +12651,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetXPostArticleApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12534,7 +12680,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12613,7 +12761,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetXUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12642,7 +12790,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12721,7 +12871,7 @@ impl HttpClient {
         product_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetXianyuProductApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12750,7 +12900,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12829,7 +12981,7 @@ impl HttpClient {
         note_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetXiaohongshuNoteApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12858,7 +13010,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -12937,7 +13091,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CreatorResponse, ApiOpError<GetXiaohongshuPgyCreatorApiError>> {
         let request_url = format!(
             "{}{}",
@@ -12966,7 +13120,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13045,7 +13201,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AudienceResponse, ApiOpError<GetXiaohongshuPgyCreatorAudienceApiError>> {
         let request_url = format!(
             "{}{}",
@@ -13074,7 +13230,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13155,7 +13313,7 @@ impl HttpClient {
         tab: Option<GetXiaohongshuPgyCreatorCostsHistoryTab>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<
         PgyCreatorCostHistoryResponse,
         ApiOpError<GetXiaohongshuPgyCreatorCostsHistoryApiError>,
@@ -13193,7 +13351,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13273,7 +13433,7 @@ impl HttpClient {
         tab: Option<GetXiaohongshuPgyCreatorCostsMetricsTab>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PgyCreatorCostsResponse, ApiOpError<GetXiaohongshuPgyCreatorCostsMetricsApiError>>
     {
         let request_url = format!(
@@ -13306,7 +13466,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13386,7 +13548,7 @@ impl HttpClient {
         window: Option<GetXiaohongshuPgyCreatorFollowersHistoryWindow>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<FollowerHistoryResponse, ApiOpError<GetXiaohongshuPgyCreatorFollowersHistoryApiError>>
     {
         let request_url = format!(
@@ -13419,7 +13581,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13498,7 +13662,7 @@ impl HttpClient {
         creator_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<
         PgyCreatorFollowersResponse,
         ApiOpError<GetXiaohongshuPgyCreatorFollowersMetricsApiError>,
@@ -13530,7 +13694,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13611,7 +13777,7 @@ impl HttpClient {
         tab: Option<GetXiaohongshuPgyCreatorMetricsTab>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PgyCreatorMetricsResponse, ApiOpError<GetXiaohongshuPgyCreatorMetricsApiError>>
     {
         let request_url = format!(
@@ -13647,7 +13813,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13726,7 +13894,7 @@ impl HttpClient {
         keyword: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<KeywordHistoryResponse, ApiOpError<GetXiaohongshuPgyKeywordsHistoryApiError>> {
         let request_url = format!(
             "{}{}",
@@ -13755,7 +13923,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13834,7 +14004,7 @@ impl HttpClient {
         note_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PgyNoteResponse, ApiOpError<GetXiaohongshuPgyNoteApiError>> {
         let request_url = format!(
             "{}{}",
@@ -13863,7 +14033,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -13942,7 +14114,7 @@ impl HttpClient {
         product_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<GetXiaohongshuShopProductApiError>> {
         let request_url = format!(
             "{}{}",
@@ -13971,7 +14143,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14050,7 +14224,7 @@ impl HttpClient {
         topic_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TopicResponse, ApiOpError<GetXiaohongshuTopicApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14079,7 +14253,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14158,7 +14334,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetXiaohongshuUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14187,7 +14363,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14266,7 +14444,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetXiaohongshuVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14295,7 +14473,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14374,7 +14554,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetXiguaUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14403,7 +14583,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14482,7 +14664,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetXiguaVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14511,7 +14693,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14590,7 +14774,7 @@ impl HttpClient {
         channel_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetYoutubeChannelApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14619,7 +14803,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14698,7 +14884,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetYoutubePostApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14727,7 +14913,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14806,7 +14994,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetYoutubeVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14835,7 +15023,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -14915,7 +15105,7 @@ impl HttpClient {
         lang: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TranscriptResponse, ApiOpError<GetYoutubeVideoTranscriptApiError>> {
         let request_url = format!(
             "{}{}",
@@ -14947,7 +15137,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15026,7 +15218,7 @@ impl HttpClient {
         answer_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetZhihuAnswerApiError>> {
         let request_url = format!(
             "{}{}",
@@ -15055,7 +15247,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15134,7 +15328,7 @@ impl HttpClient {
         article_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetZhihuArticleApiError>> {
         let request_url = format!(
             "{}{}",
@@ -15163,7 +15357,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15242,7 +15438,7 @@ impl HttpClient {
         pin_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetZhihuPinApiError>> {
         let request_url = format!(
             "{}{}",
@@ -15271,7 +15467,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15350,7 +15548,7 @@ impl HttpClient {
         question_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<GetZhihuQuestionApiError>> {
         let request_url = format!(
             "{}{}",
@@ -15379,7 +15577,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15458,7 +15658,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<GetZhihuUserApiError>> {
         let request_url = format!(
             "{}{}",
@@ -15487,7 +15687,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15568,7 +15770,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<ListAlibaba1688ProductReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -15603,7 +15805,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15684,7 +15888,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductPageResponse, ApiOpError<ListAlibaba1688ShopProductsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -15719,7 +15923,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15800,7 +16006,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<ListAliexpressProductReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -15835,7 +16041,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -15915,7 +16123,7 @@ impl HttpClient {
         limit: Option<i64>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendListResponse, ApiOpError<ListAllTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/all/trends");
         let mut req = self.http_client.get(request_url);
@@ -15949,7 +16157,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16031,7 +16241,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductPageResponse, ApiOpError<ListAmazonBestsellersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/amazon/bestsellers");
         let mut req = self.http_client.get(request_url);
@@ -16063,7 +16273,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16145,7 +16357,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<ListAmazonProductReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -16183,7 +16395,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16265,7 +16479,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<ListAppStoreAppReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -16303,7 +16517,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16381,7 +16597,7 @@ impl HttpClient {
         &self,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendListResponse, ApiOpError<ListBaiduTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/baidu/trends");
         let mut req = self.http_client.get(request_url);
@@ -16403,7 +16619,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16483,7 +16701,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListBilibiliBackupUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -16515,7 +16733,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16596,7 +16816,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListBilibiliCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -16629,7 +16849,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16708,7 +16930,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListBilibiliTrendingVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bilibili/videos");
         let mut req = self.http_client.get(request_url);
@@ -16733,7 +16955,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16812,7 +17036,7 @@ impl HttpClient {
         board: Option<ListBilibiliTrendsBoard>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendListResponse, ApiOpError<ListBilibiliTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bilibili/trends");
         let mut req = self.http_client.get(request_url);
@@ -16837,7 +17061,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -16917,7 +17143,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListBilibiliUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -16949,7 +17175,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -17030,7 +17258,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListBilibiliVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -17065,7 +17293,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -17144,7 +17374,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentListResponse, ApiOpError<ListBlueskyPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -17173,7 +17403,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -17254,7 +17486,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListBlueskyUserPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -17289,7 +17521,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -17487,7 +17721,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListDouyinBackupUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -17519,7 +17753,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -17600,7 +17836,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListDouyinCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -17633,7 +17869,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -17714,7 +17952,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListDouyinHashtagVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -17749,7 +17987,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -17830,7 +18070,7 @@ impl HttpClient {
         until: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostListResponse, ApiOpError<ListDouyinIndexCreatorVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -17861,7 +18101,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -17940,7 +18182,7 @@ impl HttpClient {
         board: Option<ListDouyinIndexTrendsBoard>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendListResponse, ApiOpError<ListDouyinIndexTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/index/trends");
         let mut req = self.http_client.get(request_url);
@@ -17965,7 +18207,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18045,7 +18289,7 @@ impl HttpClient {
         until: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<KeywordRelatedListResponse, ApiOpError<ListDouyinRelatedIndexKeywordsApiError>>
     {
         let request_url = format!(
@@ -18076,7 +18320,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18155,7 +18401,7 @@ impl HttpClient {
         keyword: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<KeywordRelatedListResponse, ApiOpError<ListDouyinRelatedKeywordsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -18184,7 +18430,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18263,7 +18511,7 @@ impl HttpClient {
         video_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostListResponse, ApiOpError<ListDouyinRelatedVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -18292,7 +18540,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18372,7 +18622,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<ListDouyinShopProductReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -18404,7 +18654,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18484,7 +18736,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductPageResponse, ApiOpError<ListDouyinShopShopProductsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -18516,7 +18768,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18597,7 +18851,7 @@ impl HttpClient {
         category: Option<ListDouyinTrendingLiveStreamersCategory>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveStreamerListResponse, ApiOpError<ListDouyinTrendingLiveStreamersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/live/streamers");
         let mut req = self.http_client.get(request_url);
@@ -18628,7 +18882,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18708,7 +18964,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListDouyinTrendingVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/videos");
         let mut req = self.http_client.get(request_url);
@@ -18736,7 +18992,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18815,7 +19073,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendPageResponse, ApiOpError<ListDouyinTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/trends");
         let mut req = self.http_client.get(request_url);
@@ -18840,7 +19098,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -18920,7 +19180,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListDouyinUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -18952,7 +19212,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19033,7 +19295,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListDouyinVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -19068,7 +19330,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19148,7 +19412,7 @@ impl HttpClient {
         until: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<XingtuCampaignListResponse, ApiOpError<ListDouyinXingtuCampaignsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/xingtu/campaigns");
         let mut req = self.http_client.get(request_url);
@@ -19172,7 +19436,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19252,7 +19518,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<XingtuCreatorPostPageResponse, ApiOpError<ListDouyinXingtuCreatorVideosApiError>>
     {
         let request_url = format!(
@@ -19285,7 +19551,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19367,7 +19635,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AdPageResponse, ApiOpError<ListGoogleAdvertiserAdsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -19405,7 +19673,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19486,7 +19756,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListInstagramCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -19519,7 +19789,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19599,7 +19871,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListInstagramHashtagPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -19631,7 +19903,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19711,7 +19985,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListInstagramPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -19743,7 +20017,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19824,7 +20100,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListInstagramUserPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -19859,7 +20135,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -19940,7 +20218,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListKuaishouCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -19973,7 +20251,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20051,7 +20331,7 @@ impl HttpClient {
         &self,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductListResponse, ApiOpError<ListKuaishouTrendingLiveProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/kuaishou/live/products");
         let mut req = self.http_client.get(request_url);
@@ -20073,7 +20353,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20152,7 +20434,7 @@ impl HttpClient {
         board: Option<ListKuaishouTrendingLiveRoomsBoard>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomListResponse, ApiOpError<ListKuaishouTrendingLiveRoomsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/kuaishou/live/rooms");
         let mut req = self.http_client.get(request_url);
@@ -20177,7 +20459,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20256,7 +20540,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendPageResponse, ApiOpError<ListKuaishouTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/kuaishou/trends");
         let mut req = self.http_client.get(request_url);
@@ -20281,7 +20565,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20362,7 +20648,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListKuaishouUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -20397,7 +20683,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20477,7 +20765,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListKuaishouVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -20509,7 +20797,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20593,7 +20883,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AdPageResponse, ApiOpError<ListMetaAdvertiserAdsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -20637,7 +20927,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20716,7 +21008,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListRedditPopularPostsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/reddit/popular/posts");
         let mut req = self.http_client.get(request_url);
@@ -20741,7 +21033,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20822,7 +21116,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListRedditPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -20857,7 +21151,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -20939,7 +21235,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListRedditSubredditPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -20977,7 +21273,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -21056,7 +21354,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendPageResponse, ApiOpError<ListRedditTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/reddit/trends");
         let mut req = self.http_client.get(request_url);
@@ -21081,7 +21379,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -21161,7 +21461,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListRedditUserPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -21193,7 +21493,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -21273,7 +21575,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListRedditUserSubredditsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -21305,7 +21607,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -21500,7 +21804,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<ListTaobaoProductReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -21535,7 +21839,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -21617,7 +21923,7 @@ impl HttpClient {
         view: Option<View>,
         fields: Option<Vec<String>>,
         seller_id: impl AsRef<str>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductPageResponse, ApiOpError<ListTaobaoShopProductsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -21653,7 +21959,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -21733,7 +22041,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListTelegramChannelMessagesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -21765,7 +22073,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -21846,7 +22156,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListTiktokCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -21879,7 +22189,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -21959,7 +22271,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListTiktokHashtagVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -21991,7 +22303,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22072,7 +22386,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductPageResponse, ApiOpError<ListTiktokLiveRoomProductsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -22105,7 +22419,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22186,7 +22502,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<ListTiktokShopProductReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -22221,7 +22537,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22301,7 +22619,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductPageResponse, ApiOpError<ListTiktokShopSellerProductsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -22333,7 +22651,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22411,7 +22731,7 @@ impl HttpClient {
         &self,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveStreamerListResponse, ApiOpError<ListTiktokTrendingLiveStreamersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/tiktok/live/streamers");
         let mut req = self.http_client.get(request_url);
@@ -22433,7 +22753,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22513,7 +22835,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListTiktokUserFollowersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -22545,7 +22867,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22626,7 +22950,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListTiktokUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -22661,7 +22985,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22741,7 +23067,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListTiktokVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -22773,7 +23099,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22853,7 +23181,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListToutiaoPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -22885,7 +23213,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -22963,7 +23293,7 @@ impl HttpClient {
         &self,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendListResponse, ApiOpError<ListToutiaoTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/toutiao/trends");
         let mut req = self.http_client.get(request_url);
@@ -22985,7 +23315,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23065,7 +23397,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListWechatChannelsBackupUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -23097,7 +23429,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23177,7 +23511,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListWechatChannelsCollectionVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -23209,7 +23543,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23290,7 +23626,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListWechatChannelsCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -23323,7 +23659,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23402,7 +23740,7 @@ impl HttpClient {
         user_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ChannelsCollectionListResponse, ApiOpError<ListWechatChannelsUserCollectionsApiError>>
     {
         let request_url = format!(
@@ -23432,7 +23770,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23512,7 +23852,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListWechatChannelsUserLiveReplaysApiError>> {
         let request_url = format!(
             "{}{}",
@@ -23544,7 +23884,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23624,7 +23966,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListWechatChannelsUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -23656,7 +23998,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23736,7 +24080,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListWechatChannelsVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -23768,7 +24112,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23849,7 +24195,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListWechatMpAccountArticlesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -23884,7 +24230,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -23964,7 +24312,7 @@ impl HttpClient {
         view: Option<View>,
         fields: Option<Vec<String>>,
         article_url: impl AsRef<str>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentListResponse, ApiOpError<ListWechatMpCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -23994,7 +24342,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24073,7 +24423,7 @@ impl HttpClient {
         keyword: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<KeywordRelatedListResponse, ApiOpError<ListWechatRelatedKeywordsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -24102,7 +24452,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24181,7 +24533,7 @@ impl HttpClient {
         board: Option<ListWeiboBackupTrendsBoard>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendListResponse, ApiOpError<ListWeiboBackupTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/weibo/backup/trends");
         let mut req = self.http_client.get(request_url);
@@ -24206,7 +24558,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24286,7 +24640,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListWeiboCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -24318,7 +24672,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24398,7 +24754,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListWeiboPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -24430,7 +24786,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24509,7 +24867,7 @@ impl HttpClient {
         post_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountListResponse, ApiOpError<ListWeiboPostLikersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -24538,7 +24896,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24617,7 +24977,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendPageResponse, ApiOpError<ListWeiboTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/weibo/trends");
         let mut req = self.http_client.get(request_url);
@@ -24642,7 +25002,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24722,7 +25084,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListWeiboUserFollowersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -24754,7 +25116,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24834,7 +25198,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListWeiboUserPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -24866,7 +25230,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -24946,7 +25312,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListXCommunityMembersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -24978,7 +25344,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25058,7 +25426,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXCommunityPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -25090,7 +25458,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25169,7 +25539,7 @@ impl HttpClient {
         list_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountListResponse, ApiOpError<ListXListFollowersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -25198,7 +25568,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25278,7 +25650,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListXListMembersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -25310,7 +25682,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25390,7 +25764,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXListPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -25422,7 +25796,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25503,7 +25879,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXPostQuotesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -25538,7 +25914,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25618,7 +25996,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXPostRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -25650,7 +26028,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25730,7 +26110,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListXPostRetweetersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -25762,7 +26142,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25842,7 +26224,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXThreadPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -25874,7 +26256,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -25954,7 +26338,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendPageResponse, ApiOpError<ListXTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/x/trends");
         let mut req = self.http_client.get(request_url);
@@ -25982,7 +26366,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26062,7 +26448,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListXUserFollowersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -26094,7 +26480,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26174,7 +26562,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListXUserFollowingApiError>> {
         let request_url = format!(
             "{}{}",
@@ -26206,7 +26594,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26286,7 +26676,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXUserMentionsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -26318,7 +26708,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26398,7 +26790,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXUserPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -26430,7 +26822,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26511,7 +26905,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListXiaohongshuCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -26544,7 +26938,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26624,7 +27020,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListXiaohongshuNoteCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -26656,7 +27052,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26742,7 +27140,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PgyCreatorPostPageResponse, ApiOpError<ListXiaohongshuPgyCreatorNotesApiError>>
     {
         let request_url = format!(
@@ -26793,7 +27191,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26872,7 +27272,7 @@ impl HttpClient {
         keyword: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<KeywordRelatedListResponse, ApiOpError<ListXiaohongshuRelatedKeywordsApiError>>
     {
         let request_url = format!(
@@ -26902,7 +27302,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -26982,7 +27384,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CreatorPageResponse, ApiOpError<ListXiaohongshuRelatedPgyCreatorsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -27014,7 +27416,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27093,7 +27497,7 @@ impl HttpClient {
         keyword: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<KeywordRelatedListResponse, ApiOpError<ListXiaohongshuRelatedPgyKeywordsApiError>>
     {
         let request_url = format!(
@@ -27123,7 +27527,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27204,7 +27610,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<ListXiaohongshuShopProductReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -27239,7 +27645,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27318,7 +27726,7 @@ impl HttpClient {
         topic_id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostListResponse, ApiOpError<ListXiaohongshuTopicNotesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -27347,7 +27755,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27430,7 +27840,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXiaohongshuTrendingPgyNotesApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/pgy/notes");
         let mut req = self.http_client.get(request_url);
@@ -27467,7 +27877,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27546,7 +27958,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendPageResponse, ApiOpError<ListXiaohongshuTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/trends");
         let mut req = self.http_client.get(request_url);
@@ -27571,7 +27983,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27651,7 +28065,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXiaohongshuUserNotesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -27683,7 +28097,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27763,7 +28179,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListXiguaUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -27795,7 +28211,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27875,7 +28293,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListXiguaVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -27907,7 +28325,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -27987,7 +28407,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListYoutubeChannelPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -28019,7 +28439,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28101,7 +28523,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListYoutubeChannelVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -28139,7 +28561,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28220,7 +28644,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListYoutubeVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -28255,7 +28679,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28335,7 +28761,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListZhihuAnswerCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -28367,7 +28793,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28447,7 +28875,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListZhihuColumnArticlesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -28479,7 +28907,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28559,7 +28989,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<ListZhihuCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -28591,7 +29021,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28671,7 +29103,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListZhihuQuestionAnswersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -28703,7 +29135,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28781,7 +29215,7 @@ impl HttpClient {
         &self,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TrendListResponse, ApiOpError<ListZhihuTrendsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/zhihu/trends");
         let mut req = self.http_client.get(request_url);
@@ -28803,7 +29237,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28883,7 +29319,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListZhihuUserAnswersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -28915,7 +29351,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -28995,7 +29433,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListZhihuUserArticlesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -29027,7 +29465,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29107,7 +29547,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<ListZhihuUserFollowersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -29139,7 +29579,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29219,7 +29661,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<ListZhihuUserPinsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -29251,7 +29693,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29331,7 +29775,7 @@ impl HttpClient {
         country: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<LookupAppStoreAppApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/app-store/apps:lookup");
         let mut req = self.http_client.get(request_url);
@@ -29357,7 +29801,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29439,7 +29885,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ReviewPageResponse, ApiOpError<LookupAppStoreAppReviewsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -29474,7 +29920,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29553,7 +30001,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<LookupBilibiliLiveRoomApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bilibili/live/rooms:lookup");
         let mut req = self.http_client.get(request_url);
@@ -29576,7 +30024,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29655,7 +30105,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupBilibiliVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bilibili/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -29678,7 +30128,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29757,7 +30209,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupBlueskyPostApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bluesky/posts:lookup");
         let mut req = self.http_client.get(request_url);
@@ -29780,7 +30232,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29859,7 +30313,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentListResponse, ApiOpError<LookupBlueskyPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -29885,7 +30339,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -29964,7 +30420,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<LookupBlueskyUserApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bluesky/users:lookup");
         let mut req = self.http_client.get(request_url);
@@ -29987,7 +30443,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30068,7 +30526,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<LookupBlueskyUserPostsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bluesky/users/posts:lookup");
         let mut req = self.http_client.get(request_url);
@@ -30097,7 +30555,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30177,7 +30637,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<LookupDouyinBackupUserVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -30206,7 +30666,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30285,7 +30747,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<LookupDouyinLiveRoomApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/live/rooms:lookup");
         let mut req = self.http_client.get(request_url);
@@ -30308,7 +30770,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30387,7 +30851,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<LiveRoomResponse, ApiOpError<LookupDouyinLiveUserApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/live/users:lookup");
         let mut req = self.http_client.get(request_url);
@@ -30410,7 +30874,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30489,7 +30955,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<LookupDouyinUserApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/users:lookup");
         let mut req = self.http_client.get(request_url);
@@ -30512,7 +30978,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30592,7 +31060,7 @@ impl HttpClient {
         view: Option<View>,
         fields: Option<Vec<String>>,
         uid: impl AsRef<str>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountHistoryResponse, ApiOpError<LookupDouyinUserHistoryApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/users/history:lookup");
         let mut req = self.http_client.get(request_url);
@@ -30618,7 +31086,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30697,7 +31167,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupDouyinVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -30720,7 +31190,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30799,7 +31271,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupDouyinVideoMetricsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -30825,7 +31297,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -30904,7 +31378,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupDouyinXingtuVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/xingtu/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -30927,7 +31401,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31009,7 +31485,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AdPageResponse, ApiOpError<LookupGoogleAdvertiserAdsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -31044,7 +31520,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31123,7 +31601,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupInstagramPostApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/instagram/posts:lookup");
         let mut req = self.http_client.get(request_url);
@@ -31146,7 +31624,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31226,7 +31706,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<LookupInstagramPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -31255,7 +31735,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31334,7 +31816,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TranscriptResponse, ApiOpError<LookupInstagramPostTranscriptApiError>> {
         let request_url = format!(
             "{}{}",
@@ -31360,7 +31842,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31439,7 +31923,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupKuaishouVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/kuaishou/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -31462,7 +31946,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31542,7 +32028,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<LookupKuaishouVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -31571,7 +32057,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31650,7 +32138,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AdResponse, ApiOpError<LookupMetaAdApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/meta/ads:lookup");
         let mut req = self.http_client.get(request_url);
@@ -31673,7 +32161,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31757,7 +32247,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AdPageResponse, ApiOpError<LookupMetaAdvertiserAdsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/meta/advertisers/ads:lookup");
         let mut req = self.http_client.get(request_url);
@@ -31795,7 +32285,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31874,7 +32366,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupRedditPostApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/reddit/posts:lookup");
         let mut req = self.http_client.get(request_url);
@@ -31897,7 +32389,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -31978,7 +32472,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<LookupRedditPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -32010,7 +32504,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32089,7 +32585,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TranscriptResponse, ApiOpError<LookupRedditPostTranscriptApiError>> {
         let request_url = format!(
             "{}{}",
@@ -32115,7 +32611,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32194,7 +32692,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupTelegramMessageApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/telegram/messages:lookup");
         let mut req = self.http_client.get(request_url);
@@ -32217,7 +32715,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32297,7 +32797,7 @@ impl HttpClient {
         country: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<ProductResponse, ApiOpError<LookupTiktokShopProductApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/tiktok/shop/products:lookup");
         let mut req = self.http_client.get(request_url);
@@ -32323,7 +32823,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32403,7 +32905,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountPageResponse, ApiOpError<LookupTiktokUserFollowersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -32432,7 +32934,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32511,7 +33015,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupTiktokVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/tiktok/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -32534,7 +33038,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32614,7 +33120,7 @@ impl HttpClient {
         lang: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<TranscriptResponse, ApiOpError<LookupTiktokVideoTranscriptApiError>> {
         let request_url = format!(
             "{}{}",
@@ -32643,7 +33149,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32722,7 +33230,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupToutiaoArticleApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/toutiao/articles:lookup");
         let mut req = self.http_client.get(request_url);
@@ -32745,7 +33253,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32825,7 +33335,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<LookupToutiaoPostCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -32854,7 +33364,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -32933,7 +33445,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<LookupToutiaoUserApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/toutiao/users:lookup");
         let mut req = self.http_client.get(request_url);
@@ -32956,7 +33468,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33035,7 +33549,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupToutiaoVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/toutiao/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -33058,7 +33572,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33137,7 +33653,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupWechatChannelsVideoApiError>> {
         let request_url = format!(
             "{}{}",
@@ -33163,7 +33679,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33242,7 +33760,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupWechatMpArticleApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/wechat-mp/articles:lookup");
         let mut req = self.http_client.get(request_url);
@@ -33265,7 +33783,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33345,7 +33865,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<LookupWechatMpArticleCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -33374,7 +33894,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33453,7 +33975,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupWechatMpArticleMetricsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -33479,7 +34001,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33558,7 +34082,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupWeiboPostApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/weibo/posts:lookup");
         let mut req = self.http_client.get(request_url);
@@ -33581,7 +34105,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33661,7 +34187,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<LookupWeiboPostCommentsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/weibo/posts/comments:lookup");
         let mut req = self.http_client.get(request_url);
@@ -33687,7 +34213,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33766,7 +34294,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountListResponse, ApiOpError<LookupWeiboPostLikersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/weibo/posts/likers:lookup");
         let mut req = self.http_client.get(request_url);
@@ -33789,7 +34317,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33868,7 +34398,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupXPostApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/x/posts:lookup");
         let mut req = self.http_client.get(request_url);
@@ -33891,7 +34421,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -33970,7 +34502,7 @@ impl HttpClient {
         id: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<LookupXUserApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/x/users:lookup");
         let mut req = self.http_client.get(request_url);
@@ -33993,7 +34525,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34072,7 +34606,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupXiaohongshuNoteApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/notes:lookup");
         let mut req = self.http_client.get(request_url);
@@ -34095,7 +34629,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34174,7 +34710,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<LookupXiaohongshuUserApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/users:lookup");
         let mut req = self.http_client.get(request_url);
@@ -34197,7 +34733,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34276,7 +34814,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupXiaohongshuVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -34299,7 +34837,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34378,7 +34918,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<LookupXiguaUserApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xigua/users:lookup");
         let mut req = self.http_client.get(request_url);
@@ -34401,7 +34941,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34481,7 +35023,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<LookupXiguaUserVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xigua/users/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -34507,7 +35049,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34586,7 +35130,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupXiguaVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xigua/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -34609,7 +35153,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34689,7 +35235,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<LookupXiguaVideoCommentsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -34718,7 +35264,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34797,7 +35345,7 @@ impl HttpClient {
         username: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<AccountResponse, ApiOpError<LookupYoutubeChannelApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/youtube/channels:lookup");
         let mut req = self.http_client.get(request_url);
@@ -34820,7 +35368,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -34900,7 +35450,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<LookupYoutubeChannelPostsApiError>> {
         let request_url = format!(
             "{}{}",
@@ -34929,7 +35479,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35011,7 +35563,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<LookupYoutubeChannelVideosApiError>> {
         let request_url = format!(
             "{}{}",
@@ -35046,7 +35598,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35126,7 +35680,7 @@ impl HttpClient {
         view: Option<View>,
         fields: Option<Vec<String>>,
         replies_token: impl AsRef<str>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<CommentPageResponse, ApiOpError<LookupYoutubeCommentRepliesApiError>> {
         let request_url = format!(
             "{}{}",
@@ -35158,7 +35712,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35237,7 +35793,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupYoutubePostApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/youtube/posts:lookup");
         let mut req = self.http_client.get(request_url);
@@ -35260,7 +35816,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35339,7 +35897,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupYoutubeVideoApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/youtube/videos:lookup");
         let mut req = self.http_client.get(request_url);
@@ -35362,7 +35920,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35441,7 +36001,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupZhihuAnswerApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/zhihu/answers:lookup");
         let mut req = self.http_client.get(request_url);
@@ -35464,7 +36024,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35543,7 +36105,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupZhihuArticleApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/zhihu/articles:lookup");
         let mut req = self.http_client.get(request_url);
@@ -35566,7 +36128,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35645,7 +36209,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupZhihuPinApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/zhihu/pins:lookup");
         let mut req = self.http_client.get(request_url);
@@ -35668,7 +36232,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35747,7 +36313,7 @@ impl HttpClient {
         url: impl AsRef<str>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostResponse, ApiOpError<LookupZhihuQuestionApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/zhihu/questions:lookup");
         let mut req = self.http_client.get(request_url);
@@ -35770,7 +36336,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35850,7 +36418,7 @@ impl HttpClient {
         cursor: Option<impl AsRef<str>>,
         view: Option<View>,
         fields: Option<Vec<String>>,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
     ) -> Result<PostPageResponse, ApiOpError<LookupZhihuQuestionAnswersApiError>> {
         let request_url = format!(
             "{}{}",
@@ -35879,7 +36447,9 @@ impl HttpClient {
                 req = req.query(&query_params);
             }
         }
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -35955,7 +36525,7 @@ impl HttpClient {
     /// `QUERY /api/v1/alibaba-1688/products`
     pub async fn search_alibaba_1688_products(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchAlibaba1688ProductsRequest,
     ) -> Result<ProductPageResponse, ApiOpError<SearchAlibaba1688ProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/alibaba-1688/products");
@@ -35966,7 +36536,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36042,7 +36614,7 @@ impl HttpClient {
     /// `QUERY /api/v1/aliexpress/products`
     pub async fn search_aliexpress_products(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchAliexpressProductsRequest,
     ) -> Result<ProductPageResponse, ApiOpError<SearchAliexpressProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/aliexpress/products");
@@ -36053,7 +36625,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36129,7 +36703,7 @@ impl HttpClient {
     /// `QUERY /api/v1/amazon/products`
     pub async fn search_amazon_products(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchAmazonProductsRequest,
     ) -> Result<ProductPageResponse, ApiOpError<SearchAmazonProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/amazon/products");
@@ -36140,7 +36714,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36216,7 +36792,7 @@ impl HttpClient {
     /// `QUERY /api/v1/bilibili/videos`
     pub async fn search_bilibili_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchBilibiliVideosRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchBilibiliVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bilibili/videos");
@@ -36227,7 +36803,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36303,7 +36881,7 @@ impl HttpClient {
     /// `QUERY /api/v1/bluesky/users`
     pub async fn search_bluesky_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchBlueskyUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchBlueskyUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/bluesky/users");
@@ -36314,7 +36892,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36390,7 +36970,7 @@ impl HttpClient {
     /// `QUERY /api/v1/douyin/backup/videos`
     pub async fn search_douyin_backup_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchDouyinBackupVideosRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchDouyinBackupVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/backup/videos");
@@ -36401,7 +36981,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36477,7 +37059,7 @@ impl HttpClient {
     /// `QUERY /api/v1/douyin/index/videos`
     pub async fn search_douyin_index_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchDouyinIndexVideosRequest,
     ) -> Result<PostListResponse, ApiOpError<SearchDouyinIndexVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/index/videos");
@@ -36488,7 +37070,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36564,7 +37148,7 @@ impl HttpClient {
     /// `QUERY /api/v1/douyin-shop/products`
     pub async fn search_douyin_shop_products(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchDouyinShopProductsRequest,
     ) -> Result<ProductPageResponse, ApiOpError<SearchDouyinShopProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin-shop/products");
@@ -36575,7 +37159,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36651,7 +37237,7 @@ impl HttpClient {
     /// `QUERY /api/v1/douyin/users`
     pub async fn search_douyin_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchDouyinUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchDouyinUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/users");
@@ -36662,7 +37248,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36738,7 +37326,7 @@ impl HttpClient {
     /// `QUERY /api/v1/douyin/videos`
     pub async fn search_douyin_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchDouyinVideosRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchDouyinVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/videos");
@@ -36749,7 +37337,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36825,7 +37415,7 @@ impl HttpClient {
     /// `QUERY /api/v1/douyin/xingtu/creators`
     pub async fn search_douyin_xingtu_creators(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchDouyinXingtuCreatorsRequest,
     ) -> Result<CreatorPageResponse, ApiOpError<SearchDouyinXingtuCreatorsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/douyin/xingtu/creators");
@@ -36836,7 +37426,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36912,7 +37504,7 @@ impl HttpClient {
     /// `QUERY /api/v1/google/advertisers`
     pub async fn search_google_advertisers(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchGoogleAdvertisersRequest,
     ) -> Result<AdvertiserPageResponse, ApiOpError<SearchGoogleAdvertisersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/google/advertisers");
@@ -36923,7 +37515,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -36999,7 +37593,7 @@ impl HttpClient {
     /// `QUERY /api/v1/instagram/users`
     pub async fn search_instagram_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchInstagramUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchInstagramUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/instagram/users");
@@ -37010,7 +37604,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37086,7 +37682,7 @@ impl HttpClient {
     /// `QUERY /api/v1/kuaishou/users`
     pub async fn search_kuaishou_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchKuaishouUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchKuaishouUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/kuaishou/users");
@@ -37097,7 +37693,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37173,7 +37771,7 @@ impl HttpClient {
     /// `QUERY /api/v1/kuaishou/videos`
     pub async fn search_kuaishou_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchKuaishouVideosRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchKuaishouVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/kuaishou/videos");
@@ -37184,7 +37782,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37260,7 +37860,7 @@ impl HttpClient {
     /// `QUERY /api/v1/meta/ads`
     pub async fn search_meta_ads(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchMetaAdsRequest,
     ) -> Result<AdPageResponse, ApiOpError<SearchMetaAdsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/meta/ads");
@@ -37271,7 +37871,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37347,7 +37949,7 @@ impl HttpClient {
     /// `QUERY /api/v1/reddit/posts`
     pub async fn search_reddit_posts(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchRedditPostsRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchRedditPostsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/reddit/posts");
@@ -37358,7 +37960,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37434,7 +38038,7 @@ impl HttpClient {
     /// `QUERY /api/v1/taobao/products`
     pub async fn search_taobao_products(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchTaobaoProductsRequest,
     ) -> Result<ProductPageResponse, ApiOpError<SearchTaobaoProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/taobao/products");
@@ -37445,7 +38049,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37521,7 +38127,7 @@ impl HttpClient {
     /// `QUERY /api/v1/tiktok/ads`
     pub async fn search_tiktok_ads(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchTiktokAdsRequest,
     ) -> Result<AdPageResponse, ApiOpError<SearchTiktokAdsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/tiktok/ads");
@@ -37532,7 +38138,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37608,7 +38216,7 @@ impl HttpClient {
     /// `QUERY /api/v1/tiktok/creative-center/ads`
     pub async fn search_tiktok_creative_center_ads(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchTiktokCreativeCenterAdsRequest,
     ) -> Result<AdPageResponse, ApiOpError<SearchTiktokCreativeCenterAdsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/tiktok/creative-center/ads");
@@ -37619,7 +38227,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37695,7 +38305,7 @@ impl HttpClient {
     /// `QUERY /api/v1/tiktok/shop/products`
     pub async fn search_tiktok_shop_products(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchTiktokShopProductsRequest,
     ) -> Result<ProductPageResponse, ApiOpError<SearchTiktokShopProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/tiktok/shop/products");
@@ -37706,7 +38316,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37782,7 +38394,7 @@ impl HttpClient {
     /// `QUERY /api/v1/tiktok/users`
     pub async fn search_tiktok_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchTiktokUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchTiktokUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/tiktok/users");
@@ -37793,7 +38405,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37869,7 +38483,7 @@ impl HttpClient {
     /// `QUERY /api/v1/tiktok/videos`
     pub async fn search_tiktok_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchTiktokVideosRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchTiktokVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/tiktok/videos");
@@ -37880,7 +38494,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -37956,7 +38572,7 @@ impl HttpClient {
     /// `QUERY /api/v1/wechat/accounts`
     pub async fn search_wechat_accounts(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWechatAccountsRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchWechatAccountsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/wechat/accounts");
@@ -37967,7 +38583,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38043,7 +38661,7 @@ impl HttpClient {
     /// `QUERY /api/v1/wechat/backup/posts`
     pub async fn search_wechat_backup_posts(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWechatBackupPostsRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchWechatBackupPostsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/wechat/backup/posts");
@@ -38054,7 +38672,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38130,7 +38750,7 @@ impl HttpClient {
     /// `QUERY /api/v1/wechat-channels/backup/videos`
     pub async fn search_wechat_channels_backup_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWechatChannelsBackupVideosRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchWechatChannelsBackupVideosApiError>> {
         let request_url = format!(
@@ -38144,7 +38764,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38220,7 +38842,7 @@ impl HttpClient {
     /// `QUERY /api/v1/wechat-channels/users`
     pub async fn search_wechat_channels_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWechatChannelsUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchWechatChannelsUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/wechat-channels/users");
@@ -38231,7 +38853,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38307,7 +38931,7 @@ impl HttpClient {
     /// `QUERY /api/v1/wechat-channels/videos`
     pub async fn search_wechat_channels_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWechatChannelsVideosRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchWechatChannelsVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/wechat-channels/videos");
@@ -38318,7 +38942,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38394,7 +39020,7 @@ impl HttpClient {
     /// `QUERY /api/v1/wechat/miniprograms`
     pub async fn search_wechat_miniprograms(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWechatMiniprogramsRequest,
     ) -> Result<MiniprogramListResponse, ApiOpError<SearchWechatMiniprogramsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/wechat/miniprograms");
@@ -38405,7 +39031,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38481,7 +39109,7 @@ impl HttpClient {
     /// `QUERY /api/v1/wechat-mp/accounts`
     pub async fn search_wechat_mp_accounts(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWechatMpAccountsRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchWechatMpAccountsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/wechat-mp/accounts");
@@ -38492,7 +39120,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38568,7 +39198,7 @@ impl HttpClient {
     /// `QUERY /api/v1/wechat/posts`
     pub async fn search_wechat_posts(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWechatPostsRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchWechatPostsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/wechat/posts");
@@ -38579,7 +39209,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38655,7 +39287,7 @@ impl HttpClient {
     /// `QUERY /api/v1/weibo/posts`
     pub async fn search_weibo_posts(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWeiboPostsRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchWeiboPostsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/weibo/posts");
@@ -38666,7 +39298,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38742,7 +39376,7 @@ impl HttpClient {
     /// `QUERY /api/v1/weibo/users`
     pub async fn search_weibo_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchWeiboUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchWeiboUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/weibo/users");
@@ -38753,7 +39387,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38829,7 +39465,7 @@ impl HttpClient {
     /// `QUERY /api/v1/x/posts`
     pub async fn search_x_posts(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXPostsRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchXPostsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/x/posts");
@@ -38840,7 +39476,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -38916,7 +39554,7 @@ impl HttpClient {
     /// `QUERY /api/v1/x/users`
     pub async fn search_x_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchXUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/x/users");
@@ -38927,7 +39565,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39003,7 +39643,7 @@ impl HttpClient {
     /// `QUERY /api/v1/xianyu/products`
     pub async fn search_xianyu_products(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXianyuProductsRequest,
     ) -> Result<ProductPageResponse, ApiOpError<SearchXianyuProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xianyu/products");
@@ -39014,7 +39654,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39090,7 +39732,7 @@ impl HttpClient {
     /// `QUERY /api/v1/xiaohongshu/images`
     pub async fn search_xiaohongshu_images(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXiaohongshuImagesRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchXiaohongshuImagesApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/images");
@@ -39101,7 +39743,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39177,7 +39821,7 @@ impl HttpClient {
     /// `QUERY /api/v1/xiaohongshu/notes`
     pub async fn search_xiaohongshu_notes(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXiaohongshuNotesRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchXiaohongshuNotesApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/notes");
@@ -39188,7 +39832,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39264,7 +39910,7 @@ impl HttpClient {
     /// `QUERY /api/v1/xiaohongshu/pgy/creators`
     pub async fn search_xiaohongshu_pgy_creators(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXiaohongshuPgyCreatorsRequest,
     ) -> Result<CreatorPageResponse, ApiOpError<SearchXiaohongshuPgyCreatorsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/pgy/creators");
@@ -39275,7 +39921,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39351,7 +39999,7 @@ impl HttpClient {
     /// `QUERY /api/v1/xiaohongshu/shop/products`
     pub async fn search_xiaohongshu_shop_products(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXiaohongshuShopProductsRequest,
     ) -> Result<ProductPageResponse, ApiOpError<SearchXiaohongshuShopProductsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/shop/products");
@@ -39362,7 +40010,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39438,7 +40088,7 @@ impl HttpClient {
     /// `QUERY /api/v1/xiaohongshu/users`
     pub async fn search_xiaohongshu_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXiaohongshuUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchXiaohongshuUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xiaohongshu/users");
@@ -39449,7 +40099,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39525,7 +40177,7 @@ impl HttpClient {
     /// `QUERY /api/v1/xigua/videos`
     pub async fn search_xigua_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchXiguaVideosRequest,
     ) -> Result<PostListResponse, ApiOpError<SearchXiguaVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/xigua/videos");
@@ -39536,7 +40188,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39612,7 +40266,7 @@ impl HttpClient {
     /// `QUERY /api/v1/youtube/channels`
     pub async fn search_youtube_channels(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchYoutubeChannelsRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchYoutubeChannelsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/youtube/channels");
@@ -39623,7 +40277,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39699,7 +40355,7 @@ impl HttpClient {
     /// `QUERY /api/v1/youtube/videos`
     pub async fn search_youtube_videos(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchYoutubeVideosRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchYoutubeVideosApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/youtube/videos");
@@ -39710,7 +40366,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39786,7 +40444,7 @@ impl HttpClient {
     /// `QUERY /api/v1/zhihu/posts`
     pub async fn search_zhihu_posts(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchZhihuPostsRequest,
     ) -> Result<PostPageResponse, ApiOpError<SearchZhihuPostsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/zhihu/posts");
@@ -39797,7 +40455,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -39873,7 +40533,7 @@ impl HttpClient {
     /// `QUERY /api/v1/zhihu/users`
     pub async fn search_zhihu_users(
         &self,
-        idempotency_key: impl AsRef<str>,
+        idempotency_key: Option<impl AsRef<str>>,
         request: SearchZhihuUsersRequest,
     ) -> Result<AccountPageResponse, ApiOpError<SearchZhihuUsersApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/zhihu/users");
@@ -39884,7 +40544,9 @@ impl HttpClient {
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
             .header("content-type", "application/json");
-        req = req.header("Idempotency-Key", idempotency_key.as_ref());
+        if let Some(v) = idempotency_key {
+            req = req.header("Idempotency-Key", v.as_ref());
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
