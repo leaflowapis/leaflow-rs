@@ -2376,6 +2376,7 @@ pub struct PaymentMethod {
     pub billing_account_id: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub brand: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
@@ -2388,7 +2389,19 @@ pub struct PaymentMethod {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub exp_year: Option<Option<i64>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub fingerprint: Option<Option<String>>,
     pub id: uuid::Uuid,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub invoice_collection_authorized_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
     pub is_default: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last4: Option<String>,
@@ -4636,6 +4649,10 @@ impl AsRef<str> for CancellationPolicy {
 pub struct CheckoutSessionConfirm {
     ///The session's `total` as read, after discounts and tax and before credit grants or balance.
     pub expected_amount: serde_json::Value,
+    ///The revision returned with the session being confirmed.
+    ///Constraint: minimum=1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_revision: Option<i64>,
     /**Immediate changes and items added to an existing subscription only. The session's `proration_date` as
     read; it must be a whole second, not in the future and at most 10 minutes old, otherwise the request is
     refused with `BILLING_CHANGE_INVALID`. Defaults to the time of the request.*/
@@ -4647,6 +4664,7 @@ impl CheckoutSessionConfirm {
     pub fn new(expected_amount: serde_json::Value) -> Self {
         Self {
             expected_amount,
+            expected_revision: None,
             proration_date: None,
         }
     }
@@ -4667,6 +4685,12 @@ impl CheckoutSessionConfirmBuilder {
         Self {
             value: CheckoutSessionConfirm::new(expected_amount),
         }
+    }
+    #[doc = concat!("Set the optional `", "expected_revision", "` request field.")]
+    #[must_use]
+    pub fn expected_revision(mut self, expected_revision: i64) -> Self {
+        self.value.expected_revision = Some(expected_revision);
+        self
     }
     #[doc = concat!("Set the optional `", "proration_date", "` request field.")]
     #[must_use]
@@ -4724,6 +4748,9 @@ pub struct CheckoutSession {
     /**Immediate changes and items added to an existing subscription of an open session only; null otherwise.
     The instant they are priced from; confirm the session with it so it is priced from the same instant.*/
     pub proration_date: Option<chrono::DateTime<chrono::Utc>>,
+    ///Incremented on every persisted session change and used for optimistic concurrency.
+    ///Constraint: minimum=1
+    pub revision: i64,
     ///`open` in a preview.
     pub status: CheckoutSessionStatus,
     ///The subscriptions the session buys, renews or changes, in order, each with its items.
@@ -6239,9 +6266,11 @@ impl AsRef<str> for AccountDeletionObjection {
 ///Balance, credits and unpaid charges, each reported separately.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AccountBalance {
-    ///Balance minus pending balance returns and the part of unbilled_amount and due that estimated_credit_applied does not cover. Open usage therefore reduces available_credit before a usage invoice exists. Negative only when the balance and applicable credit fall short of what the account owes.
-    pub available_credit: Money,
-    ///Topped-up funds in the account's currency, excluding credits. May be negative after a payment dispute. Amounts owed are reported in due; this is not a withdrawable amount.
+    ///Amount still payable on issued invoices. The invoice of an order not yet accepted is excluded, here and from available_balance. Usage not yet invoiced is reported separately.
+    pub amount_due: Money,
+    ///Total funds available for current charges. It is the account balance plus remaining credits, minus pending balance returns, unbilled usage and the amount due on issued invoices. Credits with restrictions remain included and are detailed in credit_groups.
+    pub available_balance: Money,
+    ///Topped-up funds in the account's currency, excluding credits. May be negative after a payment dispute. Amounts owed are reported in amount_due; this is not a withdrawable amount.
     pub balance: Money,
     pub billing_account_id: i64,
     ///Currently valid unspent credit grouped by permitted use. Each group covers only the charges its restrictions and validity allow, and the groups may differ from the recorded credits total.
@@ -6249,12 +6278,10 @@ pub struct AccountBalance {
     ///Remaining credit, including restricted grants; not withdrawable and not part of balance. credit_groups shows currently valid credit by permitted use; positive credits do not mean due is zero.
     pub credits: Money,
     pub currency: String,
-    ///Amount still payable on issued invoices. The invoice of an order not yet accepted is excluded, here and from available_credit. Usage not yet invoiced is reported separately.
-    pub due: Money,
-    ///Credit expected to pay unbilled_amount and due, matching each charge to the grants whose scope, validity and conditions it meets, in the order credit is applied at payment. Nothing is deducted until an invoice is paid, so credits still includes this amount.
+    ///Credit expected to pay unbilled_amount and amount_due, matching each charge to the grants whose scope, validity and conditions it meets, in the order credit is applied at payment. Nothing is deducted until an invoice is paid, so credits still includes this amount.
     pub estimated_credit_applied: Money,
-    pub pending_returns_amount: Money,
-    ///Currently valid credit restricted to certain products, operations or conditions; part of credits, not of balance.
+    pub pending_refund_amount: Money,
+    ///Currently valid credit restricted to certain products, operations or conditions; part of credit_balance, not of balance.
     pub restricted_credits: Money,
     ///Current estimate of priced usage that has not been invoiced. Final pricing and tax are fixed at issuance.
     pub unbilled_amount: Money,
@@ -6562,6 +6589,10 @@ pub struct CheckoutSessionUpdate {
     ///Turns on or off automatic renewal of every subscription with licensed items the session opens. It must be your own choice.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auto_renew: Option<bool>,
+    ///The revision returned with the session being updated.
+    ///Constraint: minimum=1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_revision: Option<i64>,
     ///The promotion code to complete the session with; null removes it, and the best applicable account discount applies instead.
     ///Constraint: minLength=1, maxLength=64
     #[serde(
