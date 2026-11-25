@@ -1024,7 +1024,7 @@ pub struct StatementItemDimensions {
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, String>,
 }
-///An account's consumption for one billing period up to one closing. Usage is invoiced after every settlement run, about hourly: each closing issues an invoice for the usage priced since the previous one and collects it from credits and balance, and later usage goes into the next statement of the same period. A closed statement does not change. The period's consumption is the sum of its statements.
+///An account's consumption for one UTC calendar month up to one closing. Usage remains in the open statement while it is being priced, so its estimate participates in balance and arrears checks. The normal closing is after month end and the late-usage window, when one usage invoice is issued for the month and collected from credits and balance. A closed statement does not change.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Statement {
     pub amounts: StatementAmounts,
@@ -1049,7 +1049,7 @@ pub struct Statement {
     pub status: StatementStatus,
     pub r#type: StatementType,
 }
-///`interim`: a closing before the period's usage is final, without minimum charges. `final`: the first closing after the period ended and its late usage was settled, applying the period's minimum charges. `supplement`: a closing after the final one, for usage priced late. An open statement is interim.
+///`interim`: a closing before the period's usage is final, currently operator-triggered and also used by historical hourly billing, without minimum charges. `final`: the normal first closing after the period ended and its late usage was settled, applying the period's minimum charges. `supplement`: a closing after the final one, for usage priced late. An open statement is still being accumulated.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum StatementType {
     #[default]
@@ -2661,6 +2661,77 @@ pub struct InvoiceItemDimensions {
     pub additional_properties: std::collections::BTreeMap<String, String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct InvoiceCollection {
+    pub collection_method: InvoiceCollectionCollectionMethod,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub payment_method_id: Option<uuid::Uuid>,
+}
+impl InvoiceCollection {
+    /// Construct this request with every required wire field.
+    pub fn new(collection_method: InvoiceCollectionCollectionMethod) -> Self {
+        Self {
+            collection_method,
+            payment_method_id: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(
+        collection_method: InvoiceCollectionCollectionMethod,
+    ) -> InvoiceCollectionBuilder {
+        InvoiceCollectionBuilder::new(collection_method)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct InvoiceCollectionBuilder {
+    value: InvoiceCollection,
+}
+impl InvoiceCollectionBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(collection_method: InvoiceCollectionCollectionMethod) -> Self {
+        Self {
+            value: InvoiceCollection::new(collection_method),
+        }
+    }
+    #[doc = concat!("Set the optional `", "payment_method_id", "` request field.")]
+    #[must_use]
+    pub fn payment_method_id(mut self, payment_method_id: uuid::Uuid) -> Self {
+        self.value.payment_method_id = Some(payment_method_id);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> InvoiceCollection {
+        self.value
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum InvoiceCollectionCollectionMethod {
+    #[default]
+    #[serde(rename = "send_invoice")]
+    SendInvoice,
+    #[serde(rename = "charge_automatically")]
+    ChargeAutomatically,
+}
+impl InvoiceCollectionCollectionMethod {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::SendInvoice => "send_invoice",
+            Self::ChargeAutomatically => "charge_automatically",
+        }
+    }
+}
+impl ::std::fmt::Display for InvoiceCollectionCollectionMethod {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for InvoiceCollectionCollectionMethod {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Invoice {
     ///What is still collectible from total plus rounding_amount after unpaid credit notes and successful payments; never below zero. Zero for a paid or void invoice.
     pub amount_due: Money,
@@ -4002,7 +4073,7 @@ pub struct InvoiceSummary {
     pub tax_amount: String,
     pub total: String,
 }
-///`open`: issued and not yet settled; a zero-total invoice is paid at once. `paid` stays paid after a refund, with the refunded part in amount_refunded. `void`: collection has stopped and any funds received have been returned. Usage not yet invoiced is not on any invoice.
+///`open`: issued and not yet settled; a zero-total invoice is paid at once. `paid` stays paid after a refund, with the refunded part in amount_refunded. `void`: collection has stopped and any funds received have been returned. Usage remains in the open Statement until the normal month-end closing and is not on an invoice before then.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum InvoiceStatus {
     #[default]
@@ -6168,7 +6239,7 @@ impl AsRef<str> for AccountDeletionObjection {
 ///Balance, credits and unpaid charges, each reported separately.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AccountBalance {
-    ///Balance minus pending balance returns and the part of unbilled_amount and due that estimated_credit_applied does not cover. Negative only when the balance and applicable credit fall short of what the account owes.
+    ///Balance minus pending balance returns and the part of unbilled_amount and due that estimated_credit_applied does not cover. Open usage therefore reduces available_credit before a usage invoice exists. Negative only when the balance and applicable credit fall short of what the account owes.
     pub available_credit: Money,
     ///Topped-up funds in the account's currency, excluding credits. May be negative after a payment dispute. Amounts owed are reported in due; this is not a withdrawable amount.
     pub balance: Money,

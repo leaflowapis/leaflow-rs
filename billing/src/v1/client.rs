@@ -521,6 +521,11 @@ pub enum GetExportApiError {
 pub enum GetInvoiceApiError {
     Default(Error),
 }
+///Typed error responses for `get-invoice-collection`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetInvoiceCollectionApiError {
+    Default(Error),
+}
 ///Typed error responses for `get-order`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetOrderApiError {
@@ -820,6 +825,11 @@ pub enum SearchPricesApiError {
 ///Typed error responses for `set-default-payment-method`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum SetDefaultPaymentMethodApiError {
+    Default(Error),
+}
+///Typed error responses for `set-invoice-collection`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum SetInvoiceCollectionApiError {
     Default(Error),
 }
 ///Typed error responses for `set-project-assignment`. One variant per declared non-2xx response.
@@ -3301,7 +3311,7 @@ impl HttpClient {
     }
     /// Download monthly statement PDF
     ///
-    /// Renders the statement of account of one finalized UTC calendar month from invoices, usage statements, credit notes and payments read at download time. Supplement statements, later credit notes and later payments are reflected in later downloads. Not a tax invoice or a demand for payment. A month that is not finalized returns 409 with `BILLING_STATEMENT_NOT_FINALIZED`.
+    /// Renders the statement of account of one finalized UTC calendar month from invoices, usage statements, credit notes and payments read at download time. Later supplement statements, credit notes and payments are reflected in later downloads. Not a tax invoice or a demand for payment. A month that is not finalized returns 409 with `BILLING_STATEMENT_NOT_FINALIZED`.
     ///
     /// `GET /api/v1/monthly-statements/pdf`
     pub async fn download_monthly_statement_pdf(
@@ -3392,7 +3402,7 @@ impl HttpClient {
     }
     /// Download monthly statement PDF
     ///
-    /// Renders the statement of account of one finalized UTC calendar month from invoices, usage statements, credit notes and payments read at download time. Supplement statements, later credit notes and later payments are reflected in later downloads. Not a tax invoice or a demand for payment. A month that is not finalized returns 409 with `BILLING_STATEMENT_NOT_FINALIZED`.
+    /// Renders the statement of account of one finalized UTC calendar month from invoices, usage statements, credit notes and payments read at download time. Later supplement statements, credit notes and payments are reflected in later downloads. Not a tax invoice or a demand for payment. A month that is not finalized returns 409 with `BILLING_STATEMENT_NOT_FINALIZED`.
     ///
     /// `GET /api/v1/monthly-statements/pdf`
     ///Select `application/pdf` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
@@ -4549,6 +4559,88 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetInvoiceApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get monthly invoice collection settings
+    ///
+    /// `GET /api/v1/billing-accounts/{accountId}/invoice-collection`
+    pub async fn get_invoice_collection(
+        &self,
+        account_id: i64,
+    ) -> Result<InvoiceCollection, ApiOpError<GetInvoiceCollectionApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/billing-accounts/{}/invoice-collection",
+                __pct_encode_path_segment(&account_id.to_string())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetInvoiceCollectionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetInvoiceCollectionApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -7494,7 +7586,7 @@ impl HttpClient {
     }
     /// List monthly statements
     ///
-    /// Monthly statements of account per UTC calendar month for your billing accounts, newest first. Each month summarizes order invoices issued in the month, closed usage statements of the month, credit notes issued in the month and payments recorded on those invoices.
+    /// Monthly statements of account per UTC calendar month for your billing accounts, newest first. Each month summarizes order invoices issued in the month, usage invoices issued for the month, credit notes issued in the month and payments recorded on those invoices.
     ///
     /// `GET /api/v1/monthly-statements`
     pub async fn list_monthly_statements(
@@ -11048,7 +11140,7 @@ impl HttpClient {
     }
     /// Set default payment method
     ///
-    /// Makes an active saved payment method the default for its billing account and returns it. Expired or removed methods cannot be selected; selecting the current default changes nothing.
+    /// Makes an active saved payment method the default for its billing account and returns it. The default is used as the fallback for authorized subscription renewals. Month-end usage collection requires a separate authorization.
     ///
     /// `PUT /api/v1/payment-methods/{paymentMethodId}/default`
     pub async fn set_default_payment_method(
@@ -11113,6 +11205,94 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(SetDefaultPaymentMethodApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Set monthly invoice collection settings
+    ///
+    /// Selects how future month-end usage invoices are collected. charge_automatically authorizes off-session payment of the amount remaining after eligible credits and account balance and requires an active saved card. send_invoice disables that authorization and must omit payment_method_id.
+    ///
+    /// `PUT /api/v1/billing-accounts/{accountId}/invoice-collection`
+    pub async fn set_invoice_collection(
+        &self,
+        account_id: i64,
+        request: InvoiceCollection,
+    ) -> Result<InvoiceCollection, ApiOpError<SetInvoiceCollectionApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/billing-accounts/{}/invoice-collection",
+                __pct_encode_path_segment(&account_id.to_string())
+            )
+        );
+        let mut req = self.http_client.put(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<SetInvoiceCollectionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(SetInvoiceCollectionApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
