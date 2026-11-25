@@ -56,6 +56,11 @@ pub mod leaflow {
                 include!("leaflow.fleet.host.v1.rs");
             }
         }
+        pub mod http {
+            pub mod v1 {
+                include!("leaflow.fleet.http.v1.rs");
+            }
+        }
         pub mod logs {
             pub mod v1 {
                 include!("leaflow.fleet.logs.v1.rs");

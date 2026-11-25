@@ -3,7 +3,7 @@
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClientMessage {
     /// The message.
-    #[prost(oneof = "client_message::Message", tags = "1, 2, 3")]
+    #[prost(oneof = "client_message::Message", tags = "1, 2, 3, 4, 5")]
     pub message: ::core::option::Option<client_message::Message>,
 }
 /// Nested message and enum types in `ClientMessage`.
@@ -21,6 +21,12 @@ pub mod client_message {
         /// Closes the program's standard input (RFC 4254 §5.3 "eof").
         #[prost(message, tag = "3")]
         InputEnd(super::ExecInputEnd),
+        /// Reattaches to a background process. Only on the background channel.
+        #[prost(message, tag = "4")]
+        Attach(super::ExecAttach),
+        /// Stops a background process. Only on the background channel.
+        #[prost(message, tag = "5")]
+        Stop(super::ExecStop),
     }
 }
 impl ::prost::Name for ClientMessage {
@@ -37,7 +43,7 @@ impl ::prost::Name for ClientMessage {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ServerMessage {
     /// The message.
-    #[prost(oneof = "server_message::Message", tags = "1, 2")]
+    #[prost(oneof = "server_message::Message", tags = "1, 2, 3")]
     pub message: ::core::option::Option<server_message::Message>,
 }
 /// Nested message and enum types in `ServerMessage`.
@@ -51,6 +57,9 @@ pub mod server_message {
         /// The program ended, or never ran. The last message.
         #[prost(message, tag = "2")]
         Exit(super::ExecExit),
+        /// Identifies a background process for later attachment.
+        #[prost(message, tag = "3")]
+        Started(super::ExecStarted),
     }
 }
 impl ::prost::Name for ServerMessage {
@@ -129,9 +138,57 @@ impl ::prost::Name for ExecInputEnd {
         "type.googleapis.com/leaflow.fleet.exec.v1.ExecInputEnd".into()
     }
 }
+/// A background process handle. Both values are opaque to participants.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ExecStarted {
+    #[prost(bytes = "bytes", tag = "1")]
+    pub execution_id: ::prost::bytes::Bytes,
+    #[prost(bytes = "bytes", tag = "2")]
+    pub attach_token: ::prost::bytes::Bytes,
+}
+impl ::prost::Name for ExecStarted {
+    const NAME: &'static str = "ExecStarted";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ExecStarted".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ExecStarted".into()
+    }
+}
+/// Reattaches to a background process.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ExecAttach {
+    #[prost(bytes = "bytes", tag = "1")]
+    pub execution_id: ::prost::bytes::Bytes,
+    #[prost(bytes = "bytes", tag = "2")]
+    pub attach_token: ::prost::bytes::Bytes,
+}
+impl ::prost::Name for ExecAttach {
+    const NAME: &'static str = "ExecAttach";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ExecAttach".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ExecAttach".into()
+    }
+}
+/// Stops a background process owned by the session.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ExecStop {}
+impl ::prost::Name for ExecStop {
+    const NAME: &'static str = "ExecStop";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ExecStop".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ExecStop".into()
+    }
+}
 /// Bytes the program wrote (RFC 4254 §5.2 data and extended data). Each
-/// stream keeps its own order. A run writes at most 16 MiB in total; then the
-/// session kills it.
+/// stream keeps its own order. The output limit comes from ExecPolicy.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ExecOutput {
     /// Where it wrote them.
@@ -193,9 +250,28 @@ impl ::prost::Name for ExecExit {
     }
 }
 /// Allows a participant to run commands. Carried in the participant's signed
-/// authorization.
+/// authorization. Limits that are absent use the Agent's defaults. The
+/// unlimited flags explicitly remove the corresponding application limit.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ExecPolicy {}
+pub struct ExecPolicy {
+    #[prost(uint32, tag = "1")]
+    pub max_processes: u32,
+    #[prost(message, optional, tag = "2")]
+    pub max_lifetime: ::core::option::Option<::prost_types::Duration>,
+    #[prost(uint64, tag = "3")]
+    pub max_output_bytes: u64,
+    #[prost(bool, tag = "4")]
+    pub unlimited_lifetime: bool,
+    #[prost(bool, tag = "5")]
+    pub unlimited_output: bool,
+    #[prost(bool, tag = "6")]
+    pub background_allowed: bool,
+    /// Allows the Agent to start the process without PR_SET_NO_NEW_PRIVS. This
+    /// is required when it must invoke sudo or another set-user-ID helper. Any
+    /// elevation still goes through the machine's PAM and Fleet approval policy.
+    #[prost(bool, tag = "7")]
+    pub allow_privilege_escalation: bool,
+}
 impl ::prost::Name for ExecPolicy {
     const NAME: &'static str = "ExecPolicy";
     const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
