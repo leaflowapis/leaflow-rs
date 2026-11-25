@@ -83,8 +83,10 @@ pub struct ExecStart {
     /// The working directory. Empty: the user's home directory.
     #[prost(string, tag = "2")]
     pub working_directory: ::prost::alloc::string::String,
-    /// Kills the program when it runs longer, at most 10 minutes. Unset: 120
-    /// seconds.
+    /// The requested execution timeout, at most 10 minutes. Unset: 120 seconds
+    /// for foreground execution. A background execution with
+    /// ExecPolicy.unlimited_lifetime may leave this unset to run until it exits,
+    /// is explicitly stopped, the session ends, or its authorization is revoked.
     #[prost(message, optional, tag = "3")]
     pub timeout: ::core::option::Option<::prost_types::Duration>,
     /// The program reads standard input from ExecInput. Otherwise its
