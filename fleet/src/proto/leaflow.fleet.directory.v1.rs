@@ -176,12 +176,17 @@ impl ::prost::Name for UpdateDirectoryResponse {
         "type.googleapis.com/leaflow.fleet.directory.v1.UpdateDirectoryResponse".into()
     }
 }
-/// The request of GetAccount.
+/// The request of GetAccount. Exactly one of username or uid is set.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct GetAccountRequest {
-    /// The account's login name.
+    /// The login name to look up: either a bound local account of this machine or
+    /// a directory account of the project.
     #[prost(string, tag = "1")]
     pub username: ::prost::alloc::string::String,
+    /// A directory account's uid, from 65536 to 2147483647, when looking up by
+    /// uid instead of username.
+    #[prost(uint32, tag = "2")]
+    pub uid: u32,
 }
 impl ::prost::Name for GetAccountRequest {
     const NAME: &'static str = "GetAccountRequest";
@@ -193,12 +198,21 @@ impl ::prost::Name for GetAccountRequest {
         "type.googleapis.com/leaflow.fleet.directory.v1.GetAccountRequest".into()
     }
 }
-/// The response of GetAccount.
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+/// The response of GetAccount. Exactly one of account or local_account is set.
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetAccountResponse {
-    /// The account as the calling machine's directory has it now.
+    /// Set when the resolved account on this machine is a directory account
+    /// served through NSS.
     #[prost(message, optional, tag = "1")]
     pub account: ::core::option::Option<Account>,
+    /// Set instead of account when this machine binds an existing local account
+    /// of /etc/passwd to a platform user.
+    #[prost(message, optional, tag = "2")]
+    pub local_account: ::core::option::Option<LocalAccount>,
+    /// The groups of the project's directory that this account belongs to,
+    /// ordered by name, so that initgroups(3) needs no separate call.
+    #[prost(message, repeated, tag = "3")]
+    pub groups: ::prost::alloc::vec::Vec<AccountGroup>,
 }
 impl ::prost::Name for GetAccountResponse {
     const NAME: &'static str = "GetAccountResponse";
@@ -249,13 +263,174 @@ impl ::prost::Name for ReportDirectoryStatusResponse {
             .into()
     }
 }
+/// An existing local account of the machine (/etc/passwd) bound 1:1 to a
+/// platform user on this machine.
+///
+/// Its uid, primary group, local supplementary groups, GECOS name, home
+/// directory and login shell come from the machine's own account files and are
+/// never overwritten. The Agent refuses to serve a LocalAccount when no local
+/// user of that name exists on the machine, when it is root (uid 0 or gid 0) or
+/// a system or non-login account (uid below UID_MIN, nobody, the Agent's own
+/// user, or a non-interactive shell), or when the machine's local configuration
+/// disallows binding it, and reports MACHINE_EVENT_TYPE_LOCAL_ACCOUNT_REFUSED
+/// (leaflow.fleet.machine.v1).
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct LocalAccount {
+    /// The local login name on this machine, by the rules of Account.username,
+    /// never "root".
+    #[prost(string, tag = "1")]
+    pub username: ::prost::alloc::string::String,
+    /// The platform user bound to this local account on this machine.
+    #[prost(string, tag = "2")]
+    pub user_id: ::prost::alloc::string::String,
+    /// The SSH public keys of the platform user, each an authorized_keys(5) key
+    /// without options. sshd(8) accepts them through the Agent's
+    /// AuthorizedKeysCommand in addition to the local account's own
+    /// authorized_keys files while login_allowed is set.
+    #[prost(string, repeated, tag = "3")]
+    pub ssh_public_keys: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// The platform user may open Fleet sessions, run commands, start MCP servers
+    /// and log in with ssh_public_keys as this local account on this machine.
+    /// Local passwords, local authorized_keys and non-Fleet PAM services of the
+    /// local account are unaffected.
+    #[prost(bool, tag = "4")]
+    pub login_allowed: bool,
+    /// The platform user may become root as this local account through Fleet's
+    /// sudo approval (leaflow.fleet.privilege.v1) and inside Fleet commands
+    /// (leaflow.fleet.command.v1).
+    #[prost(bool, tag = "5")]
+    pub admin: bool,
+}
+impl ::prost::Name for LocalAccount {
+    const NAME: &'static str = "LocalAccount";
+    const PACKAGE: &'static str = "leaflow.fleet.directory.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.directory.v1.LocalAccount".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.directory.v1.LocalAccount".into()
+    }
+}
+/// A project group an account belongs to.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct AccountGroup {
+    /// The group name, by the rules of Group.name.
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    /// The group id, from 65536 to 2147483647.
+    #[prost(uint32, tag = "2")]
+    pub gid: u32,
+}
+impl ::prost::Name for AccountGroup {
+    const NAME: &'static str = "AccountGroup";
+    const PACKAGE: &'static str = "leaflow.fleet.directory.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.directory.v1.AccountGroup".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.directory.v1.AccountGroup".into()
+    }
+}
+/// The request of GetGroup.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct GetGroupRequest {
+    /// Which group to look up; set one.
+    #[prost(oneof = "get_group_request::Query", tags = "1, 2")]
+    pub query: ::core::option::Option<get_group_request::Query>,
+}
+/// Nested message and enum types in `GetGroupRequest`.
+pub mod get_group_request {
+    /// Which group to look up; set one.
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Query {
+        /// The group name, by the rules of Group.name.
+        #[prost(string, tag = "1")]
+        Name(::prost::alloc::string::String),
+        /// The group id, from 65536 to 2147483647.
+        #[prost(uint32, tag = "2")]
+        Gid(u32),
+    }
+}
+impl ::prost::Name for GetGroupRequest {
+    const NAME: &'static str = "GetGroupRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.directory.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.directory.v1.GetGroupRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.directory.v1.GetGroupRequest".into()
+    }
+}
+/// The response of GetGroup.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct GetGroupResponse {
+    /// The group as the calling machine's project directory has it now, with the
+    /// effective usernames on this machine of its members.
+    #[prost(message, optional, tag = "1")]
+    pub group: ::core::option::Option<Group>,
+}
+impl ::prost::Name for GetGroupResponse {
+    const NAME: &'static str = "GetGroupResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.directory.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.directory.v1.GetGroupResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.directory.v1.GetGroupResponse".into()
+    }
+}
+/// The request of InvalidateDirectory.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct InvalidateDirectoryRequest {
+    /// Platform user ids whose resolved account, permissions, SSH keys or
+    /// local-account binding changed.
+    #[prost(string, repeated, tag = "1")]
+    pub user_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Account usernames (directory or local) that changed or were unbound on
+    /// this machine.
+    #[prost(string, repeated, tag = "2")]
+    pub usernames: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Project group names that were renamed, removed or had membership changes.
+    #[prost(string, repeated, tag = "3")]
+    pub group_names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// When true, invalidates every cached directory entry on the machine.
+    #[prost(bool, tag = "4")]
+    pub all: bool,
+}
+impl ::prost::Name for InvalidateDirectoryRequest {
+    const NAME: &'static str = "InvalidateDirectoryRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.directory.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.directory.v1.InvalidateDirectoryRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.directory.v1.InvalidateDirectoryRequest"
+            .into()
+    }
+}
+/// The response of InvalidateDirectory.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct InvalidateDirectoryResponse {}
+impl ::prost::Name for InvalidateDirectoryResponse {
+    const NAME: &'static str = "InvalidateDirectoryResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.directory.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.directory.v1.InvalidateDirectoryResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.directory.v1.InvalidateDirectoryResponse"
+            .into()
+    }
+}
 pub mod machine_directory_service {
     pub const NAME: &str = "leaflow.fleet.directory.v1.MachineDirectoryService";
     pub const SET_DIRECTORY: &str = "/leaflow.fleet.directory.v1.MachineDirectoryService/SetDirectory";
     pub const UPDATE_DIRECTORY: &str = "/leaflow.fleet.directory.v1.MachineDirectoryService/UpdateDirectory";
+    pub const INVALIDATE_DIRECTORY: &str = "/leaflow.fleet.directory.v1.MachineDirectoryService/InvalidateDirectory";
 }
 pub mod directory_service {
     pub const NAME: &str = "leaflow.fleet.directory.v1.DirectoryService";
     pub const GET_ACCOUNT: &str = "/leaflow.fleet.directory.v1.DirectoryService/GetAccount";
+    pub const GET_GROUP: &str = "/leaflow.fleet.directory.v1.DirectoryService/GetGroup";
     pub const REPORT_DIRECTORY_STATUS: &str = "/leaflow.fleet.directory.v1.DirectoryService/ReportDirectoryStatus";
 }

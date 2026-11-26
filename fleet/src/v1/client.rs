@@ -407,6 +407,11 @@ pub enum DeleteGroupMemberApiError {
 pub enum DeleteMachineApiError {
     Default(Error),
 }
+///Typed error responses for `delete-machine-local-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DeleteMachineLocalAccountApiError {
+    Default(Error),
+}
 ///Typed error responses for `delete-machine-registration`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DeleteMachineRegistrationApiError {
@@ -460,6 +465,11 @@ pub enum GetGroupApiError {
 ///Typed error responses for `get-machine`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetMachineApiError {
+    Default(Error),
+}
+///Typed error responses for `get-machine-local-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetMachineLocalAccountApiError {
     Default(Error),
 }
 ///Typed error responses for `get-machine-registration`. One variant per declared non-2xx response.
@@ -520,6 +530,11 @@ pub enum ListGroupsApiError {
 ///Typed error responses for `list-machine-events`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListMachineEventsApiError {
+    Default(Error),
+}
+///Typed error responses for `list-machine-local-accounts`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListMachineLocalAccountsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-machine-registrations`. One variant per declared non-2xx response.
@@ -605,6 +620,11 @@ pub enum UpdateGroupApiError {
 ///Typed error responses for `update-machine`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum UpdateMachineApiError {
+    Default(Error),
+}
+///Typed error responses for `update-machine-local-account`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum UpdateMachineLocalAccountApiError {
     Default(Error),
 }
 ///Typed error responses for `update-mcp-server`. One variant per declared non-2xx response.
@@ -2123,6 +2143,86 @@ impl HttpClient {
             }))
         }
     }
+    /// Unbind a local account on a machine
+    ///
+    /// Removes the binding of `username` on the machine; removing one that is not bound succeeds.
+    /// Open Fleet sessions and MCP servers running under the binding end, while the local account
+    /// on the machine itself is left untouched.
+    ///
+    /// Requires `fleet:machines.login` and `fleet:machines.admin` on the machine.
+    ///
+    /// `DELETE /api/v1/machines/{machineId}/local-accounts/{username}`
+    pub async fn delete_machine_local_account(
+        &self,
+        machine_id: impl AsRef<str>,
+        username: impl AsRef<str>,
+    ) -> Result<(), ApiOpError<DeleteMachineLocalAccountApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/machines/{}/local-accounts/{}",
+                __pct_encode_path_segment(machine_id.as_ref()),
+                __pct_encode_path_segment(username.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            req = req.header(name, value);
+        }
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 204u16 {
+            let _ = body_text;
+            let _ = raw_body;
+            let _ = headers;
+            Ok(())
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "204",
+                )),
+            }))
+        } else {
+            let typed: Option<DeleteMachineLocalAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DeleteMachineLocalAccountApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Revoke a machine registration
     ///
     /// Revokes the registration: its token no longer enrolls a machine. Revoking a registration
@@ -3047,6 +3147,93 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(GetMachineApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get a bound local account on a machine
+    ///
+    /// Returns the binding of a local account on the machine. Fails with `LOCAL_ACCOUNT_NOT_FOUND`
+    /// when the local username is not bound on this machine.
+    ///
+    /// `GET /api/v1/machines/{machineId}/local-accounts/{username}`
+    pub async fn get_machine_local_account(
+        &self,
+        machine_id: impl AsRef<str>,
+        username: impl AsRef<str>,
+    ) -> Result<MachineLocalAccountResource, ApiOpError<GetMachineLocalAccountApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/machines/{}/local-accounts/{}",
+                __pct_encode_path_segment(machine_id.as_ref()),
+                __pct_encode_path_segment(username.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetMachineLocalAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetMachineLocalAccountApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -4159,6 +4346,113 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListMachineEventsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List bound local accounts on a machine
+    ///
+    /// Returns the existing local Linux accounts on the machine that are bound to members of the
+    /// project, ordered by `username`.
+    ///
+    /// `GET /api/v1/machines/{machineId}/local-accounts`
+    pub async fn list_machine_local_accounts(
+        &self,
+        machine_id: impl AsRef<str>,
+        page: Option<i64>,
+        page_size: Option<i64>,
+        user_id: Option<impl AsRef<str>>,
+        keyword: Option<impl AsRef<str>>,
+    ) -> Result<MachineLocalAccountList, ApiOpError<ListMachineLocalAccountsApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/machines/{}/local-accounts",
+                __pct_encode_path_segment(machine_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = page {
+                query_params.push(("page".to_string(), v.to_string()));
+            }
+            if let Some(v) = page_size {
+                query_params.push(("page_size".to_string(), v.to_string()));
+            }
+            if let Some(v) = user_id {
+                query_params.push(("user_id".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = keyword {
+                query_params.push(("keyword".to_string(), v.as_ref().to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListMachineLocalAccountsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListMachineLocalAccountsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5847,6 +6141,114 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(UpdateMachineApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Bind or replace a local account on a machine
+    ///
+    /// Binds the existing local Linux account `username` on the machine to the project member
+    /// `user_id`, or replaces which member `username` is bound to. On this machine, Fleet opens
+    /// sessions, runs commands, starts MCP servers and approves `sudo` for that member as
+    /// `username`, keeping the local account's existing uid, home directory, shell, local groups
+    /// and `~/.ssh/authorized_keys`, while `sshd` also accepts the member's SSH keys from the
+    /// platform. The member's directory account is created if they have none yet.
+    ///
+    /// If the machine has no such local user in `/etc/passwd`, if it is a system or non-login
+    /// account, or if the machine's local configuration disallows binding it, the machine refuses
+    /// to serve it and records a `local_account_refused` event.
+    ///
+    /// Requires `fleet:machines.login` and `fleet:machines.admin` on the machine, since whoever
+    /// is bound to a local account inherits its existing files, groups and local `sudoers` rules.
+    ///
+    /// Fails with:
+    /// - `USER_NOT_PROJECT_MEMBER` when `user_id` is not an active member of the project;
+    /// - `LOCAL_ACCOUNT_RESERVED` when `username` is `root` or a reserved system account name;
+    /// - `LOCAL_ACCOUNT_USER_BOUND` when `user_id` is already bound to another local account on
+    ///   this machine, with `metadata.username` naming it; remove that binding first.
+    ///
+    /// `PUT /api/v1/machines/{machineId}/local-accounts/{username}`
+    pub async fn update_machine_local_account(
+        &self,
+        machine_id: impl AsRef<str>,
+        username: impl AsRef<str>,
+        request: UpdateMachineLocalAccountRequest,
+    ) -> Result<MachineLocalAccountResource, ApiOpError<UpdateMachineLocalAccountApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/machines/{}/local-accounts/{}",
+                __pct_encode_path_segment(machine_id.as_ref()),
+                __pct_encode_path_segment(username.as_ref())
+            )
+        );
+        let mut req = self.http_client.put(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<UpdateMachineLocalAccountApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(UpdateMachineLocalAccountApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {

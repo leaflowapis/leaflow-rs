@@ -912,6 +912,28 @@ pub struct MachineRegistrationList {
     pub total_count: i64,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MachineLocalAccountList {
+    pub items: Vec<MachineLocalAccountResource>,
+    ///Constraint: minimum=1
+    pub page: i64,
+    ///Constraint: minimum=1
+    pub page_size: i64,
+    ///Constraint: minimum=0
+    pub total_count: i64,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MachineLocalAccountResource {
+    ///The bound member's account id
+    pub account_id: uuid::Uuid,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub id: uuid::Uuid,
+    pub machine_id: uuid::Uuid,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub user: NamedIdentity,
+    ///The existing local login name on the machine (`/etc/passwd`)
+    pub username: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MachineList {
     pub items: Vec<MachineResource>,
     ///Constraint: minimum=1
@@ -1021,7 +1043,11 @@ account uses its name or uid, or its uid is among the subordinate ids of a local
 metadata `username`, and `conflict` `name`, `uid` or `subordinate`.
 `directory_group_conflict`: a group is not served because a local group uses its name or
 gid, or its gid is among the subordinate ids of a local user; metadata `groupName`, and
-`conflict` `name`, `gid` or `subordinate`.*/
+`conflict` `name`, `gid` or `subordinate`.
+`local_account_refused`: a bound local account is not served on the machine because no
+such local user exists, because it is `root` or a system or non-login account, or because
+the machine's local configuration disallows binding it; metadata `username`, and `reason`
+`missing`, `system` or `disallowed`.*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum MachineEventType {
     #[default]
@@ -1029,12 +1055,15 @@ pub enum MachineEventType {
     DirectoryAccountConflict,
     #[serde(rename = "directory_group_conflict")]
     DirectoryGroupConflict,
+    #[serde(rename = "local_account_refused")]
+    LocalAccountRefused,
 }
 impl MachineEventType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::DirectoryAccountConflict => "directory_account_conflict",
             Self::DirectoryGroupConflict => "directory_group_conflict",
+            Self::LocalAccountRefused => "local_account_refused",
         }
     }
 }
@@ -2011,6 +2040,11 @@ pub struct RunCommandResponse {
     pub stdout_truncated: bool,
     ///The timeout ended it
     pub timed_out: bool,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UpdateMachineLocalAccountRequest {
+    ///The project member to bind to this local account on the machine
+    pub user_id: uuid::Uuid,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateMachineRequest {

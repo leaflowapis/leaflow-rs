@@ -3725,7 +3725,7 @@ pub struct RateLimitResource {
     ///Effective project-shared limit in requests per minute for Canopy API-key inference. 0 means unlimited.
     ///Constraint: minimum=0, maximum=2147483647
     pub rpm_limit: i32,
-    ///Output throughput in tokens per second across completed requests with reported output or reasoning tokens in the last 60 seconds (total output tokens divided by total end-to-end request duration). Observational only, not a limit. Returns 0 when no eligible output requests completed in the window, or null when the live store is unavailable.
+    ///Project output throughput in tokens per second across completed requests with reported output or reasoning tokens in the last 60 seconds (total output tokens divided by active wall-clock output duration, stacking concurrent requests). Observational only, not a limit. Returns 0 when no eligible output requests completed in the window, or null when the live store is unavailable.
     ///Constraint: minimum=0
     pub tps: Option<f64>,
     ///Length of the observation window in seconds.

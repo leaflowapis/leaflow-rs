@@ -305,6 +305,12 @@ pub enum MachineEventType {
     /// user. Metadata "groupName", and "conflict": "name", "gid" or
     /// "subordinate".
     DirectoryGroupConflict = 2,
+    /// A bound local account (leaflow.fleet.directory.v1 LocalAccount) is not
+    /// served because no such local user exists on the machine, because it is
+    /// root or a system or non-login account, or because the machine's local
+    /// configuration does not allow binding it. Metadata "username", and
+    /// "reason": "missing", "system" or "disallowed".
+    LocalAccountRefused = 3,
 }
 impl MachineEventType {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -318,6 +324,7 @@ impl MachineEventType {
                 "MACHINE_EVENT_TYPE_DIRECTORY_ACCOUNT_CONFLICT"
             }
             Self::DirectoryGroupConflict => "MACHINE_EVENT_TYPE_DIRECTORY_GROUP_CONFLICT",
+            Self::LocalAccountRefused => "MACHINE_EVENT_TYPE_LOCAL_ACCOUNT_REFUSED",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -330,6 +337,7 @@ impl MachineEventType {
             "MACHINE_EVENT_TYPE_DIRECTORY_GROUP_CONFLICT" => {
                 Some(Self::DirectoryGroupConflict)
             }
+            "MACHINE_EVENT_TYPE_LOCAL_ACCOUNT_REFUSED" => Some(Self::LocalAccountRefused),
             _ => None,
         }
     }
