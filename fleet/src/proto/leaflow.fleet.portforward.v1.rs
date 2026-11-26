@@ -77,6 +77,34 @@ impl ::prost::Name for ForwardSpec {
         "type.googleapis.com/leaflow.fleet.portforward.v1.ForwardSpec".into()
     }
 }
+/// An address a session or participant can bind or connect.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SocketAddress {
+    #[prost(oneof = "socket_address::Address", tags = "1, 2")]
+    pub address: ::core::option::Option<socket_address::Address>,
+}
+/// Nested message and enum types in `SocketAddress`.
+pub mod socket_address {
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Address {
+        /// An IP literal and port.
+        #[prost(message, tag = "1")]
+        Tcp(super::Endpoint),
+        /// An absolute filesystem Unix Socket path.
+        #[prost(string, tag = "2")]
+        UnixPath(::prost::alloc::string::String),
+    }
+}
+impl ::prost::Name for SocketAddress {
+    const NAME: &'static str = "SocketAddress";
+    const PACKAGE: &'static str = "leaflow.fleet.portforward.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.portforward.v1.SocketAddress".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.portforward.v1.SocketAddress".into()
+    }
+}
 /// A forward of this connection.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Forward {
@@ -295,6 +323,61 @@ impl ::prost::Name for TcpShutdown {
         "type.googleapis.com/leaflow.fleet.portforward.v1.TcpShutdown".into()
     }
 }
+/// The first message of a direct_dial channel.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct DirectDialOpen {
+    #[prost(message, optional, tag = "1")]
+    pub target: ::core::option::Option<SocketAddress>,
+}
+impl ::prost::Name for DirectDialOpen {
+    const NAME: &'static str = "DirectDialOpen";
+    const PACKAGE: &'static str = "leaflow.fleet.portforward.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.portforward.v1.DirectDialOpen".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.portforward.v1.DirectDialOpen".into()
+    }
+}
+/// A byte stream message for direct_dial.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct StreamMessage {
+    #[prost(oneof = "stream_message::Message", tags = "1, 2")]
+    pub message: ::core::option::Option<stream_message::Message>,
+}
+/// Nested message and enum types in `StreamMessage`.
+pub mod stream_message {
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Message {
+        /// The next bytes of the stream. At most 64 KiB.
+        #[prost(bytes, tag = "1")]
+        Data(::prost::bytes::Bytes),
+        #[prost(message, tag = "2")]
+        Shutdown(super::StreamShutdown),
+    }
+}
+impl ::prost::Name for StreamMessage {
+    const NAME: &'static str = "StreamMessage";
+    const PACKAGE: &'static str = "leaflow.fleet.portforward.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.portforward.v1.StreamMessage".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.portforward.v1.StreamMessage".into()
+    }
+}
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct StreamShutdown {}
+impl ::prost::Name for StreamShutdown {
+    const NAME: &'static str = "StreamShutdown";
+    const PACKAGE: &'static str = "leaflow.fleet.portforward.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.portforward.v1.StreamShutdown".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.portforward.v1.StreamShutdown".into()
+    }
+}
 /// The first message of a UDP channel.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct UdpOpen {
@@ -381,6 +464,10 @@ pub struct PortForwardPolicy {
     /// 60 seconds.
     #[prost(message, optional, tag = "14")]
     pub udp_idle_timeout: ::core::option::Option<::prost_types::Duration>,
+    /// Allows direct_dial. Its target is checked against remote_targets and the
+    /// Unix path fields of that policy.
+    #[prost(bool, tag = "15")]
+    pub direct_dial_allowed: bool,
 }
 impl ::prost::Name for PortForwardPolicy {
     const NAME: &'static str = "PortForwardPolicy";
@@ -392,9 +479,10 @@ impl ::prost::Name for PortForwardPolicy {
         "type.googleapis.com/leaflow.fleet.portforward.v1.PortForwardPolicy".into()
     }
 }
-/// The addresses and ports a side may listen on or connect to. An endpoint is
-/// allowed when its address lies in one of the prefixes and its port in one
-/// of the ranges; empty lists allow nothing.
+/// The addresses, ports, and Unix Socket paths a side may listen on or connect
+/// to. An IP endpoint is allowed when its address lies in one of the prefixes
+/// and its port in one of the ranges. Unix Socket paths are allowed by exact
+/// path or prefix. Empty lists allow nothing.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EndpointPolicy {
     /// IPv4 or IPv6 prefixes in CIDR notation (RFC 4632), such as "127.0.0.0/8";
@@ -404,6 +492,12 @@ pub struct EndpointPolicy {
     /// The ports.
     #[prost(message, repeated, tag = "2")]
     pub ports: ::prost::alloc::vec::Vec<PortRange>,
+    /// Exact absolute Unix Socket paths.
+    #[prost(string, repeated, tag = "3")]
+    pub unix_paths: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Absolute Unix Socket path prefixes.
+    #[prost(string, repeated, tag = "4")]
+    pub unix_path_prefixes: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 impl ::prost::Name for EndpointPolicy {
     const NAME: &'static str = "EndpointPolicy";
