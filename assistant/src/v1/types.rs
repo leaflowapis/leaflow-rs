@@ -155,6 +155,45 @@ pub struct UpdateChannelRequestBodyCredentials {
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, String>,
 }
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct UpdateAgentRequestBody {
+    #[serde(rename = "approvalMode", skip_serializing_if = "Option::is_none")]
+    pub approval_mode: Option<ApprovalMode>,
+    ///Constraint: maxLength=500
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    ///Constraint: maxLength=32000
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instructions: Option<String>,
+    ///Constraint: maxLength=64
+    #[serde(
+        rename = "machineId",
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub machine_id: Option<Option<String>>,
+    #[serde(rename = "machineSudo", skip_serializing_if = "Option::is_none")]
+    pub machine_sudo: Option<bool>,
+    ///Constraint: minLength=1, maxLength=128
+    #[serde(rename = "modelId", skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<String>,
+    ///Constraint: minLength=1, maxLength=80
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(
+        rename = "reasoningEffort",
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub reasoning_effort: Option<Option<ReasoningEffort>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<AgentRuntime>,
+    ///Constraint: minLength=1, maxLength=64, pattern=`^[a-z][a-z0-9-]{0,63}$`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slug: Option<String>,
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ThreadTurnListResponseBody {
     #[serde(rename = "nextCursor")]
@@ -278,261 +317,6 @@ pub struct ThreadItemListResponseBody {
     #[serde(rename = "streamCursor")]
     pub stream_cursor: Option<String>,
 }
-///One entry of the transcript. `type` determines which fields it carries.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ThreadItemResource {
-    /**The `data-*` blocks the client attached to a user message. They are not part of what the
-    person wrote; render the message from `parts` and leave these out of the bubble.*/
-    #[serde(rename = "clientContext")]
-    pub client_context: Vec<ClientContextPart>,
-    #[serde(rename = "createdAt")]
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    ///How long the reasoning or the tool call took. Null while it runs and for other items.
-    #[serde(rename = "durationMs")]
-    pub duration_ms: Option<i64>,
-    pub id: String,
-    /**The position of a `user_message` among the person's messages, from 1, as in
-    list-thread-messages. Null for other items, and for messages that are reverted or waiting
-    in the queue.*/
-    ///Constraint: minimum=1
-    #[serde(rename = "messageIndex")]
-    pub message_index: Option<i64>,
-    ///The Canopy model that produced this item. Null for messages a person or another source sent.
-    #[serde(rename = "modelId")]
-    pub model_id: Option<String>,
-    ///The position in the transcript. Never renumbered. Null for a message waiting in the queue.
-    pub ordinal: Option<i64>,
-    /**The content, in the order it was written. Text arrives as `append` frames on the realtime
-    stream. A file the person attached belongs where it was written, so render parts in order.
-    Empty for tool calls; their outcome is in `toolCall`.*/
-    pub parts: Vec<PartResource>,
-    ///Left out of model requests since a revert. Shown, but marked.
-    pub reverted: bool,
-    ///Who wrote an `external_message`. Null for other items.
-    pub source: Option<ItemSourceResource>,
-    ///`queued` is a message sent while the assistant was busy that it has not read yet.
-    pub status: ThreadItemResourceStatus,
-    ///The call, for a `tool_call` item. Null for other items.
-    #[serde(rename = "toolCall")]
-    pub tool_call: Option<ToolCallResource>,
-    ///Long reasoning or tool arguments were cut from this list; read the item for all of it.
-    pub truncated: bool,
-    ///The turn that wrote this item. Null for messages waiting in the queue.
-    #[serde(rename = "turnId")]
-    pub turn_id: Option<String>,
-    pub r#type: ThreadItemResourceType,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ToolCallResource {
-    ///The answers given so far, by question id. Null for other calls.
-    pub answers: Option<ToolCallResourceAnswers>,
-    #[serde(rename = "approvalReason")]
-    pub approval_reason: Option<String>,
-    /**Who decided the call. `user` is the person, in the console or a chat app; `auto_review` is
-    the automatic reviewer; `policy` is the tool itself, which cannot be called this way. Null
-    when nobody decided, including calls that needed no decision.*/
-    #[serde(rename = "approvalSource")]
-    pub approval_source: Option<ToolCallResourceApprovalSource>,
-    /**Whether the call needed a decision before it ran. Null for calls that need none.
-    `auto_approved` was approved by the automatic reviewer.*/
-    #[serde(rename = "approvalStatus")]
-    pub approval_status: Option<ToolCallResourceApprovalStatus>,
-    ///The arguments as JSON text. Cut in lists when long; then it is no longer valid JSON.
-    pub arguments: String,
-    /**The artifact versions this call handed to the person, such as a QR code to scan or an
-    exported report. Show them where the call appears; the latest version of each artifact is
-    also what the turn handed over.*/
-    pub artifacts: Vec<ArtifactVersionResource>,
-    ///How long an `ask` call waits before it continues with its default answers. Null when it waits indefinitely.
-    #[serde(rename = "autoAnswerMs")]
-    pub auto_answer_ms: Option<i64>,
-    /**Files the call returned to the assistant as part of its result, such as a screenshot it
-    looks at. They are working material rather than something handed to the person.*/
-    #[serde(rename = "contentFiles")]
-    pub content_files: Vec<FileResource>,
-    ///When a person or the reviewer decided the call or answered its questions.
-    #[serde(rename = "decidedAt")]
-    pub decided_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///A one-line description of what the call did.
-    pub detail: Option<String>,
-    ///The tool's group, for example `instance`, `leaflow`, `agent` or `client`. Empty for tools without one.
-    pub namespace: String,
-    pub presentation: Option<PresentationResource>,
-    ///The questions of an `ask` call. Null for other calls.
-    pub questions: Option<Vec<QuestionResource>>,
-    ///When execution of the current attempt started. Null until execution starts; excludes argument generation, approval and queueing. Preserves subsecond precision.
-    #[serde(rename = "startedAt")]
-    pub started_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///What the call acts on, for display, such as a file path or an instance name.
-    pub target: Option<String>,
-    pub tool: String,
-}
-/**Whether the call needed a decision before it ran. Null for calls that need none.
-`auto_approved` was approved by the automatic reviewer.*/
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ToolCallResourceApprovalStatus {
-    #[default]
-    #[serde(rename = "pending")]
-    Pending,
-    #[serde(rename = "reviewing")]
-    Reviewing,
-    #[serde(rename = "approved")]
-    Approved,
-    #[serde(rename = "auto_approved")]
-    AutoApproved,
-    #[serde(rename = "declined")]
-    Declined,
-    #[serde(rename = "unreviewed")]
-    Unreviewed,
-}
-impl ToolCallResourceApprovalStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Pending => "pending",
-            Self::Reviewing => "reviewing",
-            Self::Approved => "approved",
-            Self::AutoApproved => "auto_approved",
-            Self::Declined => "declined",
-            Self::Unreviewed => "unreviewed",
-        }
-    }
-}
-impl ::std::fmt::Display for ToolCallResourceApprovalStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ToolCallResourceApprovalStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-/**Who decided the call. `user` is the person, in the console or a chat app; `auto_review` is
-the automatic reviewer; `policy` is the tool itself, which cannot be called this way. Null
-when nobody decided, including calls that needed no decision.*/
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ToolCallResourceApprovalSource {
-    #[default]
-    #[serde(rename = "user")]
-    User,
-    #[serde(rename = "auto_review")]
-    AutoReview,
-    #[serde(rename = "policy")]
-    Policy,
-}
-impl ToolCallResourceApprovalSource {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::User => "user",
-            Self::AutoReview => "auto_review",
-            Self::Policy => "policy",
-        }
-    }
-}
-impl ::std::fmt::Display for ToolCallResourceApprovalSource {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ToolCallResourceApprovalSource {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///The answers given so far, by question id. Null for other calls.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct ToolCallResourceAnswers {
-    /// Additional properties matching the spec's
-    /// `additionalProperties` value schema.
-    #[serde(flatten)]
-    pub additional_properties: std::collections::BTreeMap<String, String>,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ThreadItemResourceType {
-    #[default]
-    #[serde(rename = "user_message")]
-    UserMessage,
-    #[serde(rename = "external_message")]
-    ExternalMessage,
-    #[serde(rename = "agent_message")]
-    AgentMessage,
-    #[serde(rename = "reasoning")]
-    Reasoning,
-    #[serde(rename = "tool_call")]
-    ToolCall,
-    #[serde(rename = "compaction")]
-    Compaction,
-    #[serde(rename = "token_budget_reminder")]
-    TokenBudgetReminder,
-    #[serde(rename = "turn_failure")]
-    TurnFailure,
-}
-impl ThreadItemResourceType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::UserMessage => "user_message",
-            Self::ExternalMessage => "external_message",
-            Self::AgentMessage => "agent_message",
-            Self::Reasoning => "reasoning",
-            Self::ToolCall => "tool_call",
-            Self::Compaction => "compaction",
-            Self::TokenBudgetReminder => "token_budget_reminder",
-            Self::TurnFailure => "turn_failure",
-        }
-    }
-}
-impl ::std::fmt::Display for ThreadItemResourceType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ThreadItemResourceType {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///`queued` is a message sent while the assistant was busy that it has not read yet.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ThreadItemResourceStatus {
-    #[default]
-    #[serde(rename = "queued")]
-    Queued,
-    #[serde(rename = "pending")]
-    Pending,
-    #[serde(rename = "in_progress")]
-    InProgress,
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "failed")]
-    Failed,
-    #[serde(rename = "declined")]
-    Declined,
-    #[serde(rename = "cancelled")]
-    Cancelled,
-}
-impl ThreadItemResourceStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Queued => "queued",
-            Self::Pending => "pending",
-            Self::InProgress => "in_progress",
-            Self::Completed => "completed",
-            Self::Failed => "failed",
-            Self::Declined => "declined",
-            Self::Cancelled => "cancelled",
-        }
-    }
-}
-impl ::std::fmt::Display for ThreadItemResourceStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ThreadItemResourceStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TaskRunListResponseBody {
     #[serde(rename = "nextCursor")]
@@ -548,6 +332,9 @@ pub struct TaskListResponseBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TaskResource {
     pub action: TaskAction,
+    ///The project agent this task belongs to. Null for a person's private task.
+    #[serde(rename = "agentId")]
+    pub agent_id: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: chrono::DateTime<chrono::Utc>,
     ///For `event`. The event-triggered runs started under the current trigger.
@@ -935,8 +722,292 @@ impl AsRef<str> for SenderCheckResourceVerdict {
         self.as_str()
     }
 }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SendMessageResponseBody {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub item: Option<ThreadItemResource>,
+    pub queued: bool,
+    ///How many messages were waiting ahead of this one when it was queued.
+    ///Constraint: minimum=0
+    #[serde(rename = "queuedAhead")]
+    pub queued_ahead: i64,
+    ///The turn this message started. Null when it was queued behind a running turn.
+    #[serde(rename = "turnId")]
+    pub turn_id: Option<String>,
+}
+///One entry of the transcript. `type` determines which fields it carries.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ThreadItemResource {
+    ///The project member who sent a `user_message`. Null for other items.
+    #[serde(rename = "authorUserId")]
+    pub author_user_id: Option<String>,
+    /**The `data-*` blocks the client attached to a user message. They are not part of what the
+    person wrote; render the message from `parts` and leave these out of the bubble.*/
+    #[serde(rename = "clientContext")]
+    pub client_context: Vec<ClientContextPart>,
+    #[serde(rename = "createdAt")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    ///How long the reasoning or the tool call took. Null while it runs and for other items.
+    #[serde(rename = "durationMs")]
+    pub duration_ms: Option<i64>,
+    pub id: String,
+    /**The position of a `user_message` among the person's messages, from 1, as in
+    list-thread-messages. Null for other items, and for messages that are reverted or waiting
+    in the queue.*/
+    ///Constraint: minimum=1
+    #[serde(rename = "messageIndex")]
+    pub message_index: Option<i64>,
+    ///The Canopy model that produced this item. Null for messages a person or another source sent.
+    #[serde(rename = "modelId")]
+    pub model_id: Option<String>,
+    ///The position in the transcript. Never renumbered. Null for a message waiting in the queue.
+    pub ordinal: Option<i64>,
+    /**Structured relational provenance for cross-delivered items (such as messages sent by a parent
+    conversation, subagent, project agent, personal companion AI, task, or future plan/document
+    notification). Omitted or null for ordinary in-conversation items.*/
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub origin: Option<Option<ItemOriginResource>>,
+    /**The content, in the order it was written. Text arrives as `append` frames on the realtime
+    stream. A file the person attached belongs where it was written, so render parts in order.
+    Empty for tool calls; their outcome is in `toolCall`.*/
+    pub parts: Vec<PartResource>,
+    ///Left out of model requests since a revert. Shown, but marked.
+    pub reverted: bool,
+    ///Who wrote an `external_message`. Null for other items.
+    pub source: Option<ItemSourceResource>,
+    ///`queued` is a message sent while the assistant was busy that it has not read yet.
+    pub status: ThreadItemResourceStatus,
+    ///The call, for a `tool_call` item. Null for other items.
+    #[serde(rename = "toolCall")]
+    pub tool_call: Option<ToolCallResource>,
+    ///Long reasoning or tool arguments were cut from this list; read the item for all of it.
+    pub truncated: bool,
+    ///The turn that wrote this item. Null for messages waiting in the queue.
+    #[serde(rename = "turnId")]
+    pub turn_id: Option<String>,
+    pub r#type: ThreadItemResourceType,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolCallResource {
+    ///The answers given so far, by question id. Null for other calls.
+    pub answers: Option<ToolCallResourceAnswers>,
+    #[serde(rename = "approvalReason")]
+    pub approval_reason: Option<String>,
+    /**Who decided the call. `user` is the person, in the console or a chat app; `auto_review` is
+    the automatic reviewer; `policy` is the tool itself, which cannot be called this way. Null
+    when nobody decided, including calls that needed no decision.*/
+    #[serde(rename = "approvalSource")]
+    pub approval_source: Option<ToolCallResourceApprovalSource>,
+    /**Whether the call needed a decision before it ran. Null for calls that need none.
+    `auto_approved` was approved by the automatic reviewer.*/
+    #[serde(rename = "approvalStatus")]
+    pub approval_status: Option<ToolCallResourceApprovalStatus>,
+    ///The arguments as JSON text. Cut in lists when long; then it is no longer valid JSON.
+    pub arguments: String,
+    /**The artifact versions this call handed to the person, such as a QR code to scan or an
+    exported report. Show them where the call appears; the latest version of each artifact is
+    also what the turn handed over.*/
+    pub artifacts: Vec<ArtifactVersionResource>,
+    ///How long an `ask` call waits before it continues with its default answers. Null when it waits indefinitely.
+    #[serde(rename = "autoAnswerMs")]
+    pub auto_answer_ms: Option<i64>,
+    /**Files the call returned to the assistant as part of its result, such as a screenshot it
+    looks at. They are working material rather than something handed to the person.*/
+    #[serde(rename = "contentFiles")]
+    pub content_files: Vec<FileResource>,
+    ///When a person or the reviewer decided the call or answered its questions.
+    #[serde(rename = "decidedAt")]
+    pub decided_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///A one-line description of what the call did.
+    pub detail: Option<String>,
+    ///The tool's group, for example `instance`, `leaflow`, `agent` or `client`. Empty for tools without one.
+    pub namespace: String,
+    pub presentation: Option<PresentationResource>,
+    ///The questions of an `ask` call. Null for other calls.
+    pub questions: Option<Vec<QuestionResource>>,
+    ///When execution of the current attempt started. Null until execution starts; excludes argument generation, approval and queueing. Preserves subsecond precision.
+    #[serde(rename = "startedAt")]
+    pub started_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///What the call acts on, for display, such as a file path or an instance name.
+    pub target: Option<String>,
+    pub tool: String,
+}
+/**Whether the call needed a decision before it ran. Null for calls that need none.
+`auto_approved` was approved by the automatic reviewer.*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ToolCallResourceApprovalStatus {
+    #[default]
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "reviewing")]
+    Reviewing,
+    #[serde(rename = "approved")]
+    Approved,
+    #[serde(rename = "auto_approved")]
+    AutoApproved,
+    #[serde(rename = "declined")]
+    Declined,
+    #[serde(rename = "unreviewed")]
+    Unreviewed,
+}
+impl ToolCallResourceApprovalStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Reviewing => "reviewing",
+            Self::Approved => "approved",
+            Self::AutoApproved => "auto_approved",
+            Self::Declined => "declined",
+            Self::Unreviewed => "unreviewed",
+        }
+    }
+}
+impl ::std::fmt::Display for ToolCallResourceApprovalStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ToolCallResourceApprovalStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**Who decided the call. `user` is the person, in the console or a chat app; `auto_review` is
+the automatic reviewer; `policy` is the tool itself, which cannot be called this way. Null
+when nobody decided, including calls that needed no decision.*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ToolCallResourceApprovalSource {
+    #[default]
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "auto_review")]
+    AutoReview,
+    #[serde(rename = "policy")]
+    Policy,
+}
+impl ToolCallResourceApprovalSource {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::User => "user",
+            Self::AutoReview => "auto_review",
+            Self::Policy => "policy",
+        }
+    }
+}
+impl ::std::fmt::Display for ToolCallResourceApprovalSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ToolCallResourceApprovalSource {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///The answers given so far, by question id. Null for other calls.
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ToolCallResourceAnswers {
+    /// Additional properties matching the spec's
+    /// `additionalProperties` value schema.
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ThreadItemResourceType {
+    #[default]
+    #[serde(rename = "user_message")]
+    UserMessage,
+    #[serde(rename = "external_message")]
+    ExternalMessage,
+    #[serde(rename = "agent_message")]
+    AgentMessage,
+    #[serde(rename = "reasoning")]
+    Reasoning,
+    #[serde(rename = "tool_call")]
+    ToolCall,
+    #[serde(rename = "compaction")]
+    Compaction,
+    #[serde(rename = "token_budget_reminder")]
+    TokenBudgetReminder,
+    #[serde(rename = "turn_failure")]
+    TurnFailure,
+}
+impl ThreadItemResourceType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::UserMessage => "user_message",
+            Self::ExternalMessage => "external_message",
+            Self::AgentMessage => "agent_message",
+            Self::Reasoning => "reasoning",
+            Self::ToolCall => "tool_call",
+            Self::Compaction => "compaction",
+            Self::TokenBudgetReminder => "token_budget_reminder",
+            Self::TurnFailure => "turn_failure",
+        }
+    }
+}
+impl ::std::fmt::Display for ThreadItemResourceType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ThreadItemResourceType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///`queued` is a message sent while the assistant was busy that it has not read yet.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ThreadItemResourceStatus {
+    #[default]
+    #[serde(rename = "queued")]
+    Queued,
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "in_progress")]
+    InProgress,
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "failed")]
+    Failed,
+    #[serde(rename = "declined")]
+    Declined,
+    #[serde(rename = "cancelled")]
+    Cancelled,
+}
+impl ThreadItemResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Queued => "queued",
+            Self::Pending => "pending",
+            Self::InProgress => "in_progress",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Declined => "declined",
+            Self::Cancelled => "cancelled",
+        }
+    }
+}
+impl ::std::fmt::Display for ThreadItemResourceStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ThreadItemResourceStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct SearchThreadsRequestBody {
+    ///Only conversations belonging to this project agent.
+    ///Constraint: maxLength=64
+    #[serde(rename = "agentId", skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     ///True for archived conversations only; otherwise unarchived only.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub archived: Option<bool>,
@@ -1096,6 +1167,10 @@ impl AsRef<str> for SearchThreadsRequestBodyIncludeItem {
 pub struct SearchTasksRequestBody {
     #[serde(rename = "actionType", skip_serializing_if = "Option::is_none")]
     pub action_type: Option<SearchTasksRequestBodyActionType>,
+    ///Only the tasks belonging to this project agent.
+    ///Constraint: maxLength=64
+    #[serde(rename = "agentId", skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     ///Constraint: maxLength=1024
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
@@ -1470,6 +1545,8 @@ pub struct PartResource {
     /**Addresses this part in the realtime stream: text arrives as `append` frames pointing at
     `/items/{item}/parts/{id}/text`. Not an array index.*/
     pub id: String,
+    ///For `mention` parts. A project agent referenced inline.
+    pub mention: Option<MentionResource>,
     ///For `text` parts. Grows as the answer is written.
     pub text: Option<String>,
     pub r#type: PartResourceType,
@@ -1481,12 +1558,15 @@ pub enum PartResourceType {
     Text,
     #[serde(rename = "file")]
     File,
+    #[serde(rename = "mention")]
+    Mention,
 }
 impl PartResourceType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Text => "text",
             Self::File => "file",
+            Self::Mention => "mention",
         }
     }
 }
@@ -1501,11 +1581,26 @@ impl AsRef<str> for PartResourceType {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MentionResource {
+    #[serde(rename = "agentId")]
+    pub agent_id: String,
+    pub name: String,
+    pub slug: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MemoryListResponseBody {
     pub items: Vec<MemoryResource>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MemoryResource {
+    ///The project agent this memory belongs to. Null for a person's private memory.
+    #[serde(
+        rename = "agentId",
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub agent_id: Option<Option<String>>,
     ///The fact itself
     pub body: String,
     #[serde(rename = "createdAt")]
@@ -1594,14 +1689,23 @@ pub struct LengthAwarePageBindingResource {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ItemSourceResource {
-    ///The conversation, task or channel the message came from.
+    ///The conversation, agent, task, channel, plan or document the message came from.
     pub id: String,
-    /**`subagent` for a subagent reporting to its parent, `thread` for another of the person's
-    conversations, `task` for a task, `channel` for a chat app.*/
+    ///For `agent` sources or agent-owned subagents, the sending agent's slug.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub slug: Option<Option<String>>,
+    /**`subagent` for a subagent or its parent conversation, `thread` for another conversation,
+    `agent` for a project agent, `task` for a task, `channel` for a chat app, `plan` or `document`
+    for a structured plan or collaborative document notification.*/
     pub r#type: ItemSourceResourceType,
 }
-/**`subagent` for a subagent reporting to its parent, `thread` for another of the person's
-conversations, `task` for a task, `channel` for a chat app.*/
+/**`subagent` for a subagent or its parent conversation, `thread` for another conversation,
+`agent` for a project agent, `task` for a task, `channel` for a chat app, `plan` or `document`
+for a structured plan or collaborative document notification.*/
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ItemSourceResourceType {
     #[default]
@@ -1609,18 +1713,27 @@ pub enum ItemSourceResourceType {
     Subagent,
     #[serde(rename = "thread")]
     Thread,
+    #[serde(rename = "agent")]
+    Agent,
     #[serde(rename = "task")]
     Task,
     #[serde(rename = "channel")]
     Channel,
+    #[serde(rename = "plan")]
+    Plan,
+    #[serde(rename = "document")]
+    Document,
 }
 impl ItemSourceResourceType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Subagent => "subagent",
             Self::Thread => "thread",
+            Self::Agent => "agent",
             Self::Task => "task",
             Self::Channel => "channel",
+            Self::Plan => "plan",
+            Self::Document => "document",
         }
     }
 }
@@ -1630,6 +1743,93 @@ impl ::std::fmt::Display for ItemSourceResourceType {
     }
 }
 impl AsRef<str> for ItemSourceResourceType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**Relational provenance of a cross-delivered item. Private companion conversation coordinates
+(`threadId`, `turnId`, `itemId`, `itemOrdinal`, `threadTitle`) are populated only when
+`accessible` is true for the current viewer.*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ItemOriginResource {
+    ///Whether the current viewer is permitted to open the origin conversation (`false` when sent from another member's private companion AI).
+    pub accessible: bool,
+    #[serde(rename = "agentId")]
+    pub agent_id: Option<String>,
+    #[serde(rename = "agentName")]
+    pub agent_name: Option<String>,
+    #[serde(rename = "agentSlug")]
+    pub agent_slug: Option<String>,
+    #[serde(rename = "dispatchedAt")]
+    pub dispatched_at: Option<chrono::DateTime<chrono::Utc>>,
+    #[serde(rename = "documentId")]
+    pub document_id: Option<String>,
+    #[serde(rename = "documentRevision")]
+    pub document_revision: Option<i64>,
+    #[serde(rename = "itemId")]
+    pub item_id: Option<String>,
+    ///Constraint: minimum=0
+    #[serde(rename = "itemOrdinal")]
+    pub item_ordinal: Option<i64>,
+    #[serde(rename = "itemType")]
+    pub item_type: Option<String>,
+    #[serde(rename = "subagentName")]
+    pub subagent_name: Option<String>,
+    #[serde(rename = "taskId")]
+    pub task_id: Option<String>,
+    #[serde(rename = "threadId")]
+    pub thread_id: Option<String>,
+    #[serde(rename = "threadTitle")]
+    pub thread_title: Option<String>,
+    #[serde(rename = "toolCall")]
+    pub tool_call: Option<OriginToolCallResource>,
+    #[serde(rename = "turnId")]
+    pub turn_id: Option<String>,
+    ///1-based turn number of `turnId` in the origin conversation.
+    ///Constraint: minimum=1
+    #[serde(rename = "turnNumber")]
+    pub turn_number: Option<i64>,
+    pub r#type: ItemOriginResourceType,
+    #[serde(rename = "userId")]
+    pub user_id: Option<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ItemOriginResourceType {
+    #[default]
+    #[serde(rename = "companion")]
+    Companion,
+    #[serde(rename = "agent")]
+    Agent,
+    #[serde(rename = "subagent")]
+    Subagent,
+    #[serde(rename = "task")]
+    Task,
+    #[serde(rename = "channel")]
+    Channel,
+    #[serde(rename = "plan")]
+    Plan,
+    #[serde(rename = "document")]
+    Document,
+}
+impl ItemOriginResourceType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Companion => "companion",
+            Self::Agent => "agent",
+            Self::Subagent => "subagent",
+            Self::Task => "task",
+            Self::Channel => "channel",
+            Self::Plan => "plan",
+            Self::Document => "document",
+        }
+    }
+}
+impl ::std::fmt::Display for ItemOriginResourceType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ItemOriginResourceType {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -1860,9 +2060,9 @@ pub struct CreateThreadResponseBody {
 pub struct ThreadResource {
     ///What the assistant is doing right now, for example "Reading nginx.conf". Null when idle.
     pub activity: Option<String>,
-    ///The subagent's name, unique among the subagents of its parent. Null for main conversations.
-    #[serde(rename = "agentName")]
-    pub agent_name: Option<String>,
+    ///The project agent this conversation belongs to. Null for personal conversations.
+    #[serde(rename = "agentId")]
+    pub agent_id: Option<String>,
     #[serde(rename = "approvalMode")]
     pub approval_mode: ApprovalMode,
     pub archived: bool,
@@ -1902,6 +2102,9 @@ pub struct ThreadResource {
     ///`main` for a conversation with a person, `subagent` for one started by another agent.
     pub role: ThreadResourceRole,
     pub status: ThreadStatus,
+    ///The subagent's name, unique among the subagents of its parent. Null for main conversations.
+    #[serde(rename = "subagentName")]
+    pub subagent_name: Option<String>,
     pub subagents: SubagentCountResource,
     ///Null until the conversation has a name.
     pub title: Option<String>,
@@ -1946,85 +2149,6 @@ pub struct Usage {
     #[serde(rename = "totalTokens")]
     pub total_tokens: i64,
 }
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct TodoResource {
-    ///The same step phrased as happening now — "Installing nginx". Show this one while the step is in progress.
-    #[serde(rename = "activeForm")]
-    pub active_form: String,
-    ///The step as an instruction — "Install nginx".
-    pub content: String,
-    ///Where this step stands. At most one step is in_progress at any time.
-    pub status: TodoResourceStatus,
-}
-///Where this step stands. At most one step is in_progress at any time.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum TodoResourceStatus {
-    #[default]
-    #[serde(rename = "pending")]
-    Pending,
-    #[serde(rename = "in_progress")]
-    InProgress,
-    #[serde(rename = "completed")]
-    Completed,
-}
-impl TodoResourceStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Pending => "pending",
-            Self::InProgress => "in_progress",
-            Self::Completed => "completed",
-        }
-    }
-}
-impl ::std::fmt::Display for TodoResourceStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for TodoResourceStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///What the thread is doing. `waiting` is waiting for subagents or tasks it started; `awaiting_approval` and `awaiting_input` wait for a person.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ThreadStatus {
-    #[default]
-    #[serde(rename = "idle")]
-    Idle,
-    #[serde(rename = "starting")]
-    Starting,
-    #[serde(rename = "running")]
-    Running,
-    #[serde(rename = "waiting")]
-    Waiting,
-    #[serde(rename = "awaiting_approval")]
-    AwaitingApproval,
-    #[serde(rename = "awaiting_input")]
-    AwaitingInput,
-}
-impl ThreadStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Idle => "idle",
-            Self::Starting => "starting",
-            Self::Running => "running",
-            Self::Waiting => "waiting",
-            Self::AwaitingApproval => "awaiting_approval",
-            Self::AwaitingInput => "awaiting_input",
-        }
-    }
-}
-impl ::std::fmt::Display for ThreadStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ThreadStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
 ///`main` for a conversation with a person, `subagent` for one started by another agent.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum ThreadResourceRole {
@@ -2048,125 +2172,6 @@ impl ::std::fmt::Display for ThreadResourceRole {
     }
 }
 impl AsRef<str> for ThreadResourceRole {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct SubagentCountResource {
-    ///Constraint: minimum=0
-    pub running: i64,
-    ///Constraint: minimum=0
-    pub total: i64,
-}
-///A tool call that cannot continue until a person approves it or answers it.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct PendingActionResource {
-    ///The waiting tool calls. Approvals come in batches; a question is a single item.
-    ///Constraint: minItems=1
-    #[serde(rename = "itemIds")]
-    pub item_ids: Vec<String>,
-    ///The conversation the tool call belongs to; a subagent's id when the subagent is the one waiting.
-    #[serde(rename = "threadId")]
-    pub thread_id: String,
-    pub r#type: PendingActionResourceType,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum PendingActionResourceType {
-    #[default]
-    #[serde(rename = "approval")]
-    Approval,
-    #[serde(rename = "question")]
-    Question,
-}
-impl PendingActionResourceType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Approval => "approval",
-            Self::Question => "question",
-        }
-    }
-}
-impl ::std::fmt::Display for PendingActionResourceType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for PendingActionResourceType {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct LastTurnResource {
-    #[serde(rename = "completedAt")]
-    pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///Why the turn failed. Null unless status is failed.
-    #[serde(rename = "failureCode")]
-    pub failure_code: Option<String>,
-    pub id: String,
-    pub status: TurnStatus,
-    pub r#type: TurnType,
-}
-///`message` answers messages; `compaction` summarizes the history to free the context window.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum TurnType {
-    #[default]
-    #[serde(rename = "message")]
-    Message,
-    #[serde(rename = "compaction")]
-    Compaction,
-}
-impl TurnType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Message => "message",
-            Self::Compaction => "compaction",
-        }
-    }
-}
-impl ::std::fmt::Display for TurnType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for TurnType {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///`declined` ended because a person declined a tool call; `cancelled` was stopped.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum TurnStatus {
-    #[default]
-    #[serde(rename = "running")]
-    Running,
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "failed")]
-    Failed,
-    #[serde(rename = "declined")]
-    Declined,
-    #[serde(rename = "cancelled")]
-    Cancelled,
-}
-impl TurnStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Running => "running",
-            Self::Completed => "completed",
-            Self::Failed => "failed",
-            Self::Declined => "declined",
-            Self::Cancelled => "cancelled",
-        }
-    }
-}
-impl ::std::fmt::Display for TurnStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for TurnStatus {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -2251,10 +2256,19 @@ impl SendMessageRequestBodyBuilder {
 
 - `text` — the words, in `text`
 - `file` — a file uploaded earlier, by id in `fileId`
+- `mention` — a project agent, by `agentId` or `slug`
 - `data-<name>` — context from the client, in `data`. The name is shown to the assistant so it
   can tell one block from another.*/
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MessagePart {
+    ///For `mention` parts. Identifies the project agent by id.
+    #[serde(
+        rename = "agentId",
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub agent_id: Option<Option<String>>,
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
@@ -2269,6 +2283,13 @@ pub struct MessagePart {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub file_id: Option<Option<String>>,
+    ///For `mention` parts. Identifies the project agent by slug without `@`.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub slug: Option<Option<String>>,
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
@@ -2283,66 +2304,6 @@ pub struct MessagePartData {
     /// Additional properties not explicitly defined in the schema
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
-}
-///How much the model reasons before answering. Sent to the model unchanged.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ReasoningEffort {
-    #[default]
-    #[serde(rename = "low")]
-    Low,
-    #[serde(rename = "medium")]
-    Medium,
-    #[serde(rename = "high")]
-    High,
-}
-impl ReasoningEffort {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Low => "low",
-            Self::Medium => "medium",
-            Self::High => "high",
-        }
-    }
-}
-impl ::std::fmt::Display for ReasoningEffort {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ReasoningEffort {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///`manual` asks a person before tools that change something, `guardian` lets an automatic reviewer decide, `yolo` runs them without asking.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ApprovalMode {
-    #[default]
-    #[serde(rename = "manual")]
-    Manual,
-    #[serde(rename = "guardian")]
-    Guardian,
-    #[serde(rename = "yolo")]
-    Yolo,
-}
-impl ApprovalMode {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Manual => "manual",
-            Self::Guardian => "guardian",
-            Self::Yolo => "yolo",
-        }
-    }
-}
-impl ::std::fmt::Display for ApprovalMode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ApprovalMode {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateTaskRequestBody {
@@ -2539,6 +2500,14 @@ pub struct TaskAction {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub instance_id: Option<Option<String>>,
+    ///For `command`. The Fleet machine that runs it.
+    #[serde(
+        rename = "machineId",
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub machine_id: Option<Option<String>>,
     ///For `prompt`. Sent to the conversation as a message from the task.
     ///Constraint: maxLength=20000
     #[serde(
@@ -2709,6 +2678,141 @@ pub struct CreateChannelRequestBodyCredentials {
     /// `additionalProperties` value schema.
     #[serde(flatten)]
     pub additional_properties: std::collections::BTreeMap<String, String>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CreateAgentRequestBody {
+    #[serde(rename = "approvalMode", skip_serializing_if = "Option::is_none")]
+    pub approval_mode: Option<ApprovalMode>,
+    ///Constraint: maxLength=500
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    ///Constraint: maxLength=32000
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instructions: Option<String>,
+    ///Constraint: maxLength=64
+    #[serde(
+        rename = "machineId",
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub machine_id: Option<Option<String>>,
+    #[serde(rename = "machineSudo", skip_serializing_if = "Option::is_none")]
+    pub machine_sudo: Option<bool>,
+    ///Constraint: minLength=1, maxLength=128
+    #[serde(rename = "modelId", skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<String>,
+    ///Constraint: minLength=1, maxLength=80
+    pub name: String,
+    #[serde(rename = "reasoningEffort", skip_serializing_if = "Option::is_none")]
+    pub reasoning_effort: Option<ReasoningEffort>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<AgentRuntime>,
+    ///Constraint: minLength=1, maxLength=64, pattern=`^[a-z][a-z0-9-]{0,63}$`
+    pub slug: String,
+}
+impl CreateAgentRequestBody {
+    /// Construct this request with every required wire field.
+    pub fn new(name: String, slug: String) -> Self {
+        Self {
+            name,
+            slug,
+            approval_mode: None,
+            description: None,
+            instructions: None,
+            machine_id: None,
+            machine_sudo: None,
+            model_id: None,
+            reasoning_effort: None,
+            runtime: None,
+        }
+    }
+    /// Start a dependency-free builder with every required wire field.
+    pub fn builder(name: String, slug: String) -> CreateAgentRequestBodyBuilder {
+        CreateAgentRequestBodyBuilder::new(name, slug)
+    }
+}
+/// Dependency-free builder for [`#struct_name`].
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct CreateAgentRequestBodyBuilder {
+    value: CreateAgentRequestBody,
+}
+impl CreateAgentRequestBodyBuilder {
+    /// Start a builder with every required wire field.
+    pub fn new(name: String, slug: String) -> Self {
+        Self {
+            value: CreateAgentRequestBody::new(name, slug),
+        }
+    }
+    #[doc = concat!("Set the optional `", "approvalMode", "` request field.")]
+    #[must_use]
+    pub fn approval_mode(mut self, approval_mode: ApprovalMode) -> Self {
+        self.value.approval_mode = Some(approval_mode);
+        self
+    }
+    #[doc = concat!("Set the optional `", "description", "` request field.")]
+    #[must_use]
+    pub fn description(mut self, description: String) -> Self {
+        self.value.description = Some(description);
+        self
+    }
+    #[doc = concat!("Set the optional `", "instructions", "` request field.")]
+    #[must_use]
+    pub fn instructions(mut self, instructions: String) -> Self {
+        self.value.instructions = Some(instructions);
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "machineId", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn machine_id(mut self, machine_id: String) -> Self {
+        self.value.machine_id = Some(Some(machine_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "machineId", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn machine_id_null(mut self) -> Self {
+        self.value.machine_id = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "machineId", "` request field.")]
+    #[must_use]
+    pub fn machine_id_absent(mut self) -> Self {
+        self.value.machine_id = None;
+        self
+    }
+    #[doc = concat!("Set the optional `", "machineSudo", "` request field.")]
+    #[must_use]
+    pub fn machine_sudo(mut self, machine_sudo: bool) -> Self {
+        self.value.machine_sudo = Some(machine_sudo);
+        self
+    }
+    #[doc = concat!("Set the optional `", "modelId", "` request field.")]
+    #[must_use]
+    pub fn model_id(mut self, model_id: String) -> Self {
+        self.value.model_id = Some(model_id);
+        self
+    }
+    #[doc = concat!("Set the optional `", "reasoningEffort", "` request field.")]
+    #[must_use]
+    pub fn reasoning_effort(mut self, reasoning_effort: ReasoningEffort) -> Self {
+        self.value.reasoning_effort = Some(reasoning_effort);
+        self
+    }
+    #[doc = concat!("Set the optional `", "runtime", "` request field.")]
+    #[must_use]
+    pub fn runtime(mut self, runtime: AgentRuntime) -> Self {
+        self.value.runtime = Some(runtime);
+        self
+    }
+    /// Finish building the request model.
+    pub fn build(self) -> CreateAgentRequestBody {
+        self.value
+    }
 }
 /**Which client this is and which actions it offers, so the assistant can ask it to run them while
 it answers. Send `actions` only when they changed since the last message; omitting them keeps
@@ -3315,6 +3419,447 @@ pub struct AnswerQuestionRequestBodyAnswers {
     pub additional_properties: std::collections::BTreeMap<String, String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AgentListResponseBody {
+    pub agents: Vec<AgentResource>,
+}
+///A resident project agent with a dedicated service account and single living main thread.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AgentResource {
+    pub activity: Option<String>,
+    #[serde(rename = "approvalMode")]
+    pub approval_mode: ApprovalMode,
+    #[serde(rename = "createdAt")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    ///Who created this agent and via which channel (`console`, `companion`, or `plan`). Null when unknown.
+    pub creator: Option<AgentCreatorResource>,
+    pub description: String,
+    pub id: String,
+    pub instructions: String,
+    #[serde(rename = "lastTurn")]
+    pub last_turn: Option<LastTurnResource>,
+    ///The Fleet machine this agent is locked to. Null when unbound.
+    #[serde(rename = "machineId")]
+    pub machine_id: Option<String>,
+    ///Whether the agent's service account holds administrative sudo access on `machineId`.
+    #[serde(rename = "machineSudo")]
+    pub machine_sudo: bool,
+    #[serde(rename = "modelId")]
+    pub model_id: String,
+    pub name: String,
+    #[serde(rename = "pendingAction")]
+    pub pending_action: Option<PendingActionResource>,
+    #[serde(rename = "reasoningEffort")]
+    pub reasoning_effort: Option<ReasoningEffort>,
+    #[serde(rename = "recentMessage")]
+    pub recent_message: Option<String>,
+    pub runtime: AgentRuntime,
+    ///The IAM service account user id this agent acts as.
+    #[serde(rename = "serviceAccountId")]
+    pub service_account_id: String,
+    ///Unique handle within the project, used in `@slug` mentions.
+    pub slug: String,
+    pub status: ThreadStatus,
+    pub subagents: SubagentCountResource,
+    ///The single conversation thread belonging to this agent.
+    #[serde(rename = "threadId")]
+    pub thread_id: String,
+    pub todos: Vec<TodoResource>,
+    pub unread: bool,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TodoResource {
+    ///The same step phrased as happening now — "Installing nginx". Show this one while the step is in progress.
+    #[serde(rename = "activeForm")]
+    pub active_form: String,
+    ///The step as an instruction — "Install nginx".
+    pub content: String,
+    ///Where this step stands. At most one step is in_progress at any time.
+    pub status: TodoResourceStatus,
+}
+///Where this step stands. At most one step is in_progress at any time.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum TodoResourceStatus {
+    #[default]
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "in_progress")]
+    InProgress,
+    #[serde(rename = "completed")]
+    Completed,
+}
+impl TodoResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::InProgress => "in_progress",
+            Self::Completed => "completed",
+        }
+    }
+}
+impl ::std::fmt::Display for TodoResourceStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for TodoResourceStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SubagentCountResource {
+    ///Up to 20 subagents of this conversation, ordered by creation time.
+    pub items: Vec<SubagentSummaryResource>,
+    ///Constraint: minimum=0
+    #[serde(rename = "needsAction")]
+    pub needs_action: i64,
+    ///Constraint: minimum=0
+    pub running: i64,
+    ///Constraint: minimum=0
+    pub total: i64,
+}
+///Lightweight live summary of a subagent conversation for sidebar navigation and status indicators.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SubagentSummaryResource {
+    pub activity: Option<String>,
+    pub id: String,
+    #[serde(rename = "lastTurnStatus")]
+    pub last_turn_status: Option<TurnStatus>,
+    pub name: String,
+    #[serde(rename = "pendingActionType")]
+    pub pending_action_type: Option<SubagentSummaryResourcePendingActionType>,
+    pub status: ThreadStatus,
+    pub unread: bool,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+///What the thread is doing. `waiting` is waiting for subagents or tasks it started; `awaiting_approval` and `awaiting_input` wait for a person.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ThreadStatus {
+    #[default]
+    #[serde(rename = "idle")]
+    Idle,
+    #[serde(rename = "starting")]
+    Starting,
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "waiting")]
+    Waiting,
+    #[serde(rename = "awaiting_approval")]
+    AwaitingApproval,
+    #[serde(rename = "awaiting_input")]
+    AwaitingInput,
+}
+impl ThreadStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Idle => "idle",
+            Self::Starting => "starting",
+            Self::Running => "running",
+            Self::Waiting => "waiting",
+            Self::AwaitingApproval => "awaiting_approval",
+            Self::AwaitingInput => "awaiting_input",
+        }
+    }
+}
+impl ::std::fmt::Display for ThreadStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ThreadStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum SubagentSummaryResourcePendingActionType {
+    #[default]
+    #[serde(rename = "approval")]
+    Approval,
+    #[serde(rename = "question")]
+    Question,
+}
+impl SubagentSummaryResourcePendingActionType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Approval => "approval",
+            Self::Question => "question",
+        }
+    }
+}
+impl ::std::fmt::Display for SubagentSummaryResourcePendingActionType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for SubagentSummaryResourcePendingActionType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///How much the model reasons before answering. Sent to the model unchanged.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ReasoningEffort {
+    #[default]
+    #[serde(rename = "low")]
+    Low,
+    #[serde(rename = "medium")]
+    Medium,
+    #[serde(rename = "high")]
+    High,
+}
+impl ReasoningEffort {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+        }
+    }
+}
+impl ::std::fmt::Display for ReasoningEffort {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ReasoningEffort {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///A tool call that cannot continue until a person approves it or answers it.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PendingActionResource {
+    ///The waiting tool calls. Approvals come in batches; a question is a single item.
+    ///Constraint: minItems=1
+    #[serde(rename = "itemIds")]
+    pub item_ids: Vec<String>,
+    ///The conversation the tool call belongs to; a subagent's id when the subagent is the one waiting.
+    #[serde(rename = "threadId")]
+    pub thread_id: String,
+    pub r#type: PendingActionResourceType,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum PendingActionResourceType {
+    #[default]
+    #[serde(rename = "approval")]
+    Approval,
+    #[serde(rename = "question")]
+    Question,
+}
+impl PendingActionResourceType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Approval => "approval",
+            Self::Question => "question",
+        }
+    }
+}
+impl ::std::fmt::Display for PendingActionResourceType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for PendingActionResourceType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LastTurnResource {
+    #[serde(rename = "completedAt")]
+    pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Why the turn failed. Null unless status is failed.
+    #[serde(rename = "failureCode")]
+    pub failure_code: Option<String>,
+    pub id: String,
+    pub status: TurnStatus,
+    pub r#type: TurnType,
+}
+///`message` answers messages; `compaction` summarizes the history to free the context window.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum TurnType {
+    #[default]
+    #[serde(rename = "message")]
+    Message,
+    #[serde(rename = "compaction")]
+    Compaction,
+}
+impl TurnType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Message => "message",
+            Self::Compaction => "compaction",
+        }
+    }
+}
+impl ::std::fmt::Display for TurnType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for TurnType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///`declined` ended because a person declined a tool call; `cancelled` was stopped.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum TurnStatus {
+    #[default]
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "failed")]
+    Failed,
+    #[serde(rename = "declined")]
+    Declined,
+    #[serde(rename = "cancelled")]
+    Cancelled,
+}
+impl TurnStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Running => "running",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Declined => "declined",
+            Self::Cancelled => "cancelled",
+        }
+    }
+}
+impl ::std::fmt::Display for TurnStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for TurnStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///`manual` asks a person before tools that change something, `guardian` lets an automatic reviewer decide, `yolo` runs them without asking.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ApprovalMode {
+    #[default]
+    #[serde(rename = "manual")]
+    Manual,
+    #[serde(rename = "guardian")]
+    Guardian,
+    #[serde(rename = "yolo")]
+    Yolo,
+}
+impl ApprovalMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Manual => "manual",
+            Self::Guardian => "guardian",
+            Self::Yolo => "yolo",
+        }
+    }
+}
+impl ::std::fmt::Display for ApprovalMode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ApprovalMode {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**How the agent executes turns: `hosted` runs on the platform's built-in model runtime;
+`external` reserves integration with external or local agent runtimes such as A2A endpoints.*/
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AgentRuntime {
+    #[default]
+    #[serde(rename = "hosted")]
+    Hosted,
+    #[serde(rename = "external")]
+    External,
+}
+impl AgentRuntime {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Hosted => "hosted",
+            Self::External => "external",
+        }
+    }
+}
+impl ::std::fmt::Display for AgentRuntime {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AgentRuntime {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+/**Provenance of who created this resident project agent and how. When created via a member's
+personal companion AI (`type: companion`), `accessible` is true only for that member; private
+conversation coordinates remain null for other project members.*/
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AgentCreatorResource {
+    pub accessible: bool,
+    #[serde(rename = "itemId")]
+    pub item_id: Option<String>,
+    ///Constraint: minimum=0
+    #[serde(rename = "itemOrdinal")]
+    pub item_ordinal: Option<i64>,
+    #[serde(rename = "threadId")]
+    pub thread_id: Option<String>,
+    #[serde(rename = "toolCall")]
+    pub tool_call: Option<OriginToolCallResource>,
+    #[serde(rename = "turnId")]
+    pub turn_id: Option<String>,
+    ///Constraint: minimum=1
+    #[serde(rename = "turnNumber")]
+    pub turn_number: Option<i64>,
+    pub r#type: AgentCreatorResourceType,
+    #[serde(rename = "userId")]
+    pub user_id: Option<String>,
+}
+///Canonical `(namespace, tool)` identifier of the causal tool call item in the origin conversation, resolved directly from that item rather than stored as a mutable display string.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct OriginToolCallResource {
+    pub namespace: String,
+    pub tool: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum AgentCreatorResourceType {
+    #[default]
+    #[serde(rename = "console")]
+    Console,
+    #[serde(rename = "companion")]
+    Companion,
+    #[serde(rename = "plan")]
+    Plan,
+}
+impl AgentCreatorResourceType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Console => "console",
+            Self::Companion => "companion",
+            Self::Plan => "plan",
+        }
+    }
+}
+impl ::std::fmt::Display for AgentCreatorResourceType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for AgentCreatorResourceType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BindingCodeResponseBody {
     pub code: String,
     #[serde(rename = "expiresAt")]
@@ -3540,17 +4085,6 @@ pub struct RotateSecretRequestBody {
     ///Required for platforms that generate the secret themselves (secretSource=supplied). Must be absent for `generated` ones
     #[serde(rename = "webhookSecret", skip_serializing_if = "Option::is_none")]
     pub webhook_secret: Option<String>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct SendMessageResponseBody {
-    pub queued: bool,
-    ///How many messages were waiting ahead of this one when it was queued.
-    ///Constraint: minimum=0
-    #[serde(rename = "queuedAhead")]
-    pub queued_ahead: i64,
-    ///The turn this message started. Null when it was queued behind a running turn.
-    #[serde(rename = "turnId")]
-    pub turn_id: Option<String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SkillEnabledRequestBody {

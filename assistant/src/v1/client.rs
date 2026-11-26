@@ -333,6 +333,11 @@ pub enum CompactThreadApiError {
 pub enum CompleteUploadApiError {
     Default(Error),
 }
+///Typed error responses for `create-agent`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum CreateAgentApiError {
+    Default(Error),
+}
 ///Typed error responses for `create-artifact`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum CreateArtifactApiError {
@@ -376,6 +381,11 @@ pub enum CreateUploadApiError {
 ///Typed error responses for `decide-tool-calls`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DecideToolCallsApiError {
+    Default(Error),
+}
+///Typed error responses for `delete-agent`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum DeleteAgentApiError {
     Default(Error),
 }
 ///Typed error responses for `delete-artifact`. One variant per declared non-2xx response.
@@ -431,6 +441,11 @@ pub enum DeleteUploadApiError {
 ///Typed error responses for `download-file`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DownloadFileApiError {
+    Default(Error),
+}
+///Typed error responses for `get-agent`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetAgentApiError {
     Default(Error),
 }
 ///Typed error responses for `get-artifact`. One variant per declared non-2xx response.
@@ -511,6 +526,11 @@ pub enum GetWeixinLoginApiError {
 ///Typed error responses for `interrupt-thread`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum InterruptThreadApiError {
+    Default(Error),
+}
+///Typed error responses for `list-agents`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListAgentsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-artifact-versions`. One variant per declared non-2xx response.
@@ -676,6 +696,11 @@ pub enum SubmitToolResultApiError {
 ///Typed error responses for `submit-weixin-verify-code`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum SubmitWeixinVerifyCodeApiError {
+    Default(Error),
+}
+///Typed error responses for `update-agent`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum UpdateAgentApiError {
     Default(Error),
 }
 ///Typed error responses for `update-artifact`. One variant per declared non-2xx response.
@@ -1351,6 +1376,88 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(CompleteUploadApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Create a project agent
+    ///
+    /// Creates a resident agent visible to the whole project, provisions its dedicated IAM service
+    /// account, grants machine login (and optional sudo) when `machineId` is bound, and creates its
+    /// single conversation thread.
+    ///
+    /// `POST /api/v1/agents`
+    pub async fn create_agent(
+        &self,
+        request: CreateAgentRequestBody,
+    ) -> Result<AgentResource, ApiOpError<CreateAgentApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/agents");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 201u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "201",
+                )),
+            }))
+        } else {
+            let typed: Option<CreateAgentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(CreateAgentApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -2126,6 +2233,81 @@ impl HttpClient {
             }))
         }
     }
+    /// Delete a project agent
+    ///
+    /// Removes the agent and its conversation when idle. Fails with 409 and code THREAD_RUNNING while
+    /// its conversation is running.
+    ///
+    /// `DELETE /api/v1/agents/{agent}`
+    pub async fn delete_agent(
+        &self,
+        agent: impl AsRef<str>,
+    ) -> Result<(), ApiOpError<DeleteAgentApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/agents/{}",
+                __pct_encode_path_segment(agent.as_ref())
+            )
+        );
+        let mut req = self.http_client.delete(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            req = req.header(name, value);
+        }
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 204u16 {
+            let _ = body_text;
+            let _ = raw_body;
+            let _ = headers;
+            Ok(())
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "204",
+                )),
+            }))
+        } else {
+            let typed: Option<DeleteAgentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(DeleteAgentApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Delete an artifact
     ///
     /// Removes the artifact and its versions from lists, and the assistant can no longer add versions
@@ -2499,12 +2681,14 @@ impl HttpClient {
     }
     /// Delete one memory
     ///
-    /// The assistant stops remembering this. It takes effect at once, so the next conversation will not carry it. The assistant may well learn the same thing again.
+    /// Removes a stored memory immediately. Pass `agentId` when deleting a memory belonging to a
+    /// project agent.
     ///
     /// `DELETE /api/v1/memories/{memory}`
     pub async fn delete_memory(
         &self,
         memory: impl AsRef<str>,
+        agent_id: Option<impl AsRef<str>>,
     ) -> Result<(), ApiOpError<DeleteMemoryApiError>> {
         let request_url = format!(
             "{}{}",
@@ -2515,6 +2699,15 @@ impl HttpClient {
             )
         );
         let mut req = self.http_client.delete(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = agent_id {
+                query_params.push(("agentId".to_string(), v.as_ref().to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -3361,6 +3554,88 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(DownloadFileApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Get a project agent
+    ///
+    /// `GET /api/v1/agents/{agent}`
+    pub async fn get_agent(
+        &self,
+        agent: impl AsRef<str>,
+    ) -> Result<AgentResource, ApiOpError<GetAgentApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/agents/{}",
+                __pct_encode_path_segment(agent.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetAgentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetAgentApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -4693,6 +4968,84 @@ impl HttpClient {
             }))
         }
     }
+    /// List project agents
+    ///
+    /// Lists the resident agents in this project, ordered by name. Each agent has a single living
+    /// conversation (`threadId`), an isolated service account (`serviceAccountId`), and an optional
+    /// Fleet machine binding (`machineId`).
+    ///
+    /// `GET /api/v1/agents`
+    pub async fn list_agents(
+        &self,
+    ) -> Result<AgentListResponseBody, ApiOpError<ListAgentsApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/agents");
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListAgentsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListAgentsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// List artifact versions
     ///
     /// The versions of an artifact, newest first.
@@ -5261,14 +5614,25 @@ impl HttpClient {
     }
     /// List what the assistant remembers
     ///
-    /// Facts the assistant has written down for the current account in this project. They appear at the start of every later conversation. Members of the same project each have their own, and this returns only the current account's. Not paginated: there is a cap on how many there can be, and all of them come back at once.
+    /// Facts the assistant has written down in this project. Without `agentId`, returns the current
+    /// account's private memories; with `agentId`, returns that project agent's memories.
     ///
     /// `GET /api/v1/memories`
     pub async fn list_memories(
         &self,
+        agent_id: Option<impl AsRef<str>>,
     ) -> Result<MemoryListResponseBody, ApiOpError<ListMemoriesApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/memories");
         let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = agent_id {
+                query_params.push(("agentId".to_string(), v.as_ref().to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
@@ -7667,6 +8031,95 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(SubmitWeixinVerifyCodeApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Update a project agent
+    ///
+    /// Updates the agent's profile, instructions, machine binding, or conversation model settings.
+    /// Omitted fields stay as they are; setting `machineId` to null unbinds the Fleet machine.
+    ///
+    /// `PATCH /api/v1/agents/{agent}`
+    pub async fn update_agent(
+        &self,
+        agent: impl AsRef<str>,
+        request: UpdateAgentRequestBody,
+    ) -> Result<AgentResource, ApiOpError<UpdateAgentApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/agents/{}",
+                __pct_encode_path_segment(agent.as_ref())
+            )
+        );
+        let mut req = self.http_client.patch(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<UpdateAgentApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(UpdateAgentApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
