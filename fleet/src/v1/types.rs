@@ -452,6 +452,30 @@ pub struct SendMcpRequestRequestRequest {
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RunCommandResponse {
+    ///Metadata of the started background command when `background` is true; null for foreground commands
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub command: Option<Option<MachineCommandResource>>,
+    ///The status it exited with, 0 being success; null when a signal ended it or when started in the background
+    pub exit_status: Option<i32>,
+    ///The signal that ended it, such as 9 when the timeout killed it; null when it exited or when started in the background
+    pub signal: Option<i32>,
+    ///What it wrote to standard error, at most 1 MiB, in standard Base64
+    pub stderr: String,
+    ///`stderr` is cut short
+    pub stderr_truncated: bool,
+    ///What it wrote to standard output, at most 1 MiB, in standard Base64
+    pub stdout: String,
+    ///`stdout` is cut short
+    pub stdout_truncated: bool,
+    ///The timeout ended it
+    pub timed_out: bool,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ReplaceMcpConfigurationRequest {
     ///The new file, an object with an object `mcpServers`, at most 1 MiB as JSON
     pub content: ReplaceMcpConfigurationRequestContent,
@@ -984,7 +1008,7 @@ pub struct OperatingSystem {
 pub struct MachineFeature {
     ///What it can do on this machine, as the dotted names its package defines, such as `audio.pipewire`
     pub details: Vec<String>,
-    ///The protocol package that defines the feature, such as `leaflow.fleet.command.v1`
+    ///The protocol package that defines the feature, such as `leaflow.fleet.controlplane.command.v1`
     pub name: String,
     ///Why it cannot be used, such as `Xwayland is not installed`; empty while available
     pub reason: String,
@@ -1086,6 +1110,123 @@ pub struct MachineEventResourceMetadata {
     pub additional_properties: std::collections::BTreeMap<String, String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MachineCommandOutput {
+    pub command_id: String,
+    ///Output bytes in standard Base64 (RFC 4648)
+    #[serde(with = "base64_serde")]
+    pub data: Vec<u8>,
+    ///Constraint: minimum=0
+    pub end_line: i64,
+    pub has_more: bool,
+    pub machine_id: uuid::Uuid,
+    ///Constraint: minimum=0
+    pub next_offset: i64,
+    pub output_path: String,
+    pub output_truncated: bool,
+    ///Constraint: minimum=0
+    pub start_line: i64,
+    ///Constraint: minimum=0
+    pub start_offset: i64,
+    pub stream: CommandOutputStream,
+    ///Constraint: minimum=0
+    pub total_bytes: i64,
+    ///Constraint: minimum=0
+    pub total_lines: i64,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CommandOutputStream {
+    #[default]
+    #[serde(rename = "combined")]
+    Combined,
+    #[serde(rename = "stdout")]
+    Stdout,
+    #[serde(rename = "stderr")]
+    Stderr,
+}
+impl CommandOutputStream {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Combined => "combined",
+            Self::Stdout => "stdout",
+            Self::Stderr => "stderr",
+        }
+    }
+}
+impl ::std::fmt::Display for CommandOutputStream {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CommandOutputStream {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MachineCommandList {
+    pub items: Vec<MachineCommandResource>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MachineCommandResource {
+    ///Full argument vector executed on the machine
+    pub argv: Vec<String>,
+    ///Full shell command line when started via RunCommand; empty when started with argv only
+    pub command: String,
+    pub command_id: String,
+    ///Elapsed runtime in seconds (while running) or total runtime in seconds (once exited)
+    ///Constraint: minimum=0
+    pub duration_seconds: f64,
+    ///Exit status (0–255) when exited normally; null otherwise
+    pub exit_status: Option<i32>,
+    pub finished_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub machine_id: uuid::Uuid,
+    ///Constraint: minimum=0
+    pub output_bytes: i64,
+    ///Constraint: minimum=0
+    pub output_lines: i64,
+    ///Absolute path on the machine where the combined output file is persisted
+    pub output_path: String,
+    pub output_truncated: bool,
+    ///Termination reason (`exited`, `signaled`, `stopped`, `timed_out`, `output_limit`, `start_failed`, or `failed`); empty while running
+    pub reason: String,
+    ///Fleet session_id when this background process belongs to a session; null otherwise
+    pub session_id: Option<String>,
+    ///Signal number that terminated the process; null otherwise
+    pub signal: Option<i32>,
+    pub started_at: chrono::DateTime<chrono::Utc>,
+    pub state: CommandState,
+    pub timed_out: bool,
+    pub user_id: uuid::Uuid,
+    pub username: String,
+    pub working_directory: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum CommandState {
+    #[default]
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "exited")]
+    Exited,
+}
+impl CommandState {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Running => "running",
+            Self::Exited => "exited",
+        }
+    }
+}
+impl ::std::fmt::Display for CommandState {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for CommandState {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GroupList {
     pub items: Vec<GroupResource>,
     ///Constraint: minimum=1
@@ -1111,133 +1252,6 @@ pub struct GroupResource {
 pub struct FindEnrollmentResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enrollment: Option<EnrollmentResource>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ExecutionOutput {
-    ///Output bytes in standard Base64 (RFC 4648)
-    #[serde(with = "base64_serde")]
-    pub data: Vec<u8>,
-    ///Constraint: minimum=0
-    pub end_line: i64,
-    pub execution_id: String,
-    pub has_more: bool,
-    pub machine_id: uuid::Uuid,
-    ///Constraint: minimum=0
-    pub next_offset: i64,
-    pub output_path: String,
-    pub output_truncated: bool,
-    pub session_id: String,
-    ///Constraint: minimum=0
-    pub start_line: i64,
-    ///Constraint: minimum=0
-    pub start_offset: i64,
-    pub stream: ExecutionStream,
-    ///Constraint: minimum=0
-    pub total_bytes: i64,
-    ///Constraint: minimum=0
-    pub total_lines: i64,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ExecutionStream {
-    #[default]
-    #[serde(rename = "combined")]
-    Combined,
-    #[serde(rename = "stdout")]
-    Stdout,
-    #[serde(rename = "stderr")]
-    Stderr,
-}
-impl ExecutionStream {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Combined => "combined",
-            Self::Stdout => "stdout",
-            Self::Stderr => "stderr",
-        }
-    }
-}
-impl ::std::fmt::Display for ExecutionStream {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ExecutionStream {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ExecutionList {
-    pub items: Vec<ExecutionResource>,
-    ///Open sessions that could not be queried during a machine-wide fan-out
-    pub unavailable_sessions: Vec<UnavailableExecutionSession>,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UnavailableExecutionSession {
-    pub reason: String,
-    pub session_id: String,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ExecutionResource {
-    ///Full argument vector of the background command
-    pub argv: Vec<String>,
-    ///Elapsed runtime in seconds (while running) or total runtime in seconds (once exited)
-    ///Constraint: minimum=0
-    pub duration_seconds: f64,
-    pub execution_id: String,
-    pub exit: Option<ExecutionExit>,
-    pub finished_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub machine_id: uuid::Uuid,
-    ///Constraint: minimum=0
-    pub output_bytes: i64,
-    ///Constraint: minimum=0
-    pub output_lines: i64,
-    ///Absolute path on the machine where the combined output file is persisted
-    pub output_path: String,
-    pub output_truncated: bool,
-    pub session_id: String,
-    pub started_at: chrono::DateTime<chrono::Utc>,
-    pub state: ExecutionState,
-    pub user_id: uuid::Uuid,
-    pub username: String,
-    pub working_directory: String,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum ExecutionState {
-    #[default]
-    #[serde(rename = "running")]
-    Running,
-    #[serde(rename = "exited")]
-    Exited,
-}
-impl ExecutionState {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Running => "running",
-            Self::Exited => "exited",
-        }
-    }
-}
-impl ::std::fmt::Display for ExecutionState {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for ExecutionState {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ExecutionExit {
-    pub core_dumped: bool,
-    ///Exit status (0–255) when the process exited normally; null otherwise
-    ///Constraint: minimum=0, maximum=255
-    pub exit_code: Option<i32>,
-    ///Machine-readable termination reason (`exited`, `signaled`, `stopped`, `timed_out`, `output_limit`, `start_failed`, or `failed`)
-    pub reason: String,
-    ///Signal name without "SIG" (for example `KILL`) when terminated by a signal; null otherwise
-    pub signal_name: Option<String>,
 }
 /**A failed request. The envelope follows the Google REST error format: `code` is the HTTP
 status, `status` is its canonical name, and `reason` is the stable machine-readable code
@@ -1398,7 +1412,7 @@ impl CreateSessionRequestBuilder {
         self.value
     }
 }
-///A desktop for the session, on a machine that offers `leaflow.fleet.virtualdesktop.host.v1`
+///A desktop for the session, on a machine that offers `leaflow.fleet.controlplane.desktop.v1`
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DesktopOptions {
     ///The first height of the canvas; given together with `width`
@@ -1407,7 +1421,7 @@ pub struct DesktopOptions {
     pub height: Option<i64>,
     pub mode: SessionMode,
     /**In `desktop` mode, the desktop environment to start: a detail of the machine's
-    `leaflow.fleet.virtualdesktop.host.v1` feature without its `desktop.` prefix, such as
+    `leaflow.fleet.controlplane.desktop.v1` feature without its `desktop.` prefix, such as
     `XFCE`; the machine's default when omitted*/
     ///Constraint: maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -2106,20 +2120,31 @@ pub struct MigrationStep {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RunCommandRequest {
+    ///Run the command detached in the background, persist output to a file, and return immediately with `command`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub background: Option<bool>,
     ///The command line, which the account's login shell runs with `-c`; at most 65536 bytes and no NUL
     ///Constraint: minLength=1, maxLength=65536
     pub command: String,
-    ///Kills the command, and every process it started, this long after it started
-    ///Constraint: minimum=1, maximum=300
+    /**Kills the command, and every process it started, this long after it started.
+    For foreground commands: 1–300 seconds (default 60).
+    For background commands: optional upper bound (omitted means unlimited until exit, stop, or reboot).*/
+    ///Constraint: minimum=1, maximum=86400
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout_seconds: Option<i64>,
+    ///Optional working directory on the machine; empty uses the account's home directory
+    ///Constraint: maxLength=4096
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub working_directory: Option<String>,
 }
 impl RunCommandRequest {
     /// Construct this request with every required wire field.
     pub fn new(command: String) -> Self {
         Self {
             command,
+            background: None,
             timeout_seconds: None,
+            working_directory: None,
         }
     }
     /// Start a dependency-free builder with every required wire field.
@@ -2140,33 +2165,28 @@ impl RunCommandRequestBuilder {
             value: RunCommandRequest::new(command),
         }
     }
+    #[doc = concat!("Set the optional `", "background", "` request field.")]
+    #[must_use]
+    pub fn background(mut self, background: bool) -> Self {
+        self.value.background = Some(background);
+        self
+    }
     #[doc = concat!("Set the optional `", "timeout_seconds", "` request field.")]
     #[must_use]
     pub fn timeout_seconds(mut self, timeout_seconds: i64) -> Self {
         self.value.timeout_seconds = Some(timeout_seconds);
         self
     }
+    #[doc = concat!("Set the optional `", "working_directory", "` request field.")]
+    #[must_use]
+    pub fn working_directory(mut self, working_directory: String) -> Self {
+        self.value.working_directory = Some(working_directory);
+        self
+    }
     /// Finish building the request model.
     pub fn build(self) -> RunCommandRequest {
         self.value
     }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct RunCommandResponse {
-    ///The status it exited with, 0 being success; null when a signal ended it
-    pub exit_status: Option<i32>,
-    ///The signal that ended it, such as 9 when the timeout killed it; null when it exited
-    pub signal: Option<i32>,
-    ///What it wrote to standard error, at most 1 MiB, in standard Base64
-    pub stderr: String,
-    ///`stderr` is cut short
-    pub stderr_truncated: bool,
-    ///What it wrote to standard output, at most 1 MiB, in standard Base64
-    pub stdout: String,
-    ///`stdout` is cut short
-    pub stdout_truncated: bool,
-    ///The timeout ended it
-    pub timed_out: bool,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateMachineLocalAccountRequest {

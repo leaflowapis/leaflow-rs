@@ -467,6 +467,11 @@ pub enum GetGroupApiError {
 pub enum GetMachineApiError {
     Default(Error),
 }
+///Typed error responses for `get-machine-command`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetMachineCommandApiError {
+    Default(Error),
+}
 ///Typed error responses for `get-machine-local-account`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetMachineLocalAccountApiError {
@@ -507,11 +512,6 @@ pub enum GetPrivilegeRequestApiError {
 pub enum GetSessionApiError {
     Default(Error),
 }
-///Typed error responses for `get-session-execution`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetSessionExecutionApiError {
-    Default(Error),
-}
 ///Typed error responses for `get-session-rtc-configuration`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetSessionRtcConfigurationApiError {
@@ -532,14 +532,14 @@ pub enum ListGroupMembersApiError {
 pub enum ListGroupsApiError {
     Default(Error),
 }
+///Typed error responses for `list-machine-commands`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListMachineCommandsApiError {
+    Default(Error),
+}
 ///Typed error responses for `list-machine-events`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListMachineEventsApiError {
-    Default(Error),
-}
-///Typed error responses for `list-machine-executions`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListMachineExecutionsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-machine-local-accounts`. One variant per declared non-2xx response.
@@ -567,11 +567,6 @@ pub enum ListPrivilegeAutoApprovalsApiError {
 pub enum ListPrivilegeRequestsApiError {
     Default(Error),
 }
-///Typed error responses for `list-session-executions`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListSessionExecutionsApiError {
-    Default(Error),
-}
 ///Typed error responses for `list-session-participants`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListSessionParticipantsApiError {
@@ -597,9 +592,9 @@ pub enum PollToolActivitiesApiError {
 pub enum PrepareParticipantMigrationApiError {
     Default(Error),
 }
-///Typed error responses for `read-session-execution-output`. One variant per declared non-2xx response.
+///Typed error responses for `read-machine-command-output`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum ReadSessionExecutionOutputApiError {
+pub enum ReadMachineCommandOutputApiError {
     Default(Error),
 }
 ///Typed error responses for `renew-participant`. One variant per declared non-2xx response.
@@ -622,9 +617,9 @@ pub enum RunMachineCommandApiError {
 pub enum SendMcpRequestApiError {
     Default(Error),
 }
-///Typed error responses for `stop-session-execution`. One variant per declared non-2xx response.
+///Typed error responses for `stop-machine-command`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum StopSessionExecutionApiError {
+pub enum StopMachineCommandApiError {
     Default(Error),
 }
 ///Typed error responses for `terminate-session`. One variant per declared non-2xx response.
@@ -3190,6 +3185,92 @@ impl HttpClient {
             }))
         }
     }
+    /// Get a background command
+    ///
+    /// Queries the machine's Agent live for the current metadata, duration, exit status, and output file path of one background command. Requires `fleet:machines.login` on the machine.
+    ///
+    /// `GET /api/v1/machines/{machineId}/commands/{commandId}`
+    pub async fn get_machine_command(
+        &self,
+        machine_id: impl AsRef<str>,
+        command_id: impl AsRef<str>,
+    ) -> Result<MachineCommandResource, ApiOpError<GetMachineCommandApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/machines/{}/commands/{}",
+                __pct_encode_path_segment(machine_id.as_ref()),
+                __pct_encode_path_segment(command_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetMachineCommandApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetMachineCommandApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Get a bound local account on a machine
     ///
     /// Returns the binding of a local account on the machine. Fails with `LOCAL_ACCOUNT_NOT_FOUND`
@@ -3369,7 +3450,7 @@ impl HttpClient {
     ///
     /// Fails with:
     /// - `MACHINE_OFFLINE` when the machine is not connected and does not connect again in time;
-    /// - `FEATURE_UNAVAILABLE` when the machine does not offer `leaflow.fleet.mcp.v1`;
+    /// - `FEATURE_UNAVAILABLE` when the machine does not offer `leaflow.fleet.controlplane.mcp.v1`;
     /// - `USER_NOT_FOUND`, `USER_NOT_ALLOWED`, `ACCOUNT_EXPIRED` or `PAM_PERMISSION_DENIED` when
     ///   the machine refuses the account, as for opening a session;
     /// - `MCP_START_FAILED` when the machine could not start MCP for the caller's account;
@@ -3907,92 +3988,6 @@ impl HttpClient {
             }))
         }
     }
-    /// Get a background execution
-    ///
-    /// Queries the session process live for the current metadata and status of one background execution.
-    ///
-    /// `GET /api/v1/sessions/{sessionId}/executions/{executionId}`
-    pub async fn get_session_execution(
-        &self,
-        session_id: impl AsRef<str>,
-        execution_id: impl AsRef<str>,
-    ) -> Result<ExecutionResource, ApiOpError<GetSessionExecutionApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/sessions/{}/executions/{}",
-                __pct_encode_path_segment(session_id.as_ref()),
-                __pct_encode_path_segment(execution_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetSessionExecutionApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetSessionExecutionApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Get the ICE servers for a session
     ///
     /// Returns the STUN and TURN servers for the PeerConnections the caller starts to the session,
@@ -4372,6 +4367,102 @@ impl HttpClient {
             }))
         }
     }
+    /// List background commands on a machine
+    ///
+    /// Queries the machine's Agent live for background commands belonging to the caller since the
+    /// machine booted, newest first. Fleet does not store command state in its database; after a
+    /// machine reboot, no running commands remain. Requires `fleet:machines.login` on the machine.
+    ///
+    /// `GET /api/v1/machines/{machineId}/commands`
+    pub async fn list_machine_commands(
+        &self,
+        machine_id: impl AsRef<str>,
+        state: Option<CommandState>,
+    ) -> Result<MachineCommandList, ApiOpError<ListMachineCommandsApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/machines/{}/commands",
+                __pct_encode_path_segment(machine_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = state {
+                query_params.push(("state".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListMachineCommandsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListMachineCommandsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// List the events of a machine
     ///
     /// Returns what the machine reported about itself, newest first, such as a directory account
@@ -4457,104 +4548,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListMachineEventsApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// List background executions on a machine
-    ///
-    /// Queries all open sessions belonging to the caller on the machine in parallel and merges
-    /// their live background executions, newest first. Does not store process state in Fleet;
-    /// sessions that are temporarily unreachable or run an older Agent are reported in
-    /// `unavailable_sessions` rather than failing the whole response. Requires
-    /// `fleet:machines.login` on the machine.
-    ///
-    /// `GET /api/v1/machines/{machineId}/executions`
-    pub async fn list_machine_executions(
-        &self,
-        machine_id: impl AsRef<str>,
-        state: Option<ExecutionState>,
-    ) -> Result<ExecutionList, ApiOpError<ListMachineExecutionsApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/machines/{}/executions",
-                __pct_encode_path_segment(machine_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = state {
-                query_params.push(("state".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListMachineExecutionsApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListMachineExecutionsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5039,101 +5032,6 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListPrivilegeRequestsApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// List background executions in a session
-    ///
-    /// Queries the session process live for its background executions, newest first. Returns an
-    /// empty list when the session is already closed (for example after the machine rebooted).
-    ///
-    /// `GET /api/v1/sessions/{sessionId}/executions`
-    pub async fn list_session_executions(
-        &self,
-        session_id: impl AsRef<str>,
-        state: Option<ExecutionState>,
-    ) -> Result<ExecutionList, ApiOpError<ListSessionExecutionsApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/sessions/{}/executions",
-                __pct_encode_path_segment(session_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = state {
-                query_params.push(("state".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListSessionExecutionsApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListSessionExecutionsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5657,32 +5555,32 @@ impl HttpClient {
             }))
         }
     }
-    /// Read output of a background execution
+    /// Read output of a background command
     ///
-    /// Reads a bounded slice of a background execution's persisted output file from the session
-    /// process. Choose at most one addressing mode: `tail_lines`, `start_line` (with optional
+    /// Reads a bounded slice of a background command's persisted output file from the machine's
+    /// Agent. Choose at most one addressing mode: `tail_lines`, `start_line` (with optional
     /// `max_lines`), or `offset` (with optional `max_bytes`). When none is specified, returns the
-    /// last 200 lines of the combined output stream.
+    /// last 200 lines of the combined output stream. Requires `fleet:machines.login` on the machine.
     ///
-    /// `GET /api/v1/sessions/{sessionId}/executions/{executionId}/output`
-    pub async fn read_session_execution_output(
+    /// `GET /api/v1/machines/{machineId}/commands/{commandId}/output`
+    pub async fn read_machine_command_output(
         &self,
-        session_id: impl AsRef<str>,
-        execution_id: impl AsRef<str>,
-        stream: Option<ExecutionStream>,
+        machine_id: impl AsRef<str>,
+        command_id: impl AsRef<str>,
+        stream: Option<CommandOutputStream>,
         tail_lines: Option<i32>,
         start_line: Option<i64>,
         max_lines: Option<i32>,
         offset: Option<i64>,
         max_bytes: Option<i32>,
-    ) -> Result<ExecutionOutput, ApiOpError<ReadSessionExecutionOutputApiError>> {
+    ) -> Result<MachineCommandOutput, ApiOpError<ReadMachineCommandOutputApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/sessions/{}/executions/{}/output",
-                __pct_encode_path_segment(session_id.as_ref()),
-                __pct_encode_path_segment(execution_id.as_ref())
+                "/api/v1/machines/{}/commands/{}/output",
+                __pct_encode_path_segment(machine_id.as_ref()),
+                __pct_encode_path_segment(command_id.as_ref())
             )
         );
         let mut req = self.http_client.get(request_url);
@@ -5752,12 +5650,12 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<ReadSessionExecutionOutputApiError>;
+            let typed: Option<ReadMachineCommandOutputApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(ReadSessionExecutionOutputApiError::Default(v));
+                        typed = Some(ReadMachineCommandOutputApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5897,7 +5795,7 @@ impl HttpClient {
     ///   with `metadata.line` and `metadata.column`;
     /// - `MCP_CONFIGURATION_WRITE_FAILED` when the machine could not write the file;
     /// - `MACHINE_OFFLINE` when the machine is not connected and does not connect again in time;
-    /// - `FEATURE_UNAVAILABLE` when the machine does not offer `leaflow.fleet.mcp.v1`;
+    /// - `FEATURE_UNAVAILABLE` when the machine does not offer `leaflow.fleet.controlplane.mcp.v1`;
     /// - `USER_NOT_FOUND`, `USER_NOT_ALLOWED`, `ACCOUNT_EXPIRED` or `PAM_PERMISSION_DENIED` when
     ///   the machine refuses the account, as for opening a session;
     /// - `MCP_START_FAILED` when the machine could not start MCP for the caller's account;
@@ -6003,9 +5901,15 @@ impl HttpClient {
     /// Inside the command, `sudo` works without a prompt while the caller has
     /// `fleet:machines.admin` on the machine, and refuses otherwise.
     ///
-    /// After any required context preparation, the request is held until the command ends, at most
-    /// `timeout_seconds` and a few seconds more. Neither the command nor its output is hidden from the platform: do not put secrets
-    /// into either.
+    /// After any required context preparation, a foreground request is held until the command ends,
+    /// at most `timeout_seconds` and a few seconds more. When `background` is true, the Agent
+    /// starts the command detached, persists its output to a per-boot runtime file, and returns
+    /// immediately with `command` (including `command_id` and `output_path`); while it runs, the
+    /// Agent proactively reports a `leaflow.fleet.command.running` EventBus heartbeat every 30
+    /// minutes and a terminal `leaflow.fleet.command.exited` EventBus event upon completion.
+    /// Fleet keeps no database table for background commands; rebooting the machine clears all
+    /// running commands. Neither the command nor its output is hidden from the platform: do not
+    /// put secrets into either.
     ///
     /// Requires `fleet:machines.login` on the machine.
     ///
@@ -6219,23 +6123,23 @@ impl HttpClient {
             }))
         }
     }
-    /// Stop a background execution
+    /// Stop a background command
     ///
-    /// Stops a running background execution in the session. Stopping an already exited execution succeeds and returns its final metadata.
+    /// Stops a running background command belonging to the caller on the machine. Stopping an already exited command succeeds and returns its final metadata. Requires `fleet:machines.login` on the machine.
     ///
-    /// `POST /api/v1/sessions/{sessionId}/executions/{executionId}:stop`
-    pub async fn stop_session_execution(
+    /// `POST /api/v1/machines/{machineId}/commands/{commandId}:stop`
+    pub async fn stop_machine_command(
         &self,
-        session_id: impl AsRef<str>,
-        execution_id: impl AsRef<str>,
-    ) -> Result<ExecutionResource, ApiOpError<StopSessionExecutionApiError>> {
+        machine_id: impl AsRef<str>,
+        command_id: impl AsRef<str>,
+    ) -> Result<MachineCommandResource, ApiOpError<StopMachineCommandApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/sessions/{}/executions/{}:stop",
-                __pct_encode_path_segment(session_id.as_ref()),
-                __pct_encode_path_segment(execution_id.as_ref())
+                "/api/v1/machines/{}/commands/{}:stop",
+                __pct_encode_path_segment(machine_id.as_ref()),
+                __pct_encode_path_segment(command_id.as_ref())
             )
         );
         let mut req = self.http_client.post(request_url);
@@ -6282,12 +6186,12 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<StopSessionExecutionApiError>;
+            let typed: Option<StopMachineCommandApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(StopSessionExecutionApiError::Default(v));
+                        typed = Some(StopMachineCommandApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -6791,7 +6695,7 @@ impl HttpClient {
     ///   whole first;
     /// - `MCP_CONFIGURATION_WRITE_FAILED` when the machine could not write the file;
     /// - `MACHINE_OFFLINE` when the machine is not connected and does not connect again in time;
-    /// - `FEATURE_UNAVAILABLE` when the machine does not offer `leaflow.fleet.mcp.v1`;
+    /// - `FEATURE_UNAVAILABLE` when the machine does not offer `leaflow.fleet.controlplane.mcp.v1`;
     /// - `USER_NOT_FOUND`, `USER_NOT_ALLOWED`, `ACCOUNT_EXPIRED` or `PAM_PERMISSION_DENIED` when
     ///   the machine refuses the account, as for opening a session;
     /// - `MCP_START_FAILED` when the machine could not start MCP for the caller's account;

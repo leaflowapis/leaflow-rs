@@ -6,185 +6,189 @@ pub mod google {
 }
 pub mod leaflow {
     pub mod fleet {
-        pub mod audio {
-            pub mod v1 {
-                include!("leaflow.fleet.audio.v1.rs");
-            }
-        }
-        pub mod camera {
-            pub mod v1 {
-                include!("leaflow.fleet.camera.v1.rs");
-            }
-        }
-        pub mod command {
-            pub mod v1 {
-                include!("leaflow.fleet.command.v1.rs");
-            }
-        }
-        pub mod control {
-            pub mod v1 {
-                include!("leaflow.fleet.control.v1.rs");
-            }
-        }
-        pub mod device {
-            pub mod v1 {
-                include!("leaflow.fleet.device.v1.rs");
-            }
-        }
-        pub mod directory {
-            pub mod v1 {
-                include!("leaflow.fleet.directory.v1.rs");
-            }
-        }
-        pub mod exec {
-            pub mod v1 {
-                include!("leaflow.fleet.exec.v1.rs");
-            }
-        }
-        pub mod filetransfer {
-            pub mod v1 {
-                include!("leaflow.fleet.filetransfer.v1.rs");
-            }
-        }
-        pub mod gamepad {
-            pub mod v1 {
-                include!("leaflow.fleet.gamepad.v1.rs");
-            }
-        }
-        pub mod host {
-            pub mod v1 {
-                include!("leaflow.fleet.host.v1.rs");
-            }
-        }
-        pub mod logs {
-            pub mod v1 {
-                include!("leaflow.fleet.logs.v1.rs");
-            }
-        }
-        pub mod machine {
-            pub mod v1 {
-                include!("leaflow.fleet.machine.v1.rs");
-            }
-        }
-        pub mod mcp {
-            pub mod v1 {
-                include!("leaflow.fleet.mcp.v1.rs");
-            }
-        }
-        pub mod portforward {
-            pub mod v1 {
-                include!("leaflow.fleet.portforward.v1.rs");
-            }
-        }
-        pub mod printing {
-            pub mod v1 {
-                include!("leaflow.fleet.printing.v1.rs");
-            }
-        }
-        pub mod privilege {
-            pub mod v1 {
-                include!("leaflow.fleet.privilege.v1.rs");
-            }
-        }
-        pub mod rpc {
-            pub mod v1 {
-                include!("leaflow.fleet.rpc.v1.rs");
-            }
-        }
-        pub mod session {
-            pub mod v1 {
-                include!("leaflow.fleet.session.v1.rs");
-            }
-        }
-        pub mod sshagent {
-            pub mod v1 {
-                include!("leaflow.fleet.sshagent.v1.rs");
-            }
-        }
-        pub mod terminal {
-            pub mod v1 {
-                include!("leaflow.fleet.terminal.v1.rs");
-            }
-        }
-        pub mod tool {
-            pub mod v1 {
-                include!("leaflow.fleet.tool.v1.rs");
-            }
-        }
-        pub mod transport {
-            pub mod v1 {
-                include!("leaflow.fleet.transport.v1.rs");
-            }
-        }
-        pub mod virtualdesktop {
-            pub mod accessibility {
+        pub mod controlplane {
+            pub mod command {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.accessibility.v1.rs");
+                    include!("leaflow.fleet.controlplane.command.v1.rs");
                 }
             }
-            pub mod application {
+            pub mod control {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.application.v1.rs");
+                    include!("leaflow.fleet.controlplane.control.v1.rs");
                 }
             }
-            pub mod capture {
+            pub mod desktop {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.capture.v1.rs");
+                    include!("leaflow.fleet.controlplane.desktop.v1.rs");
                 }
             }
-            pub mod change {
+            pub mod directory {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.change.v1.rs");
-                }
-            }
-            pub mod cursor {
-                pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.cursor.v1.rs");
-                }
-            }
-            pub mod datatransfer {
-                pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.datatransfer.v1.rs");
-                }
-            }
-            pub mod display {
-                pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.display.v1.rs");
-                }
-            }
-            pub mod draw {
-                pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.draw.v1.rs");
+                    include!("leaflow.fleet.controlplane.directory.v1.rs");
                 }
             }
             pub mod host {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.host.v1.rs");
+                    include!("leaflow.fleet.controlplane.host.v1.rs");
                 }
             }
-            pub mod input {
+            pub mod machine {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.input.v1.rs");
+                    include!("leaflow.fleet.controlplane.machine.v1.rs");
                 }
             }
-            pub mod lease {
+            pub mod mcp {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.lease.v1.rs");
+                    include!("leaflow.fleet.controlplane.mcp.v1.rs");
                 }
             }
-            pub mod notification {
+            pub mod privilege {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.notification.v1.rs");
+                    include!("leaflow.fleet.controlplane.privilege.v1.rs");
                 }
             }
-            pub mod tray {
+            pub mod rpc {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.tray.v1.rs");
+                    include!("leaflow.fleet.controlplane.rpc.v1.rs");
                 }
             }
-            pub mod window {
+            pub mod tool {
                 pub mod v1 {
-                    include!("leaflow.fleet.virtualdesktop.window.v1.rs");
+                    include!("leaflow.fleet.controlplane.tool.v1.rs");
+                }
+            }
+        }
+        pub mod dataplane {
+            pub mod audio {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.audio.v1.rs");
+                }
+            }
+            pub mod camera {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.camera.v1.rs");
+                }
+            }
+            pub mod device {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.device.v1.rs");
+                }
+            }
+            pub mod exec {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.exec.v1.rs");
+                }
+            }
+            pub mod filetransfer {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.filetransfer.v1.rs");
+                }
+            }
+            pub mod gamepad {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.gamepad.v1.rs");
+                }
+            }
+            pub mod logs {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.logs.v1.rs");
+                }
+            }
+            pub mod portforward {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.portforward.v1.rs");
+                }
+            }
+            pub mod printing {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.printing.v1.rs");
+                }
+            }
+            pub mod session {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.session.v1.rs");
+                }
+            }
+            pub mod sshagent {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.sshagent.v1.rs");
+                }
+            }
+            pub mod terminal {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.terminal.v1.rs");
+                }
+            }
+            pub mod transport {
+                pub mod v1 {
+                    include!("leaflow.fleet.dataplane.transport.v1.rs");
+                }
+            }
+            pub mod virtualdesktop {
+                pub mod accessibility {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.accessibility.v1.rs");
+                    }
+                }
+                pub mod application {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.application.v1.rs");
+                    }
+                }
+                pub mod capture {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.capture.v1.rs");
+                    }
+                }
+                pub mod change {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.change.v1.rs");
+                    }
+                }
+                pub mod cursor {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.cursor.v1.rs");
+                    }
+                }
+                pub mod datatransfer {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.datatransfer.v1.rs");
+                    }
+                }
+                pub mod display {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.display.v1.rs");
+                    }
+                }
+                pub mod draw {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.draw.v1.rs");
+                    }
+                }
+                pub mod input {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.input.v1.rs");
+                    }
+                }
+                pub mod lease {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.lease.v1.rs");
+                    }
+                }
+                pub mod notification {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.notification.v1.rs");
+                    }
+                }
+                pub mod tray {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.tray.v1.rs");
+                    }
+                }
+                pub mod window {
+                    pub mod v1 {
+                        include!("leaflow.fleet.dataplane.virtualdesktop.window.v1.rs");
+                    }
                 }
             }
         }
