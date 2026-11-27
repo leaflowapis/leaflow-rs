@@ -140,13 +140,21 @@ impl ::prost::Name for ExecInputEnd {
         "type.googleapis.com/leaflow.fleet.exec.v1.ExecInputEnd".into()
     }
 }
-/// A background process handle. Both values are opaque to participants.
+/// A background process handle.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ExecStarted {
+    /// 16-byte UUID identifying the background execution. ExecService, REST APIs
+    /// and EventBus represent this same identifier in canonical lowercase UUID
+    /// string form.
     #[prost(bytes = "bytes", tag = "1")]
     pub execution_id: ::prost::bytes::Bytes,
+    /// Opaque token required for ExecAttach on the WebRTC background channel.
     #[prost(bytes = "bytes", tag = "2")]
     pub attach_token: ::prost::bytes::Bytes,
+    /// Absolute path on the machine where the session persists combined output
+    /// for this background execution, when file persistence is enabled.
+    #[prost(string, tag = "3")]
+    pub output_path: ::prost::alloc::string::String,
 }
 impl ::prost::Name for ExecStarted {
     const NAME: &'static str = "ExecStarted";
@@ -284,6 +292,348 @@ impl ::prost::Name for ExecPolicy {
         "type.googleapis.com/leaflow.fleet.exec.v1.ExecPolicy".into()
     }
 }
+/// Metadata and current status of a background execution.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecutionInfo {
+    /// Canonical lowercase UUID matching ExecStarted.execution_id.
+    #[prost(string, tag = "1")]
+    pub execution_id: ::prost::alloc::string::String,
+    /// Full argument vector passed to ExecStart.
+    #[prost(string, repeated, tag = "2")]
+    pub argv: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Resolved working directory where the process was started.
+    #[prost(string, tag = "3")]
+    pub working_directory: ::prost::alloc::string::String,
+    /// Platform user UUID owning the session.
+    #[prost(string, tag = "4")]
+    pub user_id: ::prost::alloc::string::String,
+    /// Effective OS username running the process on the machine.
+    #[prost(string, tag = "5")]
+    pub username: ::prost::alloc::string::String,
+    #[prost(enumeration = "ExecutionState", tag = "6")]
+    pub state: i32,
+    #[prost(message, optional, tag = "7")]
+    pub started_at: ::core::option::Option<::prost_types::Timestamp>,
+    /// Set when state is EXECUTION_STATE_EXITED.
+    #[prost(message, optional, tag = "8")]
+    pub finished_at: ::core::option::Option<::prost_types::Timestamp>,
+    /// Elapsed wall time since started_at (while running) or total runtime (once exited).
+    #[prost(message, optional, tag = "9")]
+    pub duration: ::core::option::Option<::prost_types::Duration>,
+    /// Terminal exit status or signal. Set when state is EXECUTION_STATE_EXITED.
+    #[prost(message, optional, tag = "10")]
+    pub exit: ::core::option::Option<ExecExit>,
+    /// Absolute path on the machine where combined output is persisted so callers
+    /// and AI tools can search or inspect it locally.
+    #[prost(string, tag = "11")]
+    pub output_path: ::prost::alloc::string::String,
+    /// Total bytes written to the combined output file so far.
+    #[prost(uint64, tag = "12")]
+    pub output_bytes: u64,
+    /// Total lines written to the combined output file so far.
+    #[prost(uint64, tag = "13")]
+    pub output_lines: u64,
+    /// Output was capped at the policy limit and further bytes were discarded.
+    #[prost(bool, tag = "14")]
+    pub output_truncated: bool,
+}
+impl ::prost::Name for ExecutionInfo {
+    const NAME: &'static str = "ExecutionInfo";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ExecutionInfo".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ExecutionInfo".into()
+    }
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ListExecutionsRequest {
+    /// Optional filter. Unspecified returns both running and retained exited
+    /// executions.
+    #[prost(enumeration = "ExecutionState", tag = "1")]
+    pub state: i32,
+    /// Required when Fleet forwards over the session control connection;
+    /// Authorization.control_only must be true.
+    #[prost(message, optional, tag = "2")]
+    pub authorization: ::core::option::Option<
+        super::super::control::v1::SignedAuthorization,
+    >,
+}
+impl ::prost::Name for ListExecutionsRequest {
+    const NAME: &'static str = "ListExecutionsRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ListExecutionsRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ListExecutionsRequest".into()
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListExecutionsResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub executions: ::prost::alloc::vec::Vec<ExecutionInfo>,
+}
+impl ::prost::Name for ListExecutionsResponse {
+    const NAME: &'static str = "ListExecutionsResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ListExecutionsResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ListExecutionsResponse".into()
+    }
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct GetExecutionRequest {
+    #[prost(string, tag = "1")]
+    pub execution_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub authorization: ::core::option::Option<
+        super::super::control::v1::SignedAuthorization,
+    >,
+}
+impl ::prost::Name for GetExecutionRequest {
+    const NAME: &'static str = "GetExecutionRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.GetExecutionRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.GetExecutionRequest".into()
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetExecutionResponse {
+    #[prost(message, optional, tag = "1")]
+    pub execution: ::core::option::Option<ExecutionInfo>,
+}
+impl ::prost::Name for GetExecutionResponse {
+    const NAME: &'static str = "GetExecutionResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.GetExecutionResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.GetExecutionResponse".into()
+    }
+}
+/// Line-based slice of an output file.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct LineRange {
+    /// 1-based starting line number.
+    #[prost(uint64, tag = "1")]
+    pub start_line: u64,
+    /// Maximum lines to return.
+    #[prost(uint32, tag = "2")]
+    pub max_lines: u32,
+}
+impl ::prost::Name for LineRange {
+    const NAME: &'static str = "LineRange";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.LineRange".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.LineRange".into()
+    }
+}
+/// Byte-based slice of an output file.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ByteRange {
+    /// 0-based byte offset.
+    #[prost(uint64, tag = "1")]
+    pub offset: u64,
+    /// Maximum bytes to return.
+    #[prost(uint32, tag = "2")]
+    pub max_bytes: u32,
+}
+impl ::prost::Name for ByteRange {
+    const NAME: &'static str = "ByteRange";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ByteRange".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ByteRange".into()
+    }
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ReadExecutionOutputRequest {
+    #[prost(string, tag = "1")]
+    pub execution_id: ::prost::alloc::string::String,
+    /// Output stream to read. Unspecified defaults to OUTPUT_STREAM_COMBINED.
+    #[prost(enumeration = "OutputStream", tag = "2")]
+    pub stream: i32,
+    #[prost(message, optional, tag = "6")]
+    pub authorization: ::core::option::Option<
+        super::super::control::v1::SignedAuthorization,
+    >,
+    /// Slice of the output file to read. Unset defaults to the last 200 lines.
+    #[prost(oneof = "read_execution_output_request::Range", tags = "3, 4, 5")]
+    pub range: ::core::option::Option<read_execution_output_request::Range>,
+}
+/// Nested message and enum types in `ReadExecutionOutputRequest`.
+pub mod read_execution_output_request {
+    /// Slice of the output file to read. Unset defaults to the last 200 lines.
+    #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Range {
+        /// Return at most the last N lines.
+        #[prost(uint32, tag = "3")]
+        TailLines(u32),
+        /// Return lines starting at a 1-based line number.
+        #[prost(message, tag = "4")]
+        LineRange(super::LineRange),
+        /// Return bytes starting at a 0-based byte offset.
+        #[prost(message, tag = "5")]
+        ByteRange(super::ByteRange),
+    }
+}
+impl ::prost::Name for ReadExecutionOutputRequest {
+    const NAME: &'static str = "ReadExecutionOutputRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ReadExecutionOutputRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ReadExecutionOutputRequest".into()
+    }
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ReadExecutionOutputResponse {
+    /// Output bytes in the requested slice, capped by the transfer budget (at most
+    /// 256 KiB per response).
+    #[prost(bytes = "bytes", tag = "1")]
+    pub data: ::prost::bytes::Bytes,
+    /// 1-based first line returned (0 when data is empty).
+    #[prost(uint64, tag = "2")]
+    pub start_line: u64,
+    /// 1-based last line returned (0 when data is empty).
+    #[prost(uint64, tag = "3")]
+    pub end_line: u64,
+    /// Total lines currently in the requested stream.
+    #[prost(uint64, tag = "4")]
+    pub total_lines: u64,
+    /// 0-based byte offset where data starts.
+    #[prost(uint64, tag = "5")]
+    pub start_offset: u64,
+    /// 0-based byte offset immediately after data, usable as the next offset.
+    #[prost(uint64, tag = "6")]
+    pub next_offset: u64,
+    /// Total bytes currently in the requested stream.
+    #[prost(uint64, tag = "7")]
+    pub total_bytes: u64,
+    /// More output exists beyond the returned slice.
+    #[prost(bool, tag = "8")]
+    pub has_more: bool,
+    /// The underlying output file was truncated at the policy limit.
+    #[prost(bool, tag = "9")]
+    pub output_truncated: bool,
+    /// Absolute path on the machine for the persisted output file.
+    #[prost(string, tag = "10")]
+    pub output_path: ::prost::alloc::string::String,
+}
+impl ::prost::Name for ReadExecutionOutputResponse {
+    const NAME: &'static str = "ReadExecutionOutputResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ReadExecutionOutputResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ReadExecutionOutputResponse".into()
+    }
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct StopExecutionRequest {
+    #[prost(string, tag = "1")]
+    pub execution_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub authorization: ::core::option::Option<
+        super::super::control::v1::SignedAuthorization,
+    >,
+}
+impl ::prost::Name for StopExecutionRequest {
+    const NAME: &'static str = "StopExecutionRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.StopExecutionRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.StopExecutionRequest".into()
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StopExecutionResponse {
+    #[prost(message, optional, tag = "1")]
+    pub execution: ::core::option::Option<ExecutionInfo>,
+}
+impl ::prost::Name for StopExecutionResponse {
+    const NAME: &'static str = "StopExecutionResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.StopExecutionResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.StopExecutionResponse".into()
+    }
+}
+/// A lifecycle event for one background execution.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecutionEvent {
+    /// Must match the session_id of the reporting session process connection.
+    #[prost(string, tag = "1")]
+    pub session_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub execution_id: ::prost::alloc::string::String,
+    #[prost(enumeration = "ExecutionEventKind", tag = "3")]
+    pub kind: i32,
+    /// Strictly increasing per execution_id (starting at 1) to order events and
+    /// deduplicate retries.
+    #[prost(uint64, tag = "4")]
+    pub sequence: u64,
+    #[prost(message, optional, tag = "5")]
+    pub observed_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "6")]
+    pub execution: ::core::option::Option<ExecutionInfo>,
+}
+impl ::prost::Name for ExecutionEvent {
+    const NAME: &'static str = "ExecutionEvent";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ExecutionEvent".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ExecutionEvent".into()
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportExecutionEventRequest {
+    #[prost(message, optional, tag = "1")]
+    pub event: ::core::option::Option<ExecutionEvent>,
+}
+impl ::prost::Name for ReportExecutionEventRequest {
+    const NAME: &'static str = "ReportExecutionEventRequest";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ReportExecutionEventRequest".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ReportExecutionEventRequest".into()
+    }
+}
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ReportExecutionEventResponse {}
+impl ::prost::Name for ReportExecutionEventResponse {
+    const NAME: &'static str = "ReportExecutionEventResponse";
+    const PACKAGE: &'static str = "leaflow.fleet.exec.v1";
+    fn full_name() -> ::prost::alloc::string::String {
+        "leaflow.fleet.exec.v1.ReportExecutionEventResponse".into()
+    }
+    fn type_url() -> ::prost::alloc::string::String {
+        "type.googleapis.com/leaflow.fleet.exec.v1.ReportExecutionEventResponse".into()
+    }
+}
 /// An output stream of a program.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -293,6 +643,8 @@ pub enum OutputStream {
     Stdout = 1,
     /// Standard error (SSH_EXTENDED_DATA_STDERR).
     Stderr = 2,
+    /// Merged standard output and standard error in write order.
+    Combined = 3,
 }
 impl OutputStream {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -304,6 +656,7 @@ impl OutputStream {
             Self::Unspecified => "OUTPUT_STREAM_UNSPECIFIED",
             Self::Stdout => "OUTPUT_STREAM_STDOUT",
             Self::Stderr => "OUTPUT_STREAM_STDERR",
+            Self::Combined => "OUTPUT_STREAM_COMBINED",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -312,7 +665,84 @@ impl OutputStream {
             "OUTPUT_STREAM_UNSPECIFIED" => Some(Self::Unspecified),
             "OUTPUT_STREAM_STDOUT" => Some(Self::Stdout),
             "OUTPUT_STREAM_STDERR" => Some(Self::Stderr),
+            "OUTPUT_STREAM_COMBINED" => Some(Self::Combined),
             _ => None,
         }
     }
+}
+/// Lifecycle state of a background execution.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ExecutionState {
+    Unspecified = 0,
+    /// Process is still running.
+    Running = 1,
+    /// Process has exited or was terminated; metadata and output remain readable
+    /// until the session ends or the retention limit is reached.
+    Exited = 2,
+}
+impl ExecutionState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "EXECUTION_STATE_UNSPECIFIED",
+            Self::Running => "EXECUTION_STATE_RUNNING",
+            Self::Exited => "EXECUTION_STATE_EXITED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "EXECUTION_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "EXECUTION_STATE_RUNNING" => Some(Self::Running),
+            "EXECUTION_STATE_EXITED" => Some(Self::Exited),
+            _ => None,
+        }
+    }
+}
+/// Kind of lifecycle event reported by a session process.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ExecutionEventKind {
+    Unspecified = 0,
+    /// Periodic heartbeat while the execution continues to run (every 30 minutes).
+    Running = 1,
+    /// Terminal notification once the execution exits or is terminated.
+    Exited = 2,
+}
+impl ExecutionEventKind {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "EXECUTION_EVENT_KIND_UNSPECIFIED",
+            Self::Running => "EXECUTION_EVENT_KIND_RUNNING",
+            Self::Exited => "EXECUTION_EVENT_KIND_EXITED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "EXECUTION_EVENT_KIND_UNSPECIFIED" => Some(Self::Unspecified),
+            "EXECUTION_EVENT_KIND_RUNNING" => Some(Self::Running),
+            "EXECUTION_EVENT_KIND_EXITED" => Some(Self::Exited),
+            _ => None,
+        }
+    }
+}
+pub mod exec_service {
+    pub const NAME: &str = "leaflow.fleet.exec.v1.ExecService";
+    pub const LIST_EXECUTIONS: &str = "/leaflow.fleet.exec.v1.ExecService/ListExecutions";
+    pub const GET_EXECUTION: &str = "/leaflow.fleet.exec.v1.ExecService/GetExecution";
+    pub const READ_EXECUTION_OUTPUT: &str = "/leaflow.fleet.exec.v1.ExecService/ReadExecutionOutput";
+    pub const STOP_EXECUTION: &str = "/leaflow.fleet.exec.v1.ExecService/StopExecution";
+}
+pub mod exec_event_service {
+    pub const NAME: &str = "leaflow.fleet.exec.v1.ExecEventService";
+    pub const REPORT_EXECUTION_EVENT: &str = "/leaflow.fleet.exec.v1.ExecEventService/ReportExecutionEvent";
 }

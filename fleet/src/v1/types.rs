@@ -1112,6 +1112,133 @@ pub struct FindEnrollmentResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enrollment: Option<EnrollmentResource>,
 }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExecutionOutput {
+    ///Output bytes in standard Base64 (RFC 4648)
+    #[serde(with = "base64_serde")]
+    pub data: Vec<u8>,
+    ///Constraint: minimum=0
+    pub end_line: i64,
+    pub execution_id: String,
+    pub has_more: bool,
+    pub machine_id: uuid::Uuid,
+    ///Constraint: minimum=0
+    pub next_offset: i64,
+    pub output_path: String,
+    pub output_truncated: bool,
+    pub session_id: String,
+    ///Constraint: minimum=0
+    pub start_line: i64,
+    ///Constraint: minimum=0
+    pub start_offset: i64,
+    pub stream: ExecutionStream,
+    ///Constraint: minimum=0
+    pub total_bytes: i64,
+    ///Constraint: minimum=0
+    pub total_lines: i64,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ExecutionStream {
+    #[default]
+    #[serde(rename = "combined")]
+    Combined,
+    #[serde(rename = "stdout")]
+    Stdout,
+    #[serde(rename = "stderr")]
+    Stderr,
+}
+impl ExecutionStream {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Combined => "combined",
+            Self::Stdout => "stdout",
+            Self::Stderr => "stderr",
+        }
+    }
+}
+impl ::std::fmt::Display for ExecutionStream {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ExecutionStream {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExecutionList {
+    pub items: Vec<ExecutionResource>,
+    ///Open sessions that could not be queried during a machine-wide fan-out
+    pub unavailable_sessions: Vec<UnavailableExecutionSession>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UnavailableExecutionSession {
+    pub reason: String,
+    pub session_id: String,
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExecutionResource {
+    ///Full argument vector of the background command
+    pub argv: Vec<String>,
+    ///Elapsed runtime in seconds (while running) or total runtime in seconds (once exited)
+    ///Constraint: minimum=0
+    pub duration_seconds: f64,
+    pub execution_id: String,
+    pub exit: Option<ExecutionExit>,
+    pub finished_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub machine_id: uuid::Uuid,
+    ///Constraint: minimum=0
+    pub output_bytes: i64,
+    ///Constraint: minimum=0
+    pub output_lines: i64,
+    ///Absolute path on the machine where the combined output file is persisted
+    pub output_path: String,
+    pub output_truncated: bool,
+    pub session_id: String,
+    pub started_at: chrono::DateTime<chrono::Utc>,
+    pub state: ExecutionState,
+    pub user_id: uuid::Uuid,
+    pub username: String,
+    pub working_directory: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum ExecutionState {
+    #[default]
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "exited")]
+    Exited,
+}
+impl ExecutionState {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Running => "running",
+            Self::Exited => "exited",
+        }
+    }
+}
+impl ::std::fmt::Display for ExecutionState {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for ExecutionState {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExecutionExit {
+    pub core_dumped: bool,
+    ///Exit status (0–255) when the process exited normally; null otherwise
+    ///Constraint: minimum=0, maximum=255
+    pub exit_code: Option<i32>,
+    ///Machine-readable termination reason (`exited`, `signaled`, `stopped`, `timed_out`, `output_limit`, `start_failed`, or `failed`)
+    pub reason: String,
+    ///Signal name without "SIG" (for example `KILL`) when terminated by a signal; null otherwise
+    pub signal_name: Option<String>,
+}
 /**A failed request. The envelope follows the Google REST error format: `code` is the HTTP
 status, `status` is its canonical name, and `reason` is the stable machine-readable code
 that identifies the failure.*/

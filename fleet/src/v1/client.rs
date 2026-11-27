@@ -507,6 +507,11 @@ pub enum GetPrivilegeRequestApiError {
 pub enum GetSessionApiError {
     Default(Error),
 }
+///Typed error responses for `get-session-execution`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum GetSessionExecutionApiError {
+    Default(Error),
+}
 ///Typed error responses for `get-session-rtc-configuration`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetSessionRtcConfigurationApiError {
@@ -530,6 +535,11 @@ pub enum ListGroupsApiError {
 ///Typed error responses for `list-machine-events`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListMachineEventsApiError {
+    Default(Error),
+}
+///Typed error responses for `list-machine-executions`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListMachineExecutionsApiError {
     Default(Error),
 }
 ///Typed error responses for `list-machine-local-accounts`. One variant per declared non-2xx response.
@@ -557,6 +567,11 @@ pub enum ListPrivilegeAutoApprovalsApiError {
 pub enum ListPrivilegeRequestsApiError {
     Default(Error),
 }
+///Typed error responses for `list-session-executions`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ListSessionExecutionsApiError {
+    Default(Error),
+}
 ///Typed error responses for `list-session-participants`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum ListSessionParticipantsApiError {
@@ -582,6 +597,11 @@ pub enum PollToolActivitiesApiError {
 pub enum PrepareParticipantMigrationApiError {
     Default(Error),
 }
+///Typed error responses for `read-session-execution-output`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum ReadSessionExecutionOutputApiError {
+    Default(Error),
+}
 ///Typed error responses for `renew-participant`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum RenewParticipantApiError {
@@ -600,6 +620,11 @@ pub enum RunMachineCommandApiError {
 ///Typed error responses for `send-mcp-request`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum SendMcpRequestApiError {
+    Default(Error),
+}
+///Typed error responses for `stop-session-execution`. One variant per declared non-2xx response.
+#[derive(Debug, Clone)]
+pub enum StopSessionExecutionApiError {
     Default(Error),
 }
 ///Typed error responses for `terminate-session`. One variant per declared non-2xx response.
@@ -3882,6 +3907,92 @@ impl HttpClient {
             }))
         }
     }
+    /// Get a background execution
+    ///
+    /// Queries the session process live for the current metadata and status of one background execution.
+    ///
+    /// `GET /api/v1/sessions/{sessionId}/executions/{executionId}`
+    pub async fn get_session_execution(
+        &self,
+        session_id: impl AsRef<str>,
+        execution_id: impl AsRef<str>,
+    ) -> Result<ExecutionResource, ApiOpError<GetSessionExecutionApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/sessions/{}/executions/{}",
+                __pct_encode_path_segment(session_id.as_ref()),
+                __pct_encode_path_segment(execution_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<GetSessionExecutionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(GetSessionExecutionApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Get the ICE servers for a session
     ///
     /// Returns the STUN and TURN servers for the PeerConnections the caller starts to the session,
@@ -4346,6 +4457,104 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListMachineEventsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List background executions on a machine
+    ///
+    /// Queries all open sessions belonging to the caller on the machine in parallel and merges
+    /// their live background executions, newest first. Does not store process state in Fleet;
+    /// sessions that are temporarily unreachable or run an older Agent are reported in
+    /// `unavailable_sessions` rather than failing the whole response. Requires
+    /// `fleet:machines.login` on the machine.
+    ///
+    /// `GET /api/v1/machines/{machineId}/executions`
+    pub async fn list_machine_executions(
+        &self,
+        machine_id: impl AsRef<str>,
+        state: Option<ExecutionState>,
+    ) -> Result<ExecutionList, ApiOpError<ListMachineExecutionsApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/machines/{}/executions",
+                __pct_encode_path_segment(machine_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = state {
+                query_params.push(("state".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListMachineExecutionsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListMachineExecutionsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -4830,6 +5039,101 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(ListPrivilegeRequestsApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// List background executions in a session
+    ///
+    /// Queries the session process live for its background executions, newest first. Returns an
+    /// empty list when the session is already closed (for example after the machine rebooted).
+    ///
+    /// `GET /api/v1/sessions/{sessionId}/executions`
+    pub async fn list_session_executions(
+        &self,
+        session_id: impl AsRef<str>,
+        state: Option<ExecutionState>,
+    ) -> Result<ExecutionList, ApiOpError<ListSessionExecutionsApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/sessions/{}/executions",
+                __pct_encode_path_segment(session_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = state {
+                query_params.push(("state".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ListSessionExecutionsApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ListSessionExecutionsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5353,6 +5657,125 @@ impl HttpClient {
             }))
         }
     }
+    /// Read output of a background execution
+    ///
+    /// Reads a bounded slice of a background execution's persisted output file from the session
+    /// process. Choose at most one addressing mode: `tail_lines`, `start_line` (with optional
+    /// `max_lines`), or `offset` (with optional `max_bytes`). When none is specified, returns the
+    /// last 200 lines of the combined output stream.
+    ///
+    /// `GET /api/v1/sessions/{sessionId}/executions/{executionId}/output`
+    pub async fn read_session_execution_output(
+        &self,
+        session_id: impl AsRef<str>,
+        execution_id: impl AsRef<str>,
+        stream: Option<ExecutionStream>,
+        tail_lines: Option<i32>,
+        start_line: Option<i64>,
+        max_lines: Option<i32>,
+        offset: Option<i64>,
+        max_bytes: Option<i32>,
+    ) -> Result<ExecutionOutput, ApiOpError<ReadSessionExecutionOutputApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/sessions/{}/executions/{}/output",
+                __pct_encode_path_segment(session_id.as_ref()),
+                __pct_encode_path_segment(execution_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.get(request_url);
+        {
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = stream {
+                query_params.push(("stream".to_string(), v.to_string()));
+            }
+            if let Some(v) = tail_lines {
+                query_params.push(("tail_lines".to_string(), v.to_string()));
+            }
+            if let Some(v) = start_line {
+                query_params.push(("start_line".to_string(), v.to_string()));
+            }
+            if let Some(v) = max_lines {
+                query_params.push(("max_lines".to_string(), v.to_string()));
+            }
+            if let Some(v) = offset {
+                query_params.push(("offset".to_string(), v.to_string()));
+            }
+            if let Some(v) = max_bytes {
+                query_params.push(("max_bytes".to_string(), v.to_string()));
+            }
+            if !query_params.is_empty() {
+                req = req.query(&query_params);
+            }
+        }
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<ReadSessionExecutionOutputApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(ReadSessionExecutionOutputApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
     /// Renew a participant
     ///
     /// Extends the participant's lease and returns renewed PeerAuthorizations for the
@@ -5778,6 +6201,93 @@ impl HttpClient {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
                         typed = Some(SendMcpRequestApiError::Default(v));
+                        parse_error = None;
+                    }
+                    Err(e) => {
+                        typed = None;
+                        parse_error = Some(e.to_string());
+                    }
+                },
+            }
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed,
+                parse_error,
+            }))
+        }
+    }
+    /// Stop a background execution
+    ///
+    /// Stops a running background execution in the session. Stopping an already exited execution succeeds and returns its final metadata.
+    ///
+    /// `POST /api/v1/sessions/{sessionId}/executions/{executionId}:stop`
+    pub async fn stop_session_execution(
+        &self,
+        session_id: impl AsRef<str>,
+        execution_id: impl AsRef<str>,
+    ) -> Result<ExecutionResource, ApiOpError<StopSessionExecutionApiError>> {
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/sessions/{}/executions/{}:stop",
+                __pct_encode_path_segment(session_id.as_ref()),
+                __pct_encode_path_segment(execution_id.as_ref())
+            )
+        );
+        let mut req = self.http_client.post(request_url);
+        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
+        if let Some(api_key) = &self.api_key {
+            req = req.bearer_auth(api_key);
+        }
+        for (name, value) in &self.custom_headers {
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
+        }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
+        let response = req.send().await?;
+        let status = response.status();
+        let status_code = status.as_u16();
+        let headers = response.headers().clone();
+        let body_bytes =
+            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
+        let raw_body = body_bytes;
+        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
+        } else if status.is_success() {
+            Err(ApiOpError::Api(ApiError {
+                status: status_code,
+                headers,
+                body: body_text,
+                raw_body,
+                typed: None,
+                parse_error: Some(format!(
+                    "unexpected successful status {}; generated return type selects `{}`",
+                    status_code, "200",
+                )),
+            }))
+        } else {
+            let typed: Option<StopSessionExecutionApiError>;
+            let parse_error: Option<String>;
+            match status_code {
+                _ => match serde_json::from_str::<Error>(&body_text) {
+                    Ok(v) => {
+                        typed = Some(StopSessionExecutionApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
