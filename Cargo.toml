@@ -17,10 +17,11 @@ members = [
     "support",
     "swas",
     "swas-legacy",
+    "vault",
 ]
 
 [workspace.package]
-version = "1.114.0"
+version = "1.115.0"
 edition = "2024"
 rust-version = "1.94"
 license = "MIT"
