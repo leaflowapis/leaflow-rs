@@ -38,6 +38,22 @@ pub struct UpdateLoginRequest {
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fields: Option<UpdateLoginRequestFields>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -81,6 +97,22 @@ pub struct UpdateKvSecretRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -112,6 +144,22 @@ pub struct UpdateApiKeyRequest {
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fields: Option<UpdateApiKeyRequestFields>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -160,6 +208,10 @@ pub struct TlsCertificateSecretResource {
     pub issuer: String,
     pub key_algorithm: String,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     pub not_after: chrono::DateTime<chrono::Utc>,
     pub not_before: chrono::DateTime<chrono::Utc>,
@@ -193,6 +245,10 @@ pub struct SshKeySecretResource {
     pub id: uuid::Uuid,
     pub key_type: String,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     pub public_key: String,
     pub revealable: bool,
@@ -223,6 +279,10 @@ pub struct SecureNoteSecretResource {
     pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
     pub id: uuid::Uuid,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     pub revealable: bool,
     pub slug: String,
@@ -252,6 +312,10 @@ pub struct SecretSummaryResource {
     pub has_totp: bool,
     pub id: uuid::Uuid,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     ///Certificate expiration timestamp for `tls_certificate` secrets; null for other types.
     pub not_after: Option<chrono::DateTime<chrono::Utc>>,
@@ -381,6 +445,10 @@ pub struct LoginSecretResource {
     pub has_totp: bool,
     pub id: uuid::Uuid,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     pub revealable: bool,
     pub slug: String,
@@ -411,6 +479,10 @@ pub struct KvSecretResource {
     pub field_keys: Vec<String>,
     pub id: uuid::Uuid,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     pub revealable: bool,
     pub slug: String,
@@ -495,6 +567,10 @@ pub struct DockerRegistrySecretResource {
     pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
     pub id: uuid::Uuid,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     pub revealable: bool,
     pub server: String,
@@ -519,6 +595,22 @@ pub struct CreateLoginRequest {
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fields: Option<CreateLoginRequestFields>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     ///Constraint: maxLength=16384
@@ -551,6 +643,8 @@ impl CreateLoginRequest {
             description: None,
             expires_at: None,
             fields: None,
+            managed_by: None,
+            managed_resource_id: None,
             password: None,
             revealable: None,
             slug: None,
@@ -610,6 +704,54 @@ impl CreateLoginRequestBuilder {
     #[must_use]
     pub fn fields(mut self, fields: CreateLoginRequestFields) -> Self {
         self.value.fields = Some(fields);
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_by(mut self, managed_by: String) -> Self {
+        self.value.managed_by = Some(Some(managed_by));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_by_null(mut self) -> Self {
+        self.value.managed_by = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "managed_by", "` request field.")]
+    #[must_use]
+    pub fn managed_by_absent(mut self) -> Self {
+        self.value.managed_by = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_resource_id(mut self, managed_resource_id: String) -> Self {
+        self.value.managed_resource_id = Some(Some(managed_resource_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_null(mut self) -> Self {
+        self.value.managed_resource_id = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "managed_resource_id", "` request field."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_absent(mut self) -> Self {
+        self.value.managed_resource_id = None;
         self
     }
     #[doc = concat!("Set the optional `", "password", "` request field.")]
@@ -678,6 +820,22 @@ pub struct CreateKvSecretRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -697,6 +855,8 @@ impl CreateKvSecretRequest {
             name,
             description: None,
             expires_at: None,
+            managed_by: None,
+            managed_resource_id: None,
             revealable: None,
             slug: None,
             tags: None,
@@ -748,6 +908,54 @@ impl CreateKvSecretRequestBuilder {
         self.value.expires_at = None;
         self
     }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_by(mut self, managed_by: String) -> Self {
+        self.value.managed_by = Some(Some(managed_by));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_by_null(mut self) -> Self {
+        self.value.managed_by = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "managed_by", "` request field.")]
+    #[must_use]
+    pub fn managed_by_absent(mut self) -> Self {
+        self.value.managed_by = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_resource_id(mut self, managed_resource_id: String) -> Self {
+        self.value.managed_resource_id = Some(Some(managed_resource_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_null(mut self) -> Self {
+        self.value.managed_resource_id = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "managed_resource_id", "` request field."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_absent(mut self) -> Self {
+        self.value.managed_resource_id = None;
+        self
+    }
     #[doc = concat!("Set the optional `", "revealable", "` request field.")]
     #[must_use]
     pub fn revealable(mut self, revealable: bool) -> Self {
@@ -791,6 +999,22 @@ pub struct CreateApiKeyRequest {
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fields: Option<CreateApiKeyRequestFields>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     ///Constraint: maxLength=128
@@ -816,6 +1040,8 @@ impl CreateApiKeyRequest {
             description: None,
             expires_at: None,
             fields: None,
+            managed_by: None,
+            managed_resource_id: None,
             provider: None,
             revealable: None,
             slug: None,
@@ -873,6 +1099,54 @@ impl CreateApiKeyRequestBuilder {
     #[must_use]
     pub fn fields(mut self, fields: CreateApiKeyRequestFields) -> Self {
         self.value.fields = Some(fields);
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_by(mut self, managed_by: String) -> Self {
+        self.value.managed_by = Some(Some(managed_by));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_by_null(mut self) -> Self {
+        self.value.managed_by = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "managed_by", "` request field.")]
+    #[must_use]
+    pub fn managed_by_absent(mut self) -> Self {
+        self.value.managed_by = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_resource_id(mut self, managed_resource_id: String) -> Self {
+        self.value.managed_resource_id = Some(Some(managed_resource_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_null(mut self) -> Self {
+        self.value.managed_resource_id = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "managed_resource_id", "` request field."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_absent(mut self) -> Self {
+        self.value.managed_resource_id = None;
         self
     }
     #[doc = concat!("Set the optional `", "provider", "` request field.")]
@@ -935,6 +1209,10 @@ pub struct BasicAuthSecretResource {
     pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
     pub id: uuid::Uuid,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     pub revealable: bool,
     pub slug: String,
@@ -964,6 +1242,10 @@ pub struct ApiKeySecretResource {
     pub field_keys: Vec<String>,
     pub id: uuid::Uuid,
     pub last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+    ///Optional owner or service identifier managing this secret; null when unmanaged.
+    pub managed_by: Option<String>,
+    ///Optional resource identifier within the managing service; null when unset.
+    pub managed_resource_id: Option<String>,
     pub name: String,
     pub provider: String,
     pub revealable: bool,
@@ -1012,6 +1294,22 @@ pub struct CreateBasicAuthRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     ///Constraint: minLength=1, maxLength=16384
@@ -1036,6 +1334,8 @@ impl CreateBasicAuthRequest {
             username,
             description: None,
             expires_at: None,
+            managed_by: None,
+            managed_resource_id: None,
             revealable: None,
             slug: None,
             tags: None,
@@ -1091,6 +1391,54 @@ impl CreateBasicAuthRequestBuilder {
         self.value.expires_at = None;
         self
     }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_by(mut self, managed_by: String) -> Self {
+        self.value.managed_by = Some(Some(managed_by));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_by_null(mut self) -> Self {
+        self.value.managed_by = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "managed_by", "` request field.")]
+    #[must_use]
+    pub fn managed_by_absent(mut self) -> Self {
+        self.value.managed_by = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_resource_id(mut self, managed_resource_id: String) -> Self {
+        self.value.managed_resource_id = Some(Some(managed_resource_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_null(mut self) -> Self {
+        self.value.managed_resource_id = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "managed_resource_id", "` request field."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_absent(mut self) -> Self {
+        self.value.managed_resource_id = None;
+        self
+    }
     #[doc = concat!("Set the optional `", "revealable", "` request field.")]
     #[must_use]
     pub fn revealable(mut self, revealable: bool) -> Self {
@@ -1128,6 +1476,22 @@ pub struct CreateDockerRegistryRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     ///Constraint: minLength=1, maxLength=16384
@@ -1156,6 +1520,8 @@ impl CreateDockerRegistryRequest {
             description: None,
             email: None,
             expires_at: None,
+            managed_by: None,
+            managed_resource_id: None,
             revealable: None,
             slug: None,
             tags: None,
@@ -1218,6 +1584,54 @@ impl CreateDockerRegistryRequestBuilder {
         self.value.expires_at = None;
         self
     }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_by(mut self, managed_by: String) -> Self {
+        self.value.managed_by = Some(Some(managed_by));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_by_null(mut self) -> Self {
+        self.value.managed_by = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "managed_by", "` request field.")]
+    #[must_use]
+    pub fn managed_by_absent(mut self) -> Self {
+        self.value.managed_by = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_resource_id(mut self, managed_resource_id: String) -> Self {
+        self.value.managed_resource_id = Some(Some(managed_resource_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_null(mut self) -> Self {
+        self.value.managed_resource_id = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "managed_resource_id", "` request field."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_absent(mut self) -> Self {
+        self.value.managed_resource_id = None;
+        self
+    }
     #[doc = concat!("Set the optional `", "revealable", "` request field.")]
     #[must_use]
     pub fn revealable(mut self, revealable: bool) -> Self {
@@ -1254,6 +1668,22 @@ pub struct CreateSecureNoteRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1273,6 +1703,8 @@ impl CreateSecureNoteRequest {
             name,
             description: None,
             expires_at: None,
+            managed_by: None,
+            managed_resource_id: None,
             revealable: None,
             slug: None,
             tags: None,
@@ -1324,6 +1756,54 @@ impl CreateSecureNoteRequestBuilder {
         self.value.expires_at = None;
         self
     }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_by(mut self, managed_by: String) -> Self {
+        self.value.managed_by = Some(Some(managed_by));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_by_null(mut self) -> Self {
+        self.value.managed_by = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "managed_by", "` request field.")]
+    #[must_use]
+    pub fn managed_by_absent(mut self) -> Self {
+        self.value.managed_by = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_resource_id(mut self, managed_resource_id: String) -> Self {
+        self.value.managed_resource_id = Some(Some(managed_resource_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_null(mut self) -> Self {
+        self.value.managed_resource_id = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "managed_resource_id", "` request field."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_absent(mut self) -> Self {
+        self.value.managed_resource_id = None;
+        self
+    }
     #[doc = concat!("Set the optional `", "revealable", "` request field.")]
     #[must_use]
     pub fn revealable(mut self, revealable: bool) -> Self {
@@ -1358,6 +1838,22 @@ pub struct CreateSshKeyRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     ///Constraint: maxLength=4096
@@ -1383,6 +1879,8 @@ impl CreateSshKeyRequest {
             private_key,
             description: None,
             expires_at: None,
+            managed_by: None,
+            managed_resource_id: None,
             passphrase: None,
             revealable: None,
             slug: None,
@@ -1435,6 +1933,54 @@ impl CreateSshKeyRequestBuilder {
         self.value.expires_at = None;
         self
     }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_by(mut self, managed_by: String) -> Self {
+        self.value.managed_by = Some(Some(managed_by));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_by_null(mut self) -> Self {
+        self.value.managed_by = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "managed_by", "` request field.")]
+    #[must_use]
+    pub fn managed_by_absent(mut self) -> Self {
+        self.value.managed_by = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_resource_id(mut self, managed_resource_id: String) -> Self {
+        self.value.managed_resource_id = Some(Some(managed_resource_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_null(mut self) -> Self {
+        self.value.managed_resource_id = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "managed_resource_id", "` request field."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_absent(mut self) -> Self {
+        self.value.managed_resource_id = None;
+        self
+    }
     #[doc = concat!("Set the optional `", "passphrase", "` request field.")]
     #[must_use]
     pub fn passphrase(mut self, passphrase: String) -> Self {
@@ -1481,6 +2027,22 @@ pub struct CreateTlsCertificateRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     ///PEM-encoded private key matching the leaf certificate.
@@ -1505,6 +2067,8 @@ impl CreateTlsCertificateRequest {
             ca_certificate: None,
             description: None,
             expires_at: None,
+            managed_by: None,
+            managed_resource_id: None,
             revealable: None,
             slug: None,
             tags: None,
@@ -1564,6 +2128,54 @@ impl CreateTlsCertificateRequestBuilder {
     #[must_use]
     pub fn expires_at_absent(mut self) -> Self {
         self.value.expires_at = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_by(mut self, managed_by: String) -> Self {
+        self.value.managed_by = Some(Some(managed_by));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_by", "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_by_null(mut self) -> Self {
+        self.value.managed_by = Some(None);
+        self
+    }
+    #[doc = concat!("Omit the optional nullable `", "managed_by", "` request field.")]
+    #[must_use]
+    pub fn managed_by_absent(mut self) -> Self {
+        self.value.managed_by = None;
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to a value."
+    )]
+    #[must_use]
+    pub fn managed_resource_id(mut self, managed_resource_id: String) -> Self {
+        self.value.managed_resource_id = Some(Some(managed_resource_id));
+        self
+    }
+    #[doc = concat!(
+        "Set the optional nullable `", "managed_resource_id",
+        "` request field to JSON null."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_null(mut self) -> Self {
+        self.value.managed_resource_id = Some(None);
+        self
+    }
+    #[doc = concat!(
+        "Omit the optional nullable `", "managed_resource_id", "` request field."
+    )]
+    #[must_use]
+    pub fn managed_resource_id_absent(mut self) -> Self {
+        self.value.managed_resource_id = None;
         self
     }
     #[doc = concat!("Set the optional `", "revealable", "` request field.")]
@@ -1659,6 +2271,22 @@ pub struct UpdateBasicAuthRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1690,6 +2318,22 @@ pub struct UpdateDockerRegistryRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1724,6 +2368,22 @@ pub struct UpdateSecureNoteRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1746,6 +2406,22 @@ pub struct UpdateSshKeyRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1780,6 +2456,22 @@ pub struct UpdateTlsCertificateRequest {
         deserialize_with = "tri_state_serde::deserialize"
     )]
     pub expires_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+    ///Optional controller or service identifier managing this secret (for example, `terraform`). The `leaflow.` prefix is reserved for platform-managed secrets.
+    ///Constraint: maxLength=64
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_by: Option<Option<String>>,
+    ///Optional resource identifier within the managing service. Requires `managed_by` to be set.
+    ///Constraint: maxLength=128
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        deserialize_with = "tri_state_serde::deserialize"
+    )]
+    pub managed_resource_id: Option<Option<String>>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

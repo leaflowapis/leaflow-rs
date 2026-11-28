@@ -2577,6 +2577,8 @@ impl HttpClient {
         &self,
         q: Option<impl AsRef<str>>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
     ) -> Result<ApiKeySecretListResponse, ApiOpError<ListApiKeysApiError>> {
@@ -2589,6 +2591,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = page {
                 query_params.push(("page".to_string(), v.to_string()));
@@ -2673,6 +2681,8 @@ impl HttpClient {
         &self,
         q: Option<impl AsRef<str>>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
     ) -> Result<BasicAuthSecretListResponse, ApiOpError<ListBasicAuthsApiError>> {
@@ -2685,6 +2695,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = page {
                 query_params.push(("page".to_string(), v.to_string()));
@@ -2769,6 +2785,8 @@ impl HttpClient {
         &self,
         q: Option<impl AsRef<str>>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
     ) -> Result<DockerRegistrySecretListResponse, ApiOpError<ListDockerRegistriesApiError>> {
@@ -2781,6 +2799,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = page {
                 query_params.push(("page".to_string(), v.to_string()));
@@ -2865,6 +2889,8 @@ impl HttpClient {
         &self,
         q: Option<impl AsRef<str>>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
     ) -> Result<KvSecretListResponse, ApiOpError<ListKvSecretsApiError>> {
@@ -2877,6 +2903,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = page {
                 query_params.push(("page".to_string(), v.to_string()));
@@ -2961,6 +2993,8 @@ impl HttpClient {
         &self,
         q: Option<impl AsRef<str>>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
     ) -> Result<LoginSecretListResponse, ApiOpError<ListLoginsApiError>> {
@@ -2973,6 +3007,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = page {
                 query_params.push(("page".to_string(), v.to_string()));
@@ -3058,6 +3098,8 @@ impl HttpClient {
         q: Option<impl AsRef<str>>,
         r#type: Option<SecretType>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
     ) -> Result<SecretSummaryListResponse, ApiOpError<ListSecretsApiError>> {
@@ -3073,6 +3115,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = page {
                 query_params.push(("page".to_string(), v.to_string()));
@@ -3157,6 +3205,8 @@ impl HttpClient {
         &self,
         q: Option<impl AsRef<str>>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
     ) -> Result<SecureNoteSecretListResponse, ApiOpError<ListSecureNotesApiError>> {
@@ -3169,6 +3219,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = page {
                 query_params.push(("page".to_string(), v.to_string()));
@@ -3253,6 +3309,8 @@ impl HttpClient {
         &self,
         q: Option<impl AsRef<str>>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
     ) -> Result<SshKeySecretListResponse, ApiOpError<ListSshKeysApiError>> {
@@ -3265,6 +3323,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = page {
                 query_params.push(("page".to_string(), v.to_string()));
@@ -3349,6 +3413,8 @@ impl HttpClient {
         &self,
         q: Option<impl AsRef<str>>,
         tag: Option<impl AsRef<str>>,
+        managed: Option<bool>,
+        managed_by: Option<impl AsRef<str>>,
         expiring_before: Option<impl AsRef<str>>,
         page: Option<i64>,
         page_size: Option<i64>,
@@ -3362,6 +3428,12 @@ impl HttpClient {
             }
             if let Some(v) = tag {
                 query_params.push(("tag".to_string(), v.as_ref().to_string()));
+            }
+            if let Some(v) = managed {
+                query_params.push(("managed".to_string(), v.to_string()));
+            }
+            if let Some(v) = managed_by {
+                query_params.push(("managed_by".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = expiring_before {
                 query_params.push(("expiring_before".to_string(), v.as_ref().to_string()));
