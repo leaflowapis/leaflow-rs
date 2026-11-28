@@ -225,8 +225,6 @@ pub struct ServiceAccountResource {
     pub created_by: Option<String>,
     pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
     pub description: String,
-    ///Optional email address; empty when not configured
-    pub email: String,
     ///Platform user id of this service account
     pub id: uuid::Uuid,
     pub name: String,
@@ -618,7 +616,6 @@ impl AsRef<str> for ServiceAccountKeyResourceOrigin {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ServiceAccountCredentialsResource {
     pub algorithm: String,
-    pub email: String,
     pub key_id: uuid::Uuid,
     pub name: String,
     ///PKCS#8 PEM Ed25519 private key, returned once and never stored
@@ -1098,10 +1095,6 @@ pub struct CreateServiceAccountRequestBody {
     ///Constraint: maxLength=500
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    ///Optional email address; omit or leave empty unless using an allowed domain
-    ///Constraint: maxLength=320
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
     ///Constraint: minLength=1, maxLength=128
     pub name: String,
     ///Optional initial role codes to assign at creation; `OWNER` is not accepted
@@ -1114,7 +1107,6 @@ impl CreateServiceAccountRequestBody {
         Self {
             name,
             description: None,
-            email: None,
             roles: None,
         }
     }
@@ -1140,12 +1132,6 @@ impl CreateServiceAccountRequestBodyBuilder {
     #[must_use]
     pub fn description(mut self, description: String) -> Self {
         self.value.description = Some(description);
-        self
-    }
-    #[doc = concat!("Set the optional `", "email", "` request field.")]
-    #[must_use]
-    pub fn email(mut self, email: String) -> Self {
-        self.value.email = Some(email);
         self
     }
     #[doc = concat!("Set the optional `", "roles", "` request field.")]
@@ -1302,10 +1288,6 @@ pub struct UpdateServiceAccountRequestBody {
     ///Constraint: maxLength=500
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    ///Optional email address; pass an empty string to clear it
-    ///Constraint: maxLength=320
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
     ///Constraint: minLength=1, maxLength=128
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
