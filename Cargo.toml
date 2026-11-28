@@ -10,6 +10,7 @@ members = [
     "eventbus",
     "fleet",
     "iam",
+    "mail",
     "membership",
     "monitoring",
     "notification",
@@ -21,7 +22,7 @@ members = [
 ]
 
 [workspace.package]
-version = "1.116.0"
+version = "1.117.0"
 edition = "2024"
 rust-version = "1.94"
 license = "MIT"
