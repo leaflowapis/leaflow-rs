@@ -298,21 +298,6 @@ fn __pct_encode_path_segment(s: &str) -> String {
     }
     out
 }
-///Typed error responses for `activate-account-mailbox`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ActivateAccountMailboxApiError {
-    Default(Error),
-}
-///Typed error responses for `allocate-mailbox`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum AllocateMailboxApiError {
-    Default(Error),
-}
-///Typed error responses for `batch-update-account-messages`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum BatchUpdateAccountMessagesApiError {
-    Default(Error),
-}
 ///Typed error responses for `batch-update-messages`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum BatchUpdateMessagesApiError {
@@ -324,24 +309,14 @@ pub enum CreateEnablementApiError {
     Status409(Error),
     Default(Error),
 }
-///Typed error responses for `delete-account-message`. One variant per declared non-2xx response.
+///Typed error responses for `create-inbox`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum DeleteAccountMessageApiError {
+pub enum CreateInboxApiError {
     Default(Error),
 }
 ///Typed error responses for `delete-message`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum DeleteMessageApiError {
-    Default(Error),
-}
-///Typed error responses for `download-account-attachment`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum DownloadAccountAttachmentApiError {
-    Default(Error),
-}
-///Typed error responses for `download-account-message-raw`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum DownloadAccountMessageRawApiError {
     Default(Error),
 }
 ///Typed error responses for `download-attachment`. One variant per declared non-2xx response.
@@ -354,34 +329,14 @@ pub enum DownloadAttachmentApiError {
 pub enum DownloadMessageRawApiError {
     Default(Error),
 }
-///Typed error responses for `get-account-mailbox`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetAccountMailboxApiError {
-    Default(Error),
-}
-///Typed error responses for `get-account-message`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetAccountMessageApiError {
-    Default(Error),
-}
-///Typed error responses for `get-account-message-headers`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetAccountMessageHeadersApiError {
-    Default(Error),
-}
-///Typed error responses for `get-account-thread`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum GetAccountThreadApiError {
-    Default(Error),
-}
 ///Typed error responses for `get-enablement`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum GetEnablementApiError {
     Default(Error),
 }
-///Typed error responses for `get-mailbox`. One variant per declared non-2xx response.
+///Typed error responses for `get-inbox`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum GetMailboxApiError {
+pub enum GetInboxApiError {
     Default(Error),
 }
 ///Typed error responses for `get-message`. One variant per declared non-2xx response.
@@ -404,24 +359,14 @@ pub enum GetThreadApiError {
 pub enum GetUsageApiError {
     Default(Error),
 }
-///Typed error responses for `list-account-messages`. One variant per declared non-2xx response.
+///Typed error responses for `list-inbox-threads`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum ListAccountMessagesApiError {
+pub enum ListInboxThreadsApiError {
     Default(Error),
 }
-///Typed error responses for `list-account-thread-messages`. One variant per declared non-2xx response.
+///Typed error responses for `list-inboxes`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum ListAccountThreadMessagesApiError {
-    Default(Error),
-}
-///Typed error responses for `list-account-threads`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListAccountThreadsApiError {
-    Default(Error),
-}
-///Typed error responses for `list-mailboxes`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ListMailboxesApiError {
+pub enum ListInboxesApiError {
     Default(Error),
 }
 ///Typed error responses for `list-messages`. One variant per declared non-2xx response.
@@ -444,14 +389,9 @@ pub enum ListThreadMessagesApiError {
 pub enum ListThreadsApiError {
     Default(Error),
 }
-///Typed error responses for `pause-mailbox-outbound`. One variant per declared non-2xx response.
+///Typed error responses for `pause-inbox-outbound`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum PauseMailboxOutboundApiError {
-    Default(Error),
-}
-///Typed error responses for `reply-account-thread`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum ReplyAccountThreadApiError {
+pub enum PauseInboxOutboundApiError {
     Default(Error),
 }
 ///Typed error responses for `reply-message`. One variant per declared non-2xx response.
@@ -459,9 +399,9 @@ pub enum ReplyAccountThreadApiError {
 pub enum ReplyMessageApiError {
     Default(Error),
 }
-///Typed error responses for `resume-mailbox-outbound`. One variant per declared non-2xx response.
+///Typed error responses for `resume-inbox-outbound`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum ResumeMailboxOutboundApiError {
+pub enum ResumeInboxOutboundApiError {
     Default(Error),
 }
 ///Typed error responses for `send-message`. One variant per declared non-2xx response.
@@ -469,24 +409,14 @@ pub enum ResumeMailboxOutboundApiError {
 pub enum SendMessageApiError {
     Default(Error),
 }
-///Typed error responses for `update-account-mailbox`. One variant per declared non-2xx response.
+///Typed error responses for `update-inbox`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
-pub enum UpdateAccountMailboxApiError {
-    Default(Error),
-}
-///Typed error responses for `update-account-message`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum UpdateAccountMessageApiError {
+pub enum UpdateInboxApiError {
     Default(Error),
 }
 ///Typed error responses for `update-message`. One variant per declared non-2xx response.
 #[derive(Debug, Clone)]
 pub enum UpdateMessageApiError {
-    Default(Error),
-}
-///Typed error responses for `upload-account-attachment`. One variant per declared non-2xx response.
-#[derive(Debug, Clone)]
-pub enum UploadAccountAttachmentApiError {
     Default(Error),
 }
 ///Typed error responses for `upload-attachment`. One variant per declared non-2xx response.
@@ -495,261 +425,25 @@ pub enum UploadAttachmentApiError {
     Default(Error),
 }
 impl HttpClient {
-    /// Activate personal account mailbox
+    /// Batch update read or flagged state on messages in an inbox
     ///
-    /// Idempotently allocates the caller's default personal mailbox address if it has not yet been
-    /// provisioned. Free of charge and requires no billing account.
+    /// Updates `read` and/or `flagged` on up to 200 messages belonging to the specified inbox in a
+    /// single call.
     ///
-    /// `POST /api/v1/account/mailbox:activate`
-    pub async fn activate_account_mailbox(
-        &self,
-    ) -> Result<AccountMailboxResource, ApiOpError<ActivateAccountMailboxApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/account/mailbox:activate");
-        let mut req = self.http_client.post(request_url);
-        req = req.header(reqwest::header::CONTENT_LENGTH, "0");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ActivateAccountMailboxApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ActivateAccountMailboxApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Allocate or retry default mailbox for a service account
-    ///
-    /// Idempotently allocates a default mailbox address for an active service account in the
-    /// project, or retries a previously failed allocation. Requires the project mail service to be
-    /// enabled (412 `MAIL_SERVICE_NOT_ENABLED` otherwise). If the service account already holds an
-    /// allocated mailbox, returns it with 200.
-    ///
-    /// `POST /api/v1/mailboxes`
-    pub async fn allocate_mailbox(
-        &self,
-        request: AllocateMailboxRequestBody,
-    ) -> Result<MailboxResource, ApiOpError<AllocateMailboxApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/mailboxes");
-        let mut req = self.http_client.post(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 || status_code == 201u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200, 201",
-                )),
-            }))
-        } else {
-            let typed: Option<AllocateMailboxApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(AllocateMailboxApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Batch update read or flagged state on personal account messages
-    ///
-    /// `POST /api/v1/account/messages:batchUpdate`
-    pub async fn batch_update_account_messages(
-        &self,
-        request: BatchUpdateMessagesRequestBody,
-    ) -> Result<BatchUpdateMessagesResponseBody, ApiOpError<BatchUpdateAccountMessagesApiError>>
-    {
-        let request_url = format!(
-            "{}{}",
-            self.base_url, "/api/v1/account/messages:batchUpdate"
-        );
-        let mut req = self.http_client.post(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<BatchUpdateAccountMessagesApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(BatchUpdateAccountMessagesApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Batch update read or flagged state on project messages
-    ///
-    /// Updates `read` and/or `flagged` on up to 200 messages belonging to the authenticated
-    /// project in a single call. Service account tokens may only update messages in their own
-    /// mailbox.
-    ///
-    /// `POST /api/v1/messages:batchUpdate`
+    /// `POST /api/v1/inboxes/{inboxId}/messages:batchUpdate`
     pub async fn batch_update_messages(
         &self,
+        inbox_id: impl AsRef<str>,
         request: BatchUpdateMessagesRequestBody,
     ) -> Result<BatchUpdateMessagesResponseBody, ApiOpError<BatchUpdateMessagesApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/messages:batchUpdate");
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/inboxes/{}/messages:batchUpdate",
+                __pct_encode_path_segment(inbox_id.as_ref())
+            )
+        );
         let mut req = self.http_client.post(request_url);
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
@@ -822,16 +516,12 @@ impl HttpClient {
     }
     /// Enable project mail service
     ///
-    /// Enables the mail service for the authenticated project. Enabling carries no upfront fee;
-    /// inbound mail is free and outbound mail is billed per accepted recipient with no free
-    /// outbound allowance. Returns the enablement as `pending` together with its Billing Checkout
-    /// Session; once the order is accepted, `status` transitions to `active` and default email
-    /// addresses are allocated for project service accounts.
+    /// Enables the mail service for the authenticated project and provisions inboxes for active
+    /// project members. Enabling carries no upfront fee; inbound mail is free and outbound mail is
+    /// billed per accepted recipient.
     ///
     /// Refused with 409 `MAIL_SERVICE_ALREADY_ENABLED` while an enablement is `pending` or
-    /// `active`. Billing refusals are returned with Billing's error code, such as
-    /// `BILLING_PRICE_UNAVAILABLE` when the service has no price in the project billing account's
-    /// currency.
+    /// `active`.
     ///
     /// `POST /api/v1/enablement`
     pub async fn create_enablement(
@@ -919,28 +609,31 @@ impl HttpClient {
             }))
         }
     }
-    /// Delete a personal account message
+    /// Create or retrieve an inbox for a project member
     ///
-    /// `DELETE /api/v1/account/messages/{messageId}`
-    pub async fn delete_account_message(
+    /// Idempotently provisions an active `@onleaflow.cloud` inbox for an active member of the
+    /// authenticated project (human user or service account). When `user_id` is omitted, provisions
+    /// an inbox for the caller. Returns immediately with the allocated address.
+    ///
+    /// `POST /api/v1/inboxes`
+    pub async fn create_inbox(
         &self,
-        message_id: impl AsRef<str>,
-    ) -> Result<(), ApiOpError<DeleteAccountMessageApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/messages/{}",
-                __pct_encode_path_segment(message_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.delete(request_url);
+        request: CreateInboxRequestBody,
+    ) -> Result<InboxResource, ApiOpError<CreateInboxApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/inboxes");
+        let mut req = self.http_client.post(request_url);
+        req = req
+            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
+            .header("content-type", "application/json");
         if let Some(api_key) = &self.api_key {
             req = req.bearer_auth(api_key);
         }
         for (name, value) in &self.custom_headers {
-            req = req.header(name, value);
+            if !name.eq_ignore_ascii_case("accept") {
+                req = req.header(name, value);
+            }
         }
+        req = req.header(reqwest::header::ACCEPT, "application/json");
         let response = req.send().await?;
         let status = response.status();
         let status_code = status.as_u16();
@@ -949,11 +642,18 @@ impl HttpClient {
             __read_bounded_response_body(response, self.max_response_body_bytes).await?;
         let raw_body = body_bytes;
         let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 204u16 {
-            let _ = body_text;
-            let _ = raw_body;
-            let _ = headers;
-            Ok(())
+        if false || status_code == 200u16 {
+            match serde_json::from_str(&body_text) {
+                Ok(body) => Ok(body),
+                Err(e) => Err(ApiOpError::Api(ApiError {
+                    status: status_code,
+                    headers: headers,
+                    body: body_text,
+                    raw_body,
+                    typed: None,
+                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
+                })),
+            }
         } else if status.is_success() {
             Err(ApiOpError::Api(ApiError {
                 status: status_code,
@@ -963,16 +663,16 @@ impl HttpClient {
                 typed: None,
                 parse_error: Some(format!(
                     "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "204",
+                    status_code, "200",
                 )),
             }))
         } else {
-            let typed: Option<DeleteAccountMessageApiError>;
+            let typed: Option<CreateInboxApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(DeleteAccountMessageApiError::Default(v));
+                        typed = Some(CreateInboxApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -991,21 +691,23 @@ impl HttpClient {
             }))
         }
     }
-    /// Delete a project message from the mailbox
+    /// Delete a message from an inbox
     ///
-    /// Removes the message body, raw archive, and attachments from the tenant mailbox view.
-    /// Outbound delivery and billing metadata are retained for auditing.
+    /// Removes the message body, raw archive, and attachments from the tenant inbox view. Outbound
+    /// delivery and billing metadata are retained for auditing.
     ///
-    /// `DELETE /api/v1/messages/{messageId}`
+    /// `DELETE /api/v1/inboxes/{inboxId}/messages/{messageId}`
     pub async fn delete_message(
         &self,
+        inbox_id: impl AsRef<str>,
         message_id: impl AsRef<str>,
     ) -> Result<(), ApiOpError<DeleteMessageApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/messages/{}",
+                "/api/v1/inboxes/{}/messages/{}",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(message_id.as_ref())
             )
         );
@@ -1066,836 +768,16 @@ impl HttpClient {
             }))
         }
     }
-    /// Download a personal account attachment
+    /// Download an email attachment from an inbox
     ///
-    /// `GET /api/v1/account/attachments/{attachmentId}/content`
-    pub async fn download_account_attachment(
-        &self,
-        attachment_id: impl AsRef<str>,
-        inline: Option<bool>,
-    ) -> Result<bytes::Bytes, ApiOpError<DownloadAccountAttachmentApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/attachments/{}/content",
-                __pct_encode_path_segment(attachment_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = inline {
-                query_params.push(("inline".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            req = req.header(name, value);
-        }
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        if false || status_code == 200u16 {
-            Ok(bytes::Bytes::from(body_bytes))
-        } else {
-            let raw_body = body_bytes;
-            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-            if status.is_success() {
-                return Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!(
-                        "unexpected successful status {}; generated return type selects `{}`",
-                        status_code, "200",
-                    )),
-                }));
-            }
-            let typed: Option<DownloadAccountAttachmentApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DownloadAccountAttachmentApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Download a personal account attachment
+    /// Streams the attachment bytes for an inbound or outbound message in the specified inbox.
+    /// `Content-Disposition` is `attachment` unless `inline=true` is requested and the detected
+    /// content type can be rendered safely.
     ///
-    /// `GET /api/v1/account/attachments/{attachmentId}/content`
-    ///Select `*/*` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
-    pub async fn download_account_attachment_binary(
-        &self,
-        attachment_id: impl AsRef<str>,
-        inline: Option<bool>,
-    ) -> Result<bytes::Bytes, ApiOpError<DownloadAccountAttachmentApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/attachments/{}/content",
-                __pct_encode_path_segment(attachment_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = inline {
-                query_params.push(("inline".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "*/*");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        if false || status_code == 200u16 {
-            let actual = response
-                .headers()
-                .get(reqwest::header::CONTENT_TYPE)
-                .and_then(|value| value.to_str().ok())
-                .unwrap_or("")
-                .to_string();
-            let expected = "*/*";
-            let parse_media = |value: &str| {
-                let mut parts = Vec::new();
-                let mut start = 0;
-                let mut quoted = false;
-                let mut escaped = false;
-                for (index, character) in value.char_indices() {
-                    if escaped {
-                        escaped = false;
-                        continue;
-                    }
-                    if character == '\\' && quoted {
-                        escaped = true;
-                        continue;
-                    }
-                    if character == '"' {
-                        quoted = !quoted;
-                    }
-                    if character == ';' && !quoted {
-                        parts.push(&value[start..index]);
-                        start = index + 1;
-                    }
-                }
-                if quoted || escaped {
-                    return None;
-                }
-                parts.push(&value[start..]);
-                let essence = parts
-                    .first()
-                    .copied()
-                    .unwrap_or("")
-                    .trim()
-                    .to_ascii_lowercase();
-                let mut parameters = std::collections::BTreeMap::new();
-                for part in parts.into_iter().skip(1) {
-                    let (name, value) = part.split_once('=')?;
-                    let name = name.trim().to_ascii_lowercase();
-                    if name.is_empty() {
-                        return None;
-                    }
-                    let value = value.trim();
-                    let value = if let Some(quoted) = value.strip_prefix('"') {
-                        let inner = quoted.strip_suffix('"')?;
-                        let mut decoded = String::new();
-                        let mut escaped = false;
-                        for character in inner.chars() {
-                            if escaped {
-                                decoded.push(character);
-                                escaped = false;
-                            } else if character == '\\' {
-                                escaped = true;
-                            } else if character == '"' {
-                                return None;
-                            } else {
-                                decoded.push(character);
-                            }
-                        }
-                        if escaped {
-                            return None;
-                        }
-                        decoded
-                    } else {
-                        if value.contains('"') {
-                            return None;
-                        }
-                        value.to_string()
-                    };
-                    if parameters.insert(name, value).is_some() {
-                        return None;
-                    }
-                }
-                Some((essence, parameters))
-            };
-            let matches = match (parse_media(&actual), parse_media(expected)) {
-                (
-                    Some((actual_essence, actual_parameters)),
-                    Some((expected_essence, expected_parameters)),
-                ) => {
-                    let essence_matches = if expected_essence == "*/*" {
-                        actual_essence.contains('/')
-                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
-                        actual_essence.split('/').next() == Some(prefix)
-                    } else {
-                        actual_essence == expected_essence
-                    };
-                    essence_matches
-                        && expected_parameters.iter().all(|(name, value)| {
-                            actual_parameters.get(name).is_some_and(|actual| {
-                                if name == "charset" {
-                                    actual.eq_ignore_ascii_case(value)
-                                } else {
-                                    actual == value
-                                }
-                            })
-                        })
-                }
-                _ => false,
-            };
-            if !matches {
-                let headers = response.headers().clone();
-                let raw_body =
-                    __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-                let typed: Option<DownloadAccountAttachmentApiError>;
-                let parse_error: Option<String>;
-                match status_code {
-                    _ => match serde_json::from_str::<Error>(&body_text) {
-                        Ok(v) => {
-                            typed = Some(DownloadAccountAttachmentApiError::Default(v));
-                            parse_error = None;
-                        }
-                        Err(e) => {
-                            typed = None;
-                            parse_error = Some(e.to_string());
-                        }
-                    },
-                }
-                let _ = parse_error;
-                return Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers,
-                    body: body_text,
-                    raw_body,
-                    typed,
-                    parse_error: Some(format!(
-                        "unexpected response Content-Type `{}`; expected `{}`",
-                        actual, expected
-                    )),
-                }));
-            }
-        }
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        if false || status_code == 200u16 {
-            Ok(bytes::Bytes::from(body_bytes))
-        } else {
-            let raw_body = body_bytes;
-            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-            if status.is_success() {
-                return Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!(
-                        "unexpected successful status {}; generated return type selects `{}`",
-                        status_code, "200",
-                    )),
-                }));
-            }
-            let typed: Option<DownloadAccountAttachmentApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DownloadAccountAttachmentApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Download a personal account attachment
-    ///
-    /// `GET /api/v1/account/attachments/{attachmentId}/content`
-    ///Select `*/*` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
-    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
-    pub async fn download_account_attachment_binary_stream<__Param0: AsRef<str>>(
-        &self,
-        attachment_id: __Param0,
-        inline: Option<bool>,
-    ) -> Result<
-        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<__Param0>,
-        ApiOpError<DownloadAccountAttachmentApiError>,
-    > {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/attachments/{}/content",
-                __pct_encode_path_segment(attachment_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = inline {
-                query_params.push(("inline".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "*/*");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        if false || status_code == 200u16 {
-            let actual = response
-                .headers()
-                .get(reqwest::header::CONTENT_TYPE)
-                .and_then(|value| value.to_str().ok())
-                .unwrap_or("")
-                .to_string();
-            let expected = "*/*";
-            let parse_media = |value: &str| {
-                let mut parts = Vec::new();
-                let mut start = 0;
-                let mut quoted = false;
-                let mut escaped = false;
-                for (index, character) in value.char_indices() {
-                    if escaped {
-                        escaped = false;
-                        continue;
-                    }
-                    if character == '\\' && quoted {
-                        escaped = true;
-                        continue;
-                    }
-                    if character == '"' {
-                        quoted = !quoted;
-                    }
-                    if character == ';' && !quoted {
-                        parts.push(&value[start..index]);
-                        start = index + 1;
-                    }
-                }
-                if quoted || escaped {
-                    return None;
-                }
-                parts.push(&value[start..]);
-                let essence = parts
-                    .first()
-                    .copied()
-                    .unwrap_or("")
-                    .trim()
-                    .to_ascii_lowercase();
-                let mut parameters = std::collections::BTreeMap::new();
-                for part in parts.into_iter().skip(1) {
-                    let (name, value) = part.split_once('=')?;
-                    let name = name.trim().to_ascii_lowercase();
-                    if name.is_empty() {
-                        return None;
-                    }
-                    let value = value.trim();
-                    let value = if let Some(quoted) = value.strip_prefix('"') {
-                        let inner = quoted.strip_suffix('"')?;
-                        let mut decoded = String::new();
-                        let mut escaped = false;
-                        for character in inner.chars() {
-                            if escaped {
-                                decoded.push(character);
-                                escaped = false;
-                            } else if character == '\\' {
-                                escaped = true;
-                            } else if character == '"' {
-                                return None;
-                            } else {
-                                decoded.push(character);
-                            }
-                        }
-                        if escaped {
-                            return None;
-                        }
-                        decoded
-                    } else {
-                        if value.contains('"') {
-                            return None;
-                        }
-                        value.to_string()
-                    };
-                    if parameters.insert(name, value).is_some() {
-                        return None;
-                    }
-                }
-                Some((essence, parameters))
-            };
-            let matches = match (parse_media(&actual), parse_media(expected)) {
-                (
-                    Some((actual_essence, actual_parameters)),
-                    Some((expected_essence, expected_parameters)),
-                ) => {
-                    let essence_matches = if expected_essence == "*/*" {
-                        actual_essence.contains('/')
-                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
-                        actual_essence.split('/').next() == Some(prefix)
-                    } else {
-                        actual_essence == expected_essence
-                    };
-                    essence_matches
-                        && expected_parameters.iter().all(|(name, value)| {
-                            actual_parameters.get(name).is_some_and(|actual| {
-                                if name == "charset" {
-                                    actual.eq_ignore_ascii_case(value)
-                                } else {
-                                    actual == value
-                                }
-                            })
-                        })
-                }
-                _ => false,
-            };
-            if !matches {
-                let headers = response.headers().clone();
-                let raw_body = Vec::new();
-                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-                let typed: Option<DownloadAccountAttachmentApiError>;
-                let parse_error: Option<String>;
-                match status_code {
-                    _ => match serde_json::from_str::<Error>(&body_text) {
-                        Ok(v) => {
-                            typed = Some(DownloadAccountAttachmentApiError::Default(v));
-                            parse_error = None;
-                        }
-                        Err(e) => {
-                            typed = None;
-                            parse_error = Some(e.to_string());
-                        }
-                    },
-                }
-                let _ = parse_error;
-                return Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers,
-                    body: body_text,
-                    raw_body,
-                    typed,
-                    parse_error: Some(format!(
-                        "unexpected response Content-Type `{}`; expected `{}`",
-                        actual, expected
-                    )),
-                }));
-            }
-        }
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        if false || status_code == 200u16 {
-            Ok(response.bytes_stream())
-        } else {
-            if status.is_success() {
-                return Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers,
-                    body: String::new(),
-                    raw_body: Vec::new(),
-                    typed: None,
-                    parse_error: Some(format!(
-                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
-                        status_code, "200",
-                    )),
-                }));
-            }
-            let body_bytes =
-                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-            let raw_body = body_bytes;
-            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-            let typed: Option<DownloadAccountAttachmentApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DownloadAccountAttachmentApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Download raw RFC 5322 `.eml` source of a personal account message
-    ///
-    /// `GET /api/v1/account/messages/{messageId}/raw`
-    pub async fn download_account_message_raw(
-        &self,
-        message_id: impl AsRef<str>,
-    ) -> Result<bytes::Bytes, ApiOpError<DownloadAccountMessageRawApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/messages/{}/raw",
-                __pct_encode_path_segment(message_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "message/rfc822");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        if false || status_code == 200u16 {
-            Ok(bytes::Bytes::from(body_bytes))
-        } else {
-            let raw_body = body_bytes;
-            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-            if status.is_success() {
-                return Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!(
-                        "unexpected successful status {}; generated return type selects `{}`",
-                        status_code, "200",
-                    )),
-                }));
-            }
-            let typed: Option<DownloadAccountMessageRawApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DownloadAccountMessageRawApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Download raw RFC 5322 `.eml` source of a personal account message
-    ///
-    /// `GET /api/v1/account/messages/{messageId}/raw`
-    ///Select `message/rfc822` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
-    ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
-    pub async fn download_account_message_raw_binary_stream<__Param0: AsRef<str>>(
-        &self,
-        message_id: __Param0,
-    ) -> Result<
-        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<__Param0>,
-        ApiOpError<DownloadAccountMessageRawApiError>,
-    > {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/messages/{}/raw",
-                __pct_encode_path_segment(message_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "message/rfc822");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        if false || status_code == 200u16 {
-            let actual = response
-                .headers()
-                .get(reqwest::header::CONTENT_TYPE)
-                .and_then(|value| value.to_str().ok())
-                .unwrap_or("")
-                .to_string();
-            let expected = "message/rfc822";
-            let parse_media = |value: &str| {
-                let mut parts = Vec::new();
-                let mut start = 0;
-                let mut quoted = false;
-                let mut escaped = false;
-                for (index, character) in value.char_indices() {
-                    if escaped {
-                        escaped = false;
-                        continue;
-                    }
-                    if character == '\\' && quoted {
-                        escaped = true;
-                        continue;
-                    }
-                    if character == '"' {
-                        quoted = !quoted;
-                    }
-                    if character == ';' && !quoted {
-                        parts.push(&value[start..index]);
-                        start = index + 1;
-                    }
-                }
-                if quoted || escaped {
-                    return None;
-                }
-                parts.push(&value[start..]);
-                let essence = parts
-                    .first()
-                    .copied()
-                    .unwrap_or("")
-                    .trim()
-                    .to_ascii_lowercase();
-                let mut parameters = std::collections::BTreeMap::new();
-                for part in parts.into_iter().skip(1) {
-                    let (name, value) = part.split_once('=')?;
-                    let name = name.trim().to_ascii_lowercase();
-                    if name.is_empty() {
-                        return None;
-                    }
-                    let value = value.trim();
-                    let value = if let Some(quoted) = value.strip_prefix('"') {
-                        let inner = quoted.strip_suffix('"')?;
-                        let mut decoded = String::new();
-                        let mut escaped = false;
-                        for character in inner.chars() {
-                            if escaped {
-                                decoded.push(character);
-                                escaped = false;
-                            } else if character == '\\' {
-                                escaped = true;
-                            } else if character == '"' {
-                                return None;
-                            } else {
-                                decoded.push(character);
-                            }
-                        }
-                        if escaped {
-                            return None;
-                        }
-                        decoded
-                    } else {
-                        if value.contains('"') {
-                            return None;
-                        }
-                        value.to_string()
-                    };
-                    if parameters.insert(name, value).is_some() {
-                        return None;
-                    }
-                }
-                Some((essence, parameters))
-            };
-            let matches = match (parse_media(&actual), parse_media(expected)) {
-                (
-                    Some((actual_essence, actual_parameters)),
-                    Some((expected_essence, expected_parameters)),
-                ) => {
-                    let essence_matches = if expected_essence == "*/*" {
-                        actual_essence.contains('/')
-                    } else if let Some(prefix) = expected_essence.strip_suffix("/*") {
-                        actual_essence.split('/').next() == Some(prefix)
-                    } else {
-                        actual_essence == expected_essence
-                    };
-                    essence_matches
-                        && expected_parameters.iter().all(|(name, value)| {
-                            actual_parameters.get(name).is_some_and(|actual| {
-                                if name == "charset" {
-                                    actual.eq_ignore_ascii_case(value)
-                                } else {
-                                    actual == value
-                                }
-                            })
-                        })
-                }
-                _ => false,
-            };
-            if !matches {
-                let headers = response.headers().clone();
-                let raw_body = Vec::new();
-                let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-                let typed: Option<DownloadAccountMessageRawApiError>;
-                let parse_error: Option<String>;
-                match status_code {
-                    _ => match serde_json::from_str::<Error>(&body_text) {
-                        Ok(v) => {
-                            typed = Some(DownloadAccountMessageRawApiError::Default(v));
-                            parse_error = None;
-                        }
-                        Err(e) => {
-                            typed = None;
-                            parse_error = Some(e.to_string());
-                        }
-                    },
-                }
-                let _ = parse_error;
-                return Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers,
-                    body: body_text,
-                    raw_body,
-                    typed,
-                    parse_error: Some(format!(
-                        "unexpected response Content-Type `{}`; expected `{}`",
-                        actual, expected
-                    )),
-                }));
-            }
-        }
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        if false || status_code == 200u16 {
-            Ok(response.bytes_stream())
-        } else {
-            if status.is_success() {
-                return Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers,
-                    body: String::new(),
-                    raw_body: Vec::new(),
-                    typed: None,
-                    parse_error: Some(format!(
-                        "unexpected successful status {}; generated return type selects `{}`; live response body was not buffered",
-                        status_code, "200",
-                    )),
-                }));
-            }
-            let body_bytes =
-                __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-            let raw_body = body_bytes;
-            let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-            let typed: Option<DownloadAccountMessageRawApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(DownloadAccountMessageRawApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Download a project email attachment
-    ///
-    /// Streams the attachment bytes for an inbound or outbound message in the authenticated
-    /// project. `Content-Disposition` is `attachment` unless `inline=true` is requested and the
-    /// detected content type can be rendered safely.
-    ///
-    /// `GET /api/v1/attachments/{attachmentId}/content`
+    /// `GET /api/v1/inboxes/{inboxId}/attachments/{attachmentId}/content`
     pub async fn download_attachment(
         &self,
+        inbox_id: impl AsRef<str>,
         attachment_id: impl AsRef<str>,
         inline: Option<bool>,
     ) -> Result<bytes::Bytes, ApiOpError<DownloadAttachmentApiError>> {
@@ -1903,7 +785,8 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/attachments/{}/content",
+                "/api/v1/inboxes/{}/attachments/{}/content",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(attachment_id.as_ref())
             )
         );
@@ -1971,16 +854,17 @@ impl HttpClient {
             }))
         }
     }
-    /// Download a project email attachment
+    /// Download an email attachment from an inbox
     ///
-    /// Streams the attachment bytes for an inbound or outbound message in the authenticated
-    /// project. `Content-Disposition` is `attachment` unless `inline=true` is requested and the
-    /// detected content type can be rendered safely.
+    /// Streams the attachment bytes for an inbound or outbound message in the specified inbox.
+    /// `Content-Disposition` is `attachment` unless `inline=true` is requested and the detected
+    /// content type can be rendered safely.
     ///
-    /// `GET /api/v1/attachments/{attachmentId}/content`
+    /// `GET /api/v1/inboxes/{inboxId}/attachments/{attachmentId}/content`
     ///Select `*/*` as buffered; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
     pub async fn download_attachment_binary(
         &self,
+        inbox_id: impl AsRef<str>,
         attachment_id: impl AsRef<str>,
         inline: Option<bool>,
     ) -> Result<bytes::Bytes, ApiOpError<DownloadAttachmentApiError>> {
@@ -1988,7 +872,8 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/attachments/{}/content",
+                "/api/v1/inboxes/{}/attachments/{}/content",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(attachment_id.as_ref())
             )
         );
@@ -2199,28 +1084,32 @@ impl HttpClient {
             }))
         }
     }
-    /// Download a project email attachment
+    /// Download an email attachment from an inbox
     ///
-    /// Streams the attachment bytes for an inbound or outbound message in the authenticated
-    /// project. `Content-Disposition` is `attachment` unless `inline=true` is requested and the
-    /// detected content type can be rendered safely.
+    /// Streams the attachment bytes for an inbound or outbound message in the specified inbox.
+    /// `Content-Disposition` is `attachment` unless `inline=true` is requested and the detected
+    /// content type can be rendered safely.
     ///
-    /// `GET /api/v1/attachments/{attachmentId}/content`
+    /// `GET /api/v1/inboxes/{inboxId}/attachments/{attachmentId}/content`
     ///Select `*/*` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
     ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
-    pub async fn download_attachment_binary_stream<__Param0: AsRef<str>>(
+    pub async fn download_attachment_binary_stream<__Param0: AsRef<str>, __Param1: AsRef<str>>(
         &self,
-        attachment_id: __Param0,
+        inbox_id: __Param0,
+        attachment_id: __Param1,
         inline: Option<bool>,
     ) -> Result<
-        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<__Param0>,
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>>
+        + 'static
+        + use<__Param0, __Param1>,
         ApiOpError<DownloadAttachmentApiError>,
     > {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/attachments/{}/content",
+                "/api/v1/inboxes/{}/attachments/{}/content",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(attachment_id.as_ref())
             )
         );
@@ -2430,18 +1319,20 @@ impl HttpClient {
             }))
         }
     }
-    /// Download raw RFC 5322 `.eml` source of a project message
+    /// Download raw RFC 5322 `.eml` source of a message
     ///
-    /// `GET /api/v1/messages/{messageId}/raw`
+    /// `GET /api/v1/inboxes/{inboxId}/messages/{messageId}/raw`
     pub async fn download_message_raw(
         &self,
+        inbox_id: impl AsRef<str>,
         message_id: impl AsRef<str>,
     ) -> Result<bytes::Bytes, ApiOpError<DownloadMessageRawApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/messages/{}/raw",
+                "/api/v1/inboxes/{}/messages/{}/raw",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(message_id.as_ref())
             )
         );
@@ -2503,23 +1394,27 @@ impl HttpClient {
             }))
         }
     }
-    /// Download raw RFC 5322 `.eml` source of a project message
+    /// Download raw RFC 5322 `.eml` source of a message
     ///
-    /// `GET /api/v1/messages/{messageId}/raw`
+    /// `GET /api/v1/inboxes/{inboxId}/messages/{messageId}/raw`
     ///Select `message/rfc822` as binary_stream; accepts response statuses 200. Other successful statuses and mismatched Content-Type values are returned as inspectable API errors.
     ///Success chunks are returned live without a total body-size limit. Error responses use the configured buffered body-size limit.
-    pub async fn download_message_raw_binary_stream<__Param0: AsRef<str>>(
+    pub async fn download_message_raw_binary_stream<__Param0: AsRef<str>, __Param1: AsRef<str>>(
         &self,
-        message_id: __Param0,
+        inbox_id: __Param0,
+        message_id: __Param1,
     ) -> Result<
-        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + 'static + use<__Param0>,
+        impl futures_util::Stream<Item = Result<bytes::Bytes, reqwest::Error>>
+        + 'static
+        + use<__Param0, __Param1>,
         ApiOpError<DownloadMessageRawApiError>,
     > {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/messages/{}/raw",
+                "/api/v1/inboxes/{}/messages/{}/raw",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(message_id.as_ref())
             )
         );
@@ -2720,346 +1615,12 @@ impl HttpClient {
             }))
         }
     }
-    /// Get personal account mailbox
-    ///
-    /// Returns the caller's personal mailbox allocation status, default email address, forwarding
-    /// preferences, daily reply quota usage, and outbound state. Inbound mail, forwarding to the
-    /// account's verified email address, and replies to existing inbound threads are free.
-    ///
-    /// `GET /api/v1/account/mailbox`
-    pub async fn get_account_mailbox(
-        &self,
-    ) -> Result<AccountMailboxResource, ApiOpError<GetAccountMailboxApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/account/mailbox");
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetAccountMailboxApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetAccountMailboxApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Get a personal account message
-    ///
-    /// `GET /api/v1/account/messages/{messageId}`
-    pub async fn get_account_message(
-        &self,
-        message_id: impl AsRef<str>,
-        include_html: Option<bool>,
-    ) -> Result<MessageResource, ApiOpError<GetAccountMessageApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/messages/{}",
-                __pct_encode_path_segment(message_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = include_html {
-                query_params.push(("include_html".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetAccountMessageApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetAccountMessageApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Get raw RFC 5322 headers of a personal account message
-    ///
-    /// `GET /api/v1/account/messages/{messageId}/headers`
-    pub async fn get_account_message_headers(
-        &self,
-        message_id: impl AsRef<str>,
-    ) -> Result<MessageHeadersResource, ApiOpError<GetAccountMessageHeadersApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/messages/{}/headers",
-                __pct_encode_path_segment(message_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetAccountMessageHeadersApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetAccountMessageHeadersApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Get a personal account email thread
-    ///
-    /// `GET /api/v1/account/threads/{threadId}`
-    pub async fn get_account_thread(
-        &self,
-        thread_id: impl AsRef<str>,
-    ) -> Result<ThreadResource, ApiOpError<GetAccountThreadApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/threads/{}",
-                __pct_encode_path_segment(thread_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.get(request_url);
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<GetAccountThreadApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(GetAccountThreadApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
     /// Get project mail service enablement
     ///
     /// Returns the mail service enablement of the authenticated project. Once `status` is `active`,
-    /// default email addresses are provisioned for active service accounts in the project, inbound
-    /// delivery is accepted at no charge, and outbound sends are billed per accepted recipient
-    /// under `subscription_id` (unless `billing_suspended` is true).
+    /// inboxes are provisioned for active project members (human members and service accounts
+    /// alike), inbound delivery is accepted at no charge, and outbound sends are billed per
+    /// accepted recipient under `subscription_id` (unless `billing_suspended` is true).
     ///
     /// `GET /api/v1/enablement`
     pub async fn get_enablement(
@@ -3133,21 +1694,19 @@ impl HttpClient {
             }))
         }
     }
-    /// Get a project mailbox
+    /// Get an inbox
     ///
-    /// Returns a single mailbox's address allocation status, outbound state, and unread count.
-    ///
-    /// `GET /api/v1/mailboxes/{mailboxId}`
-    pub async fn get_mailbox(
+    /// `GET /api/v1/inboxes/{inboxId}`
+    pub async fn get_inbox(
         &self,
-        mailbox_id: impl AsRef<str>,
-    ) -> Result<MailboxResource, ApiOpError<GetMailboxApiError>> {
+        inbox_id: impl AsRef<str>,
+    ) -> Result<InboxResource, ApiOpError<GetInboxApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/mailboxes/{}",
-                __pct_encode_path_segment(mailbox_id.as_ref())
+                "/api/v1/inboxes/{}",
+                __pct_encode_path_segment(inbox_id.as_ref())
             )
         );
         let mut req = self.http_client.get(request_url);
@@ -3193,12 +1752,12 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<GetMailboxApiError>;
+            let typed: Option<GetInboxApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(GetMailboxApiError::Default(v));
+                        typed = Some(GetInboxApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -3217,14 +1776,15 @@ impl HttpClient {
             }))
         }
     }
-    /// Get a project message
+    /// Get a message
     ///
     /// Returns full message details including plain-text body, server-sanitized HTML body (unless
     /// `include_html=false`), attachments, and per-recipient delivery statuses.
     ///
-    /// `GET /api/v1/messages/{messageId}`
+    /// `GET /api/v1/inboxes/{inboxId}/messages/{messageId}`
     pub async fn get_message(
         &self,
+        inbox_id: impl AsRef<str>,
         message_id: impl AsRef<str>,
         include_html: Option<bool>,
     ) -> Result<MessageResource, ApiOpError<GetMessageApiError>> {
@@ -3232,7 +1792,8 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/messages/{}",
+                "/api/v1/inboxes/{}/messages/{}",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(message_id.as_ref())
             )
         );
@@ -3312,18 +1873,20 @@ impl HttpClient {
             }))
         }
     }
-    /// Get raw RFC 5322 headers of a project message
+    /// Get raw RFC 5322 headers of a message
     ///
-    /// `GET /api/v1/messages/{messageId}/headers`
+    /// `GET /api/v1/inboxes/{inboxId}/messages/{messageId}/headers`
     pub async fn get_message_headers(
         &self,
+        inbox_id: impl AsRef<str>,
         message_id: impl AsRef<str>,
     ) -> Result<MessageHeadersResource, ApiOpError<GetMessageHeadersApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/messages/{}/headers",
+                "/api/v1/inboxes/{}/messages/{}/headers",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(message_id.as_ref())
             )
         );
@@ -3394,18 +1957,20 @@ impl HttpClient {
             }))
         }
     }
-    /// Get a project email thread
+    /// Get a thread in an inbox
     ///
-    /// `GET /api/v1/threads/{threadId}`
+    /// `GET /api/v1/inboxes/{inboxId}/threads/{threadId}`
     pub async fn get_thread(
         &self,
+        inbox_id: impl AsRef<str>,
         thread_id: impl AsRef<str>,
     ) -> Result<ThreadResource, ApiOpError<GetThreadApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/threads/{}",
+                "/api/v1/inboxes/{}/threads/{}",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(thread_id.as_ref())
             )
         );
@@ -3487,8 +2052,8 @@ impl HttpClient {
         &self,
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        mailbox_id: Option<impl AsRef<str>>,
-        service_account_id: Option<impl AsRef<str>>,
+        inbox_id: Option<impl AsRef<str>>,
+        user_id: Option<impl AsRef<str>>,
     ) -> Result<UsageResource, ApiOpError<GetUsageApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/usage");
         let mut req = self.http_client.get(request_url);
@@ -3496,11 +2061,11 @@ impl HttpClient {
             let mut query_params: Vec<(String, String)> = Vec::new();
             query_params.push(("from".to_string(), from.as_ref().to_string()));
             query_params.push(("to".to_string(), to.as_ref().to_string()));
-            if let Some(v) = mailbox_id {
-                query_params.push(("mailbox_id".to_string(), v.as_ref().to_string()));
+            if let Some(v) = inbox_id {
+                query_params.push(("inbox_id".to_string(), v.as_ref().to_string()));
             }
-            if let Some(v) = service_account_id {
-                query_params.push(("service_account_id".to_string(), v.as_ref().to_string()));
+            if let Some(v) = user_id {
+                query_params.push(("user_id".to_string(), v.as_ref().to_string()));
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -3572,185 +2137,27 @@ impl HttpClient {
             }))
         }
     }
-    /// List and search personal account messages
+    /// List email threads in an inbox
     ///
-    /// Cursor-paged lightweight message summaries in the caller's personal mailbox, newest first.
+    /// Cursor-paged conversation threads belonging to the specified inbox, ordered by most recent
+    /// message first.
     ///
-    /// `GET /api/v1/account/messages`
-    pub async fn list_account_messages(
+    /// `GET /api/v1/inboxes/{inboxId}/threads`
+    pub async fn list_inbox_threads(
         &self,
+        inbox_id: impl AsRef<str>,
         limit: Option<i64>,
         cursor: Option<impl AsRef<str>>,
-        thread_id: Option<impl AsRef<str>>,
-        direction: Option<Vec<MessageDirection>>,
-        status: Option<Vec<MessageStatus>>,
-        from_address: Option<impl AsRef<str>>,
-        q: Option<impl AsRef<str>>,
         unread_only: Option<bool>,
         flagged_only: Option<bool>,
-        has_attachments: Option<bool>,
-    ) -> Result<MessageSummaryListResponseBody, ApiOpError<ListAccountMessagesApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/account/messages");
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = limit {
-                query_params.push(("limit".to_string(), v.to_string()));
-            }
-            if let Some(v) = cursor {
-                query_params.push(("cursor".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = thread_id {
-                query_params.push(("thread_id".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = direction {
-                if v.is_empty() {
-                    query_params.push((format!("{}[]", "direction"), String::new()));
-                } else {
-                    let mut parts = Vec::with_capacity(v.len());
-                    for item in &v {
-                        let item = item.to_string();
-                        if item.contains(',') {
-                            return Err(
-                                HttpError::serialization_error(
-                                        format!(
-                                            "query array `{}` contains a comma; use explode=true for lossless string values",
-                                            "direction",
-                                        ),
-                                    )
-                                    .into(),
-                            );
-                        }
-                        parts.push(item);
-                    }
-                    query_params.push(("direction".to_string(), parts.join(",")));
-                }
-            }
-            if let Some(v) = status {
-                if v.is_empty() {
-                    query_params.push((format!("{}[]", "status"), String::new()));
-                } else {
-                    let mut parts = Vec::with_capacity(v.len());
-                    for item in &v {
-                        let item = item.to_string();
-                        if item.contains(',') {
-                            return Err(
-                                HttpError::serialization_error(
-                                        format!(
-                                            "query array `{}` contains a comma; use explode=true for lossless string values",
-                                            "status",
-                                        ),
-                                    )
-                                    .into(),
-                            );
-                        }
-                        parts.push(item);
-                    }
-                    query_params.push(("status".to_string(), parts.join(",")));
-                }
-            }
-            if let Some(v) = from_address {
-                query_params.push(("from_address".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = q {
-                query_params.push(("q".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = unread_only {
-                query_params.push(("unread_only".to_string(), v.to_string()));
-            }
-            if let Some(v) = flagged_only {
-                query_params.push(("flagged_only".to_string(), v.to_string()));
-            }
-            if let Some(v) = has_attachments {
-                query_params.push(("has_attachments".to_string(), v.to_string()));
-            }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListAccountMessagesApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListAccountMessagesApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// List messages in a personal account thread
-    ///
-    /// Cursor-paged lightweight message summaries belonging to the personal thread, oldest first.
-    ///
-    /// `GET /api/v1/account/threads/{threadId}/messages`
-    pub async fn list_account_thread_messages(
-        &self,
-        thread_id: impl AsRef<str>,
-        limit: Option<i64>,
-        cursor: Option<impl AsRef<str>>,
-    ) -> Result<MessageSummaryListResponseBody, ApiOpError<ListAccountThreadMessagesApiError>> {
+        keyword: Option<impl AsRef<str>>,
+    ) -> Result<ThreadListResponseBody, ApiOpError<ListInboxThreadsApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/account/threads/{}/messages",
-                __pct_encode_path_segment(thread_id.as_ref())
+                "/api/v1/inboxes/{}/threads",
+                __pct_encode_path_segment(inbox_id.as_ref())
             )
         );
         let mut req = self.http_client.get(request_url);
@@ -3762,107 +2169,14 @@ impl HttpClient {
             if let Some(v) = cursor {
                 query_params.push(("cursor".to_string(), v.as_ref().to_string()));
             }
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<ListAccountThreadMessagesApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ListAccountThreadMessagesApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// List personal account email threads
-    ///
-    /// Cursor-paged threads in the caller's personal mailbox, most recent first.
-    ///
-    /// `GET /api/v1/account/threads`
-    pub async fn list_account_threads(
-        &self,
-        limit: Option<i64>,
-        cursor: Option<impl AsRef<str>>,
-        unread_only: Option<bool>,
-        flagged_only: Option<bool>,
-        q: Option<impl AsRef<str>>,
-    ) -> Result<ThreadListResponseBody, ApiOpError<ListAccountThreadsApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/account/threads");
-        let mut req = self.http_client.get(request_url);
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = limit {
-                query_params.push(("limit".to_string(), v.to_string()));
-            }
-            if let Some(v) = cursor {
-                query_params.push(("cursor".to_string(), v.as_ref().to_string()));
-            }
             if let Some(v) = unread_only {
                 query_params.push(("unread_only".to_string(), v.to_string()));
             }
             if let Some(v) = flagged_only {
                 query_params.push(("flagged_only".to_string(), v.to_string()));
             }
-            if let Some(v) = q {
-                query_params.push(("q".to_string(), v.as_ref().to_string()));
+            if let Some(v) = keyword {
+                query_params.push(("keyword".to_string(), v.as_ref().to_string()));
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -3910,12 +2224,12 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<ListAccountThreadsApiError>;
+            let typed: Option<ListInboxThreadsApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(ListAccountThreadsApiError::Default(v));
+                        typed = Some(ListInboxThreadsApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -3934,24 +2248,21 @@ impl HttpClient {
             }))
         }
     }
-    /// List project mailboxes and allocation states
+    /// List project inboxes
     ///
-    /// Lists mailboxes in the authenticated project together with each mailbox's email address
-    /// allocation status and outbound state. Returns an empty list before the project enables the
-    /// mail service. When called with a service account token, only that service account's own
-    /// mailbox is returned.
+    /// Lists inboxes provisioned for members of the authenticated project (both human members and
+    /// service accounts). Service account tokens only receive their own inbox.
     ///
-    /// `GET /api/v1/mailboxes`
-    pub async fn list_mailboxes(
+    /// `GET /api/v1/inboxes`
+    pub async fn list_inboxes(
         &self,
         page: Option<i64>,
         page_size: Option<i64>,
-        service_account_id: Option<impl AsRef<str>>,
-        allocation_status: Option<Vec<AllocationStatus>>,
+        user_id: Option<impl AsRef<str>>,
         outbound_status: Option<Vec<OutboundStatus>>,
         keyword: Option<impl AsRef<str>>,
-    ) -> Result<MailboxListResponseBody, ApiOpError<ListMailboxesApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/mailboxes");
+    ) -> Result<InboxListResponseBody, ApiOpError<ListInboxesApiError>> {
+        let request_url = format!("{}{}", self.base_url, "/api/v1/inboxes");
         let mut req = self.http_client.get(request_url);
         {
             let mut query_params: Vec<(String, String)> = Vec::new();
@@ -3961,31 +2272,8 @@ impl HttpClient {
             if let Some(v) = page_size {
                 query_params.push(("page_size".to_string(), v.to_string()));
             }
-            if let Some(v) = service_account_id {
-                query_params.push(("service_account_id".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = allocation_status {
-                if v.is_empty() {
-                    query_params.push((format!("{}[]", "allocation_status"), String::new()));
-                } else {
-                    let mut parts = Vec::with_capacity(v.len());
-                    for item in &v {
-                        let item = item.to_string();
-                        if item.contains(',') {
-                            return Err(
-                                HttpError::serialization_error(
-                                        format!(
-                                            "query array `{}` contains a comma; use explode=true for lossless string values",
-                                            "allocation_status",
-                                        ),
-                                    )
-                                    .into(),
-                            );
-                        }
-                        parts.push(item);
-                    }
-                    query_params.push(("allocation_status".to_string(), parts.join(",")));
-                }
+            if let Some(v) = user_id {
+                query_params.push(("user_id".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = outbound_status {
                 if v.is_empty() {
@@ -4059,12 +2347,12 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<ListMailboxesApiError>;
+            let typed: Option<ListInboxesApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(ListMailboxesApiError::Default(v));
+                        typed = Some(ListInboxesApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -4083,19 +2371,17 @@ impl HttpClient {
             }))
         }
     }
-    /// List and search project messages
+    /// List and search messages in an inbox
     ///
-    /// Cursor-paged lightweight message summaries, newest first, without full body payloads.
-    /// Service account tokens are automatically restricted to their own mailbox. Call
+    /// Cursor-paged lightweight message summaries, newest first, without full body payloads. Call
     /// `get-message` to read full plain-text or sanitized HTML bodies and attachments.
     ///
-    /// `GET /api/v1/messages`
+    /// `GET /api/v1/inboxes/{inboxId}/messages`
     pub async fn list_messages(
         &self,
+        inbox_id: impl AsRef<str>,
         limit: Option<i64>,
         cursor: Option<impl AsRef<str>>,
-        mailbox_id: Option<impl AsRef<str>>,
-        service_account_id: Option<impl AsRef<str>>,
         thread_id: Option<impl AsRef<str>>,
         direction: Option<Vec<MessageDirection>>,
         status: Option<Vec<MessageStatus>>,
@@ -4108,7 +2394,14 @@ impl HttpClient {
         from: Option<impl AsRef<str>>,
         to: Option<impl AsRef<str>>,
     ) -> Result<MessageSummaryListResponseBody, ApiOpError<ListMessagesApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/messages");
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/inboxes/{}/messages",
+                __pct_encode_path_segment(inbox_id.as_ref())
+            )
+        );
         let mut req = self.http_client.get(request_url);
         {
             let mut query_params: Vec<(String, String)> = Vec::new();
@@ -4117,12 +2410,6 @@ impl HttpClient {
             }
             if let Some(v) = cursor {
                 query_params.push(("cursor".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = mailbox_id {
-                query_params.push(("mailbox_id".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = service_account_id {
-                query_params.push(("service_account_id".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = thread_id {
                 query_params.push(("thread_id".to_string(), v.as_ref().to_string()));
@@ -4386,13 +2673,15 @@ impl HttpClient {
             }))
         }
     }
-    /// List messages in a project thread
+    /// List messages in a thread
     ///
-    /// Cursor-paged lightweight message summaries belonging to the thread, oldest first. Fetch full body content via `get-message`.
+    /// Returns lightweight message summaries in chronological order (oldest first) for thread
+    /// rendering. Call `get-message` for full bodies and attachments.
     ///
-    /// `GET /api/v1/threads/{threadId}/messages`
+    /// `GET /api/v1/inboxes/{inboxId}/threads/{threadId}/messages`
     pub async fn list_thread_messages(
         &self,
+        inbox_id: impl AsRef<str>,
         thread_id: impl AsRef<str>,
         limit: Option<i64>,
         cursor: Option<impl AsRef<str>>,
@@ -4401,7 +2690,8 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/threads/{}/messages",
+                "/api/v1/inboxes/{}/threads/{}/messages",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(thread_id.as_ref())
             )
         );
@@ -4484,21 +2774,20 @@ impl HttpClient {
             }))
         }
     }
-    /// List project email threads
+    /// List email threads across project inboxes
     ///
-    /// Cursor-paged conversation threads ordered by most recent message first. Service account
-    /// tokens are automatically restricted to their own mailbox.
+    /// Cursor-paged conversation threads across the authenticated project, ordered by most recent
+    /// message first. Service account tokens are automatically restricted to their own inbox.
     ///
     /// `GET /api/v1/threads`
     pub async fn list_threads(
         &self,
         limit: Option<i64>,
         cursor: Option<impl AsRef<str>>,
-        mailbox_id: Option<impl AsRef<str>>,
-        service_account_id: Option<impl AsRef<str>>,
+        inbox_id: Option<impl AsRef<str>>,
         unread_only: Option<bool>,
         flagged_only: Option<bool>,
-        q: Option<impl AsRef<str>>,
+        keyword: Option<impl AsRef<str>>,
     ) -> Result<ThreadListResponseBody, ApiOpError<ListThreadsApiError>> {
         let request_url = format!("{}{}", self.base_url, "/api/v1/threads");
         let mut req = self.http_client.get(request_url);
@@ -4510,11 +2799,8 @@ impl HttpClient {
             if let Some(v) = cursor {
                 query_params.push(("cursor".to_string(), v.as_ref().to_string()));
             }
-            if let Some(v) = mailbox_id {
-                query_params.push(("mailbox_id".to_string(), v.as_ref().to_string()));
-            }
-            if let Some(v) = service_account_id {
-                query_params.push(("service_account_id".to_string(), v.as_ref().to_string()));
+            if let Some(v) = inbox_id {
+                query_params.push(("inbox_id".to_string(), v.as_ref().to_string()));
             }
             if let Some(v) = unread_only {
                 query_params.push(("unread_only".to_string(), v.to_string()));
@@ -4522,8 +2808,8 @@ impl HttpClient {
             if let Some(v) = flagged_only {
                 query_params.push(("flagged_only".to_string(), v.to_string()));
             }
-            if let Some(v) = q {
-                query_params.push(("q".to_string(), v.as_ref().to_string()));
+            if let Some(v) = keyword {
+                query_params.push(("keyword".to_string(), v.as_ref().to_string()));
             }
             if !query_params.is_empty() {
                 req = req.query(&query_params);
@@ -4595,22 +2881,21 @@ impl HttpClient {
             }))
         }
     }
-    /// Pause outbound sending on a mailbox
+    /// Pause outbound sending for an inbox
     ///
-    /// Immediately prevents outbound sending from this mailbox while keeping inbound delivery
-    /// active. Useful for stopping a runaway automated sender.
+    /// Stops outbound sending from the inbox while keeping inbound mail delivery active.
     ///
-    /// `POST /api/v1/mailboxes/{mailboxId}:pauseOutbound`
-    pub async fn pause_mailbox_outbound(
+    /// `POST /api/v1/inboxes/{inboxId}:pauseOutbound`
+    pub async fn pause_inbox_outbound(
         &self,
-        mailbox_id: impl AsRef<str>,
-    ) -> Result<MailboxResource, ApiOpError<PauseMailboxOutboundApiError>> {
+        inbox_id: impl AsRef<str>,
+    ) -> Result<InboxResource, ApiOpError<PauseInboxOutboundApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/mailboxes/{}:pauseOutbound",
-                __pct_encode_path_segment(mailbox_id.as_ref())
+                "/api/v1/inboxes/{}:pauseOutbound",
+                __pct_encode_path_segment(inbox_id.as_ref())
             )
         );
         let mut req = self.http_client.post(request_url);
@@ -4657,12 +2942,12 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<PauseMailboxOutboundApiError>;
+            let typed: Option<PauseInboxOutboundApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(PauseMailboxOutboundApiError::Default(v));
+                        typed = Some(PauseInboxOutboundApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -4681,113 +2966,16 @@ impl HttpClient {
             }))
         }
     }
-    /// Reply to an inbound personal account thread
+    /// Reply to a message
     ///
-    /// Sends a free single-recipient reply from the caller's personal mailbox to the verified
-    /// external sender of an existing inbound thread. The recipient is fixed by the thread and
-    /// cannot be overridden; subject to hourly and daily anti-abuse limits.
+    /// Sends an outbound reply from the inbox while preserving `In-Reply-To`, `References`, and
+    /// `Re:` subject folding. Defaults to replying to the original message's `reply_to` (or `from`
+    /// if absent); pass `reply_all=true` to include original `to` and `cc` recipients.
     ///
-    /// `POST /api/v1/account/threads/{threadId}:reply`
-    pub async fn reply_account_thread(
-        &self,
-        thread_id: impl AsRef<str>,
-        idempotency_key: Option<impl AsRef<str>>,
-        request: ReplyAccountThreadRequestBody,
-    ) -> Result<MessageResource, ApiOpError<ReplyAccountThreadApiError>> {
-        let request_url = format!(
-            "{}{}",
-            self.base_url,
-            format!(
-                "/api/v1/account/threads/{}:reply",
-                __pct_encode_path_segment(thread_id.as_ref())
-            )
-        );
-        let mut req = self.http_client.post(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(v) = idempotency_key {
-            req = req.header("Idempotency-Key", v.as_ref());
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 201u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "201",
-                )),
-            }))
-        } else {
-            let typed: Option<ReplyAccountThreadApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(ReplyAccountThreadApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Reply to a project message
-    ///
-    /// Sends a billed outbound reply from the original message's mailbox while automatically
-    /// preserving `In-Reply-To`, `References`, and `Re:` subject folding.
-    ///
-    /// Defaults to replying to the original message's `reply_to` (or `from` if absent). When
-    /// `reply_all` is true, deduplicated recipients from the original `to` and `cc` (excluding the
-    /// sending mailbox's own address) are added to `cc`. Additional `cc` and `bcc` recipients may
-    /// also be specified; total recipients must not exceed 50.
-    ///
-    /// `POST /api/v1/messages/{messageId}:reply`
+    /// `POST /api/v1/inboxes/{inboxId}/messages/{messageId}:reply`
     pub async fn reply_message(
         &self,
+        inbox_id: impl AsRef<str>,
         message_id: impl AsRef<str>,
         idempotency_key: Option<impl AsRef<str>>,
         request: ReplyMessageRequestBody,
@@ -4796,7 +2984,8 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/messages/{}:reply",
+                "/api/v1/inboxes/{}/messages/{}:reply",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(message_id.as_ref())
             )
         );
@@ -4873,23 +3062,23 @@ impl HttpClient {
             }))
         }
     }
-    /// Resume outbound sending on a mailbox
+    /// Resume outbound sending for an inbox
     ///
-    /// Resumes outbound sending on a mailbox paused by the project or paused automatically for
-    /// reputation protection. Operator suspensions cannot be cleared here and return 412
-    /// `MAIL_MAILBOX_PAUSED`.
+    /// Resumes outbound sending for a project-paused or reputation-paused inbox. Operator
+    /// suspensions (`suspended`) cannot be lifted by project users and return 403
+    /// `MAIL_OUTBOUND_SUSPENDED_BY_OPERATOR`.
     ///
-    /// `POST /api/v1/mailboxes/{mailboxId}:resumeOutbound`
-    pub async fn resume_mailbox_outbound(
+    /// `POST /api/v1/inboxes/{inboxId}:resumeOutbound`
+    pub async fn resume_inbox_outbound(
         &self,
-        mailbox_id: impl AsRef<str>,
-    ) -> Result<MailboxResource, ApiOpError<ResumeMailboxOutboundApiError>> {
+        inbox_id: impl AsRef<str>,
+    ) -> Result<InboxResource, ApiOpError<ResumeInboxOutboundApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/mailboxes/{}:resumeOutbound",
-                __pct_encode_path_segment(mailbox_id.as_ref())
+                "/api/v1/inboxes/{}:resumeOutbound",
+                __pct_encode_path_segment(inbox_id.as_ref())
             )
         );
         let mut req = self.http_client.post(request_url);
@@ -4936,12 +3125,12 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<ResumeMailboxOutboundApiError>;
+            let typed: Option<ResumeInboxOutboundApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(ResumeMailboxOutboundApiError::Default(v));
+                        typed = Some(ResumeInboxOutboundApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -4960,29 +3149,33 @@ impl HttpClient {
             }))
         }
     }
-    /// Send an outbound email from a project mailbox
+    /// Send an outbound email from an inbox
     ///
-    /// Submits an outbound email from a project mailbox and bills the project's active mail
+    /// Submits an outbound email from the specified inbox and bills the project's active mail
     /// subscription by the number of accepted recipients (`to` + `cc` + `bcc`, at most 50).
     ///
     /// - **Validation, suppression, and rate limits**: Messages rejected for invalid arguments
     ///   (400), suppressed recipients (422 `MAIL_RECIPIENT_SUPPRESSED`, non-retryable), or rate /
     ///   daily-quota limits (429 `MAIL_RATE_LIMITED` with `retry_delay`, retryable) are not billed.
-    /// - **Accepted sends and bounces**: Once accepted (201 with `status: accepted`), delivery
-    ///   proceeds asynchronously and per-recipient outcomes appear in `deliveries`; subsequent
-    ///   hard bounces remain billed.
-    /// - **Sender derivation**: `From` is derived strictly from the sending mailbox's allocated
-    ///   address. A service account token may omit `mailbox_id` to send from its own mailbox.
+    /// - **Sender derivation**: `From` is derived strictly from the inbox's allocated address.
     /// - **Plain-text derivation**: If only `html` is provided, a plain-text alternative is
     ///   automatically derived for multipart delivery.
     ///
-    /// `POST /api/v1/messages`
+    /// `POST /api/v1/inboxes/{inboxId}/messages`
     pub async fn send_message(
         &self,
+        inbox_id: impl AsRef<str>,
         idempotency_key: Option<impl AsRef<str>>,
         request: SendMessageRequestBody,
     ) -> Result<MessageResource, ApiOpError<SendMessageApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/messages");
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/inboxes/{}/messages",
+                __pct_encode_path_segment(inbox_id.as_ref())
+            )
+        );
         let mut req = self.http_client.post(request_url);
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
@@ -5056,101 +3249,23 @@ impl HttpClient {
             }))
         }
     }
-    /// Update personal account mailbox preferences
+    /// Update inbox settings and forwarding preferences
     ///
-    /// Updates forwarding and inbound spam filtering preferences for the caller's personal
-    /// mailbox. Unsupplied fields are left unchanged.
+    /// Updates display name, inbound delivery toggle, or optional email forwarding preferences for
+    /// the inbox. Unsupplied fields are left unchanged.
     ///
-    /// `PATCH /api/v1/account/mailbox`
-    pub async fn update_account_mailbox(
+    /// `PATCH /api/v1/inboxes/{inboxId}`
+    pub async fn update_inbox(
         &self,
-        request: UpdateAccountMailboxRequestBody,
-    ) -> Result<AccountMailboxResource, ApiOpError<UpdateAccountMailboxApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/account/mailbox");
-        let mut req = self.http_client.patch(request_url);
-        req = req
-            .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
-            .header("content-type", "application/json");
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 200u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "200",
-                )),
-            }))
-        } else {
-            let typed: Option<UpdateAccountMailboxApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(UpdateAccountMailboxApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Update read or flagged state of a personal account message
-    ///
-    /// `PATCH /api/v1/account/messages/{messageId}`
-    pub async fn update_account_message(
-        &self,
-        message_id: impl AsRef<str>,
-        request: UpdateMessageRequestBody,
-    ) -> Result<MessageResource, ApiOpError<UpdateAccountMessageApiError>> {
+        inbox_id: impl AsRef<str>,
+        request: UpdateInboxRequestBody,
+    ) -> Result<InboxResource, ApiOpError<UpdateInboxApiError>> {
         let request_url = format!(
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/account/messages/{}",
-                __pct_encode_path_segment(message_id.as_ref())
+                "/api/v1/inboxes/{}",
+                __pct_encode_path_segment(inbox_id.as_ref())
             )
         );
         let mut req = self.http_client.patch(request_url);
@@ -5199,12 +3314,12 @@ impl HttpClient {
                 )),
             }))
         } else {
-            let typed: Option<UpdateAccountMessageApiError>;
+            let typed: Option<UpdateInboxApiError>;
             let parse_error: Option<String>;
             match status_code {
                 _ => match serde_json::from_str::<Error>(&body_text) {
                     Ok(v) => {
-                        typed = Some(UpdateAccountMessageApiError::Default(v));
+                        typed = Some(UpdateInboxApiError::Default(v));
                         parse_error = None;
                     }
                     Err(e) => {
@@ -5223,11 +3338,12 @@ impl HttpClient {
             }))
         }
     }
-    /// Update read or flagged state of a project message
+    /// Update read or flagged state of a message
     ///
-    /// `PATCH /api/v1/messages/{messageId}`
+    /// `PATCH /api/v1/inboxes/{inboxId}/messages/{messageId}`
     pub async fn update_message(
         &self,
+        inbox_id: impl AsRef<str>,
         message_id: impl AsRef<str>,
         request: UpdateMessageRequestBody,
     ) -> Result<MessageResource, ApiOpError<UpdateMessageApiError>> {
@@ -5235,7 +3351,8 @@ impl HttpClient {
             "{}{}",
             self.base_url,
             format!(
-                "/api/v1/messages/{}",
+                "/api/v1/inboxes/{}/messages/{}",
+                __pct_encode_path_segment(inbox_id.as_ref()),
                 __pct_encode_path_segment(message_id.as_ref())
             )
         );
@@ -5309,110 +3426,29 @@ impl HttpClient {
             }))
         }
     }
-    /// Upload a personal account reply attachment
-    ///
-    /// Uploads raw file bytes (`application/octet-stream`) for use in `reply-account-thread`.
-    /// Unreferenced attachments are removed automatically after 24 hours.
-    ///
-    /// `POST /api/v1/account/attachments`
-    pub async fn upload_account_attachment(
-        &self,
-        filename: impl AsRef<str>,
-        body: Vec<u8>,
-    ) -> Result<AttachmentResource, ApiOpError<UploadAccountAttachmentApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/account/attachments");
-        let mut req = self.http_client.post(request_url);
-        req = req
-            .body(body)
-            .header("content-type", "application/octet-stream");
-        {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            query_params.push(("filename".to_string(), filename.as_ref().to_string()));
-            if !query_params.is_empty() {
-                req = req.query(&query_params);
-            }
-        }
-        if let Some(api_key) = &self.api_key {
-            req = req.bearer_auth(api_key);
-        }
-        for (name, value) in &self.custom_headers {
-            if !name.eq_ignore_ascii_case("accept") {
-                req = req.header(name, value);
-            }
-        }
-        req = req.header(reqwest::header::ACCEPT, "application/json");
-        let response = req.send().await?;
-        let status = response.status();
-        let status_code = status.as_u16();
-        let headers = response.headers().clone();
-        let body_bytes =
-            __read_bounded_response_body(response, self.max_response_body_bytes).await?;
-        let raw_body = body_bytes;
-        let body_text = String::from_utf8_lossy(&raw_body).into_owned();
-        if false || status_code == 201u16 {
-            match serde_json::from_str(&body_text) {
-                Ok(body) => Ok(body),
-                Err(e) => Err(ApiOpError::Api(ApiError {
-                    status: status_code,
-                    headers: headers,
-                    body: body_text,
-                    raw_body,
-                    typed: None,
-                    parse_error: Some(format!("failed to deserialize 2xx response body: {}", e)),
-                })),
-            }
-        } else if status.is_success() {
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed: None,
-                parse_error: Some(format!(
-                    "unexpected successful status {}; generated return type selects `{}`",
-                    status_code, "201",
-                )),
-            }))
-        } else {
-            let typed: Option<UploadAccountAttachmentApiError>;
-            let parse_error: Option<String>;
-            match status_code {
-                _ => match serde_json::from_str::<Error>(&body_text) {
-                    Ok(v) => {
-                        typed = Some(UploadAccountAttachmentApiError::Default(v));
-                        parse_error = None;
-                    }
-                    Err(e) => {
-                        typed = None;
-                        parse_error = Some(e.to_string());
-                    }
-                },
-            }
-            Err(ApiOpError::Api(ApiError {
-                status: status_code,
-                headers,
-                body: body_text,
-                raw_body,
-                typed,
-                parse_error,
-            }))
-        }
-    }
-    /// Upload a project email attachment
+    /// Upload an email attachment for an inbox
     ///
     /// The body is the raw file bytes (`application/octet-stream`), one file per request. The
     /// content type is determined by inspecting the bytes, not from request headers.
     ///
-    /// Pass the returned `id` in `attachment_ids` when calling `send-message`. An unreferenced
-    /// attachment is removed automatically after 24 hours.
+    /// Pass the returned `id` in `attachment_ids` when calling `send-message` or `reply-message`
+    /// on the same inbox. An unreferenced attachment is removed automatically after 24 hours.
     ///
-    /// `POST /api/v1/attachments`
+    /// `POST /api/v1/inboxes/{inboxId}/attachments`
     pub async fn upload_attachment(
         &self,
+        inbox_id: impl AsRef<str>,
         filename: impl AsRef<str>,
         body: Vec<u8>,
     ) -> Result<AttachmentResource, ApiOpError<UploadAttachmentApiError>> {
-        let request_url = format!("{}{}", self.base_url, "/api/v1/attachments");
+        let request_url = format!(
+            "{}{}",
+            self.base_url,
+            format!(
+                "/api/v1/inboxes/{}/attachments",
+                __pct_encode_path_segment(inbox_id.as_ref())
+            )
+        );
         let mut req = self.http_client.post(request_url);
         req = req
             .body(body)

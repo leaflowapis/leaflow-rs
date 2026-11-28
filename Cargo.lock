@@ -638,7 +638,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-account"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -652,7 +652,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-assistant"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -668,7 +668,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-audit"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -682,7 +682,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-billing"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -698,7 +698,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-canopy"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -714,7 +714,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-compute"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -729,7 +729,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-dns"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -743,7 +743,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-eventbus"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -757,7 +757,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-fleet"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -775,7 +775,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-iam"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -789,7 +789,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-mail"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -805,7 +805,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-membership"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -820,7 +820,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-monitoring"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -834,7 +834,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-notification"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -848,7 +848,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-okdata"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -863,7 +863,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-support"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -878,7 +878,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-swas"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -892,7 +892,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-swas-legacy"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",
@@ -907,7 +907,7 @@ dependencies = [
 
 [[package]]
 name = "leaflow-vault"
-version = "1.119.0"
+version = "1.120.0"
 dependencies = [
  "chrono",
  "futures-util",

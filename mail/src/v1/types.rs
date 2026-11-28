@@ -22,9 +22,14 @@ mod tri_state_serde {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct UpdateAccountMailboxRequestBody {
+pub struct UpdateInboxRequestBody {
+    ///Constraint: maxLength=255
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub forwarding_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inbound_enabled: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub spam_filter_mode: Option<SpamFilterMode>,
 }
@@ -41,12 +46,12 @@ pub struct ThreadResource {
     ///True when at least one message in the thread has a non-inline attachment.
     pub has_attachments: bool,
     pub id: uuid::Uuid,
+    pub inbox_id: uuid::Uuid,
     pub last_message_at: chrono::DateTime<chrono::Utc>,
-    pub mailbox_id: uuid::Uuid,
     ///Constraint: minimum=0
     pub message_count: i64,
     pub participants: Vec<EmailAddress>,
-    ///Whether the thread has a verified external counterparty eligible for a reply.
+    ///Whether the thread has an external counterparty eligible for a reply.
     pub replyable: bool,
     pub snippet: String,
     pub subject: String,
@@ -55,7 +60,7 @@ pub struct ThreadResource {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SendMessageRequestBody {
-    ///Pre-uploaded attachment IDs from `upload-attachment`. Combined assembled message size must not exceed 25 MiB.
+    ///Pre-uploaded attachment IDs from `upload-attachment` on the same inbox. Combined assembled message size must not exceed 25 MiB.
     ///Constraint: maxItems=20
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attachment_ids: Option<Vec<String>>,
@@ -71,12 +76,9 @@ pub struct SendMessageRequestBody {
     ///HTML body. At least one of `text` or `html` is required; plain text is auto-derived when omitted.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub html: Option<String>,
-    ///Existing message ID in the same mailbox to reply to; automatically sets threading headers and attaches to the same thread.
+    ///Existing message ID in the same inbox to reply to; automatically sets threading headers and attaches to the same thread.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub in_reply_to_message_id: Option<uuid::Uuid>,
-    ///Sending mailbox ID. Optional when authenticated as a service account (defaults to its own allocated mailbox and must match it); required when a human member sends on behalf of a mailbox.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mailbox_id: Option<uuid::Uuid>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_to: Option<EmailAddress>,
     ///Constraint: minLength=1, maxLength=998
@@ -100,7 +102,6 @@ impl SendMessageRequestBody {
             headers: None,
             html: None,
             in_reply_to_message_id: None,
-            mailbox_id: None,
             reply_to: None,
             text: None,
         }
@@ -159,12 +160,6 @@ impl SendMessageRequestBodyBuilder {
         self.value.in_reply_to_message_id = Some(in_reply_to_message_id);
         self
     }
-    #[doc = concat!("Set the optional `", "mailbox_id", "` request field.")]
-    #[must_use]
-    pub fn mailbox_id(mut self, mailbox_id: uuid::Uuid) -> Self {
-        self.value.mailbox_id = Some(mailbox_id);
-        self
-    }
     #[doc = concat!("Set the optional `", "reply_to", "` request field.")]
     #[must_use]
     pub fn reply_to(mut self, reply_to: EmailAddress) -> Self {
@@ -192,7 +187,7 @@ pub struct SendMessageRequestBodyHeaders {
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct ReplyMessageRequestBody {
-    ///Pre-uploaded attachment IDs from `upload-attachment`.
+    ///Pre-uploaded attachment IDs from `upload-attachment` on the same inbox.
     ///Constraint: maxItems=20
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attachment_ids: Option<Vec<String>>,
@@ -209,7 +204,7 @@ pub struct ReplyMessageRequestBody {
     ///HTML reply body. At least one of `text` or `html` is required; plain text is auto-derived when omitted.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub html: Option<String>,
-    ///When true, includes original `to` and `cc` addresses in `cc` (deduplicated and excluding the sending mailbox's own address). Defaults to false.
+    ///When true, includes original `to` and `cc` addresses in `cc` (deduplicated and excluding the sending inbox's own address). Defaults to false.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_all: Option<bool>,
     ///Optional subject override; defaults to `Re: <subject>` with duplicate prefixes collapsed.
@@ -281,7 +276,7 @@ pub struct MessageSummaryListResponseBody {
 ///Lightweight message row returned by list endpoints without full body payloads.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MessageSummaryResource {
-    ///Number of billable recipients accepted for outbound delivery. Zero for inbound messages and free personal replies.
+    ///Number of billable recipients accepted for outbound delivery. Zero for inbound messages.
     ///Constraint: minimum=0
     pub billed_recipients: i64,
     pub created_at: chrono::DateTime<chrono::Utc>,
@@ -291,7 +286,7 @@ pub struct MessageSummaryResource {
     ///True when the message contains at least one non-inline attachment.
     pub has_attachments: bool,
     pub id: uuid::Uuid,
-    pub mailbox_id: uuid::Uuid,
+    pub inbox_id: uuid::Uuid,
     pub read_at: Option<chrono::DateTime<chrono::Utc>>,
     ///Present when the RFC 5322 `Sender` header differs from `From` (on-behalf-of sender); null otherwise.
     pub sender: Option<EmailAddress>,
@@ -322,7 +317,7 @@ pub struct MessageResource {
     pub attachments: Vec<AttachmentResource>,
     ///Present on outbound messages only; empty array on inbound messages.
     pub bcc: Vec<EmailAddress>,
-    ///Number of billable recipients accepted for outbound delivery. Zero for inbound messages and free personal replies.
+    ///Number of billable recipients accepted for outbound delivery. Zero for inbound messages.
     ///Constraint: minimum=0
     pub billed_recipients: i64,
     pub cc: Vec<EmailAddress>,
@@ -337,7 +332,7 @@ pub struct MessageResource {
     pub html: Option<String>,
     pub id: uuid::Uuid,
     pub in_reply_to: Option<String>,
-    pub mailbox_id: uuid::Uuid,
+    pub inbox_id: uuid::Uuid,
     pub read_at: Option<chrono::DateTime<chrono::Utc>>,
     ///Ordered list of RFC 5322 `References` Message-IDs for thread reconstruction.
     pub references: Vec<String>,
@@ -524,8 +519,8 @@ impl AsRef<str> for DeliveryStatus {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MailboxListResponseBody {
-    pub items: Vec<MailboxResource>,
+pub struct InboxListResponseBody {
+    pub items: Vec<InboxResource>,
     pub pagination: OffsetPagination,
 }
 ///Pagination metadata for stable numbered pages. total_count is returned only when the operation can determine it without an unbounded scan.
@@ -540,26 +535,117 @@ pub struct OffsetPagination {
     pub total_count: Option<i64>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MailboxResource {
-    ///Full allocated email address; null while allocation is pending or failed.
-    pub address: Option<String>,
-    ///Machine-readable reason when `allocation_status` is `failed`; null otherwise.
-    pub allocation_error: Option<String>,
-    pub allocation_status: AllocationStatus,
+pub struct InboxResource {
+    ///Allocated primary email address on the platform domain.
+    pub address: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
-    ///Display name used when formatting outbound `From` headers.
     pub display_name: String,
+    pub forwarding: InboxForwarding,
     pub id: uuid::Uuid,
-    ///Whether inbound mail is currently accepted for this mailbox.
     pub inbound_enabled: bool,
     pub outbound_status: OutboundStatus,
+    pub pause_detail: Option<String>,
     pub pause_reason: Option<PauseReason>,
     pub paused_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///Service account associated with this mailbox.
-    pub service_account_id: Option<uuid::Uuid>,
-    ///Constraint: minimum=0
-    pub unread_count: i64,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    ///IAM user ID of the project member owning this inbox (human member or service account).
+    pub user_id: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum PauseReason {
+    #[default]
+    #[serde(rename = "manual")]
+    Manual,
+    #[serde(rename = "complaint")]
+    Complaint,
+    #[serde(rename = "bounce_rate")]
+    BounceRate,
+    #[serde(rename = "operator")]
+    Operator,
+}
+impl PauseReason {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Manual => "manual",
+            Self::Complaint => "complaint",
+            Self::BounceRate => "bounce_rate",
+            Self::Operator => "operator",
+        }
+    }
+}
+impl ::std::fmt::Display for PauseReason {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for PauseReason {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///Current outbound sending state for an inbox.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum OutboundStatus {
+    #[default]
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "paused")]
+    Paused,
+    #[serde(rename = "suspended")]
+    Suspended,
+}
+impl OutboundStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "active",
+            Self::Paused => "paused",
+            Self::Suspended => "suspended",
+        }
+    }
+}
+impl ::std::fmt::Display for OutboundStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for OutboundStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+///Optional inbound forwarding preferences to the owning member's verified IAM email address.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct InboxForwarding {
+    pub enabled: bool,
+    pub spam_filter_mode: SpamFilterMode,
+    ///True when the owning IAM user has a verified external email eligible for forwarding and reply-by-email.
+    pub verified: bool,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+pub enum SpamFilterMode {
+    #[default]
+    #[serde(rename = "standard")]
+    Standard,
+    #[serde(rename = "strict")]
+    Strict,
+}
+impl SpamFilterMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Standard => "standard",
+            Self::Strict => "strict",
+        }
+    }
+}
+impl ::std::fmt::Display for SpamFilterMode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+impl AsRef<str> for SpamFilterMode {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 /**A failed request. The envelope follows the Google REST error format: `code` is the HTTP
 status, `status` is its canonical name, and `reason` is the stable machine-readable code
@@ -617,7 +703,7 @@ pub struct FieldViolation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
-///The enablement, `pending` until its order is accepted, together with its Checkout Session.
+///The enablement together with its Checkout Session when billing checkout is required.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateEnablementResponseBody {
     ///The Billing Checkout Session of this enablement.
@@ -641,14 +727,14 @@ pub struct EnablementResource {
     pub failure_reason: Option<EnablementResourceFailureReason>,
     ///The order that enabled the service; null before checkout completes.
     pub order_id: Option<uuid::Uuid>,
-    ///The Billing plan the mail service is sold under; null where the service is not sold. Preview pricing with Billing's `preview-checkout-session` using `recurring` price type, `metered` usage type, and quantity 1.
+    ///The Billing plan the mail service is sold under; null where the service is not sold.
     pub plan_id: Option<uuid::Uuid>,
-    ///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of checkout and acceptance of its order; `active` provisions mailboxes and allows billed outbound sending; `failed` means enabling failed, as `failure_reason` states.
+    ///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of checkout and acceptance of its order; `active` provisions member inboxes and allows outbound sending; `failed` means enabling failed, as `failure_reason` states.
     pub status: EnablementResourceStatus,
     ///The Billing subscription under which outbound recipients are billed; null until checkout completes.
     pub subscription_id: Option<uuid::Uuid>,
 }
-///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of checkout and acceptance of its order; `active` provisions mailboxes and allows billed outbound sending; `failed` means enabling failed, as `failure_reason` states.
+///`inactive` has never been enabled or its subscription has ended; `pending` awaits completion of checkout and acceptance of its order; `active` provisions member inboxes and allows outbound sending; `failed` means enabling failed, as `failure_reason` states.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum EnablementResourceStatus {
     #[default]
@@ -842,167 +928,6 @@ impl AsRef<str> for AttachmentDisposition {
     }
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AccountMailboxResource {
-    ///Allocated personal email address; null while unallocated, pending, or failed.
-    pub address: Option<String>,
-    pub allocation_error: Option<String>,
-    pub allocation_status: AllocationStatus,
-    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
-    ///Forwarding and reply-by-email require the external email address to be verified.
-    pub forward_email_verified: bool,
-    ///Account's external email address synchronized from IAM that receives forwarded inbound mail.
-    pub forward_to: Option<String>,
-    pub forwarding_enabled: bool,
-    ///Personal mailbox identifier; null until activated.
-    pub id: Option<uuid::Uuid>,
-    pub outbound_status: OutboundStatus,
-    pub pause_reason: Option<PauseReason>,
-    ///Constraint: minimum=0
-    pub reply_daily_limit: i64,
-    ///Constraint: minimum=0
-    pub reply_used_today: i64,
-    pub spam_filter_mode: SpamFilterMode,
-    ///Constraint: minimum=0
-    pub unread_count: i64,
-    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
-}
-///`standard` filters known spoofing and unauthenticated bulk mail before forwarding; `strict` forwards only messages passing strict sender authentication.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum SpamFilterMode {
-    #[default]
-    #[serde(rename = "standard")]
-    Standard,
-    #[serde(rename = "strict")]
-    Strict,
-}
-impl SpamFilterMode {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Standard => "standard",
-            Self::Strict => "strict",
-        }
-    }
-}
-impl ::std::fmt::Display for SpamFilterMode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for SpamFilterMode {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum PauseReason {
-    #[default]
-    #[serde(rename = "manual")]
-    Manual,
-    #[serde(rename = "complaint")]
-    Complaint,
-    #[serde(rename = "bounce_rate")]
-    BounceRate,
-    #[serde(rename = "operator")]
-    Operator,
-}
-impl PauseReason {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Manual => "manual",
-            Self::Complaint => "complaint",
-            Self::BounceRate => "bounce_rate",
-            Self::Operator => "operator",
-        }
-    }
-}
-impl ::std::fmt::Display for PauseReason {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for PauseReason {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///Current outbound sending state for a mailbox.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum OutboundStatus {
-    #[default]
-    #[serde(rename = "disabled")]
-    Disabled,
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "paused_by_project")]
-    PausedByProject,
-    #[serde(rename = "paused_for_reputation")]
-    PausedForReputation,
-    #[serde(rename = "suspended_by_operator")]
-    SuspendedByOperator,
-}
-impl OutboundStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Disabled => "disabled",
-            Self::Active => "active",
-            Self::PausedByProject => "paused_by_project",
-            Self::PausedForReputation => "paused_for_reputation",
-            Self::SuspendedByOperator => "suspended_by_operator",
-        }
-    }
-}
-impl ::std::fmt::Display for OutboundStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for OutboundStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-///Current address allocation state for a mailbox.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-pub enum AllocationStatus {
-    #[default]
-    #[serde(rename = "unallocated")]
-    Unallocated,
-    #[serde(rename = "pending")]
-    Pending,
-    #[serde(rename = "allocated")]
-    Allocated,
-    #[serde(rename = "failed")]
-    Failed,
-    #[serde(rename = "released")]
-    Released,
-}
-impl AllocationStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Unallocated => "unallocated",
-            Self::Pending => "pending",
-            Self::Allocated => "allocated",
-            Self::Failed => "failed",
-            Self::Released => "released",
-        }
-    }
-}
-impl ::std::fmt::Display for AllocationStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-impl AsRef<str> for AllocationStatus {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AllocateMailboxRequestBody {
-    ///Active service account in the current project to allocate a default mailbox for.
-    pub service_account_id: uuid::Uuid,
-}
-#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BatchUpdateMessagesRequestBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub flagged: Option<bool>,
@@ -1062,20 +987,14 @@ pub struct BatchUpdateMessagesResponseBody {
     pub updated_count: i64,
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct ReplyAccountThreadRequestBody {
-    ///Pre-uploaded attachment IDs from `upload-account-attachment`.
-    ///Constraint: maxItems=10
+pub struct CreateInboxRequestBody {
+    ///Constraint: maxLength=255
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub attachment_ids: Option<Vec<String>>,
-    ///HTML reply body. At least one of `text` or `html` is required; plain text is auto-derived when omitted.
+    pub display_name: Option<String>,
+    ///Target project member's IAM user ID. Omit to provision an inbox for the caller.
+    ///Constraint: minLength=1, maxLength=255
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub html: Option<String>,
-    ///Specific inbound message in this thread to reply to; defaults to the latest inbound message.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub in_reply_to_message_id: Option<uuid::Uuid>,
-    ///Plain-text reply body. At least one of `text` or `html` is required.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub text: Option<String>,
+    pub user_id: Option<String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct UpdateMessageRequestBody {
