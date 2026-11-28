@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "account",
     "assistant",
+    "audit",
     "billing",
     "canopy",
     "compute",
@@ -22,7 +23,7 @@ members = [
 ]
 
 [workspace.package]
-version = "1.117.0"
+version = "1.118.0"
 edition = "2024"
 rust-version = "1.94"
 license = "MIT"
